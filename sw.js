@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v5';
+const CACHE_NAME = 'lifemaxx-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './css/vision.css',
   './css/dark-override.css',
   './css/home.css',
+  './css/aero-bg-mobile.jpg',
   './js/formulas.js',
   './js/store.js',
   './js/seed.js',
@@ -29,7 +30,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets v5');
+      console.log('[SW] Caching assets v6');
       return cache.addAll(ASSETS);
     })
   );

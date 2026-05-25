@@ -99,13 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const _aeroOn = LM.store.getSettings().aeroTheme !== false;
   LM.views.settings.applyAeroTheme(_aeroOn);
 
-  // Show home splash on load (if enabled)
-  if (LM.store.getSettings().homeSplash !== false) {
-    LM.views.home.show();
-  }
-
-  // Logo click → show home again
-  document.getElementById('logo-home-btn')?.addEventListener('click', () => LM.views.home.show());
+  // Logo click → navigate to dashboard
+  document.getElementById('logo-home-btn')?.addEventListener('click', () => LM.router.navigate('#dashboard'));
   // Sidebar skills
   renderSidebarSkills();
 

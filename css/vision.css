@@ -249,4 +249,9 @@ body {
     box-shadow: 0 -4px 16px rgba(14,100,180,0.08), inset 0 1px 0 rgba(255,255,255,0.92);
   }
   .nav-active { border-left: none !important; border-top: 2px solid var(--accent) !important; background: transparent !important; }
+  body {
+    background:
+      linear-gradient(160deg, rgba(168,216,240,0.2) 0%, rgba(198,236,248,0.1) 50%, rgba(180,228,244,0.15) 100%),
+      url('aero-bg-mobile.jpg') center center / cover no-repeat fixed !important;
+  }
 }
