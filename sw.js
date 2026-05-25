@@ -1,9 +1,12 @@
-const CACHE_NAME = 'lifemaxx-v1';
+// ⚠️ BUMP THIS VERSION every deploy to bust old caches
+const CACHE_NAME = 'lifemaxx-v3';
 const ASSETS = [
   './',
   './index.html',
   './css/main.css',
   './css/vision.css',
+  './css/dark-override.css',
+  './css/home.css',
   './js/formulas.js',
   './js/store.js',
   './js/seed.js',
@@ -17,66 +20,68 @@ const ASSETS = [
   './js/views/skill-detail.js',
   './js/views/quest-log.js',
   './js/views/research-hub.js',
+  './js/views/home.js',
   './js/views/settings.js',
-  './js/main.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap',
-  'https://cdn.quilljs.com/1.3.6/quill.snow.css',
-  'https://cdn.quilljs.com/1.3.6/quill.js'
+  './js/main.js'
 ];
 
-// Install Event
+// Install: cache all assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Caching offline assets');
+      console.log('[SW] Caching assets v3');
       return cache.addAll(ASSETS);
     })
   );
+  // Take control immediately — don't wait for old SW to die
   self.skipWaiting();
 });
 
-// Activate Event
+// Activate: delete ALL old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE_NAME).map(key => {
+          console.log('[SW] Deleting old cache:', key);
+          return caches.delete(key);
+        })
       );
     })
   );
+  // Take control of all open tabs immediately
   self.clients.claim();
 });
 
-// Fetch Event - Network First with Cache Fallback for resources
+// Fetch: Network-First strategy
+// → Always try the network first so users get fresh content.
+// → Only fall back to cache when offline (airplane mode, etc.)
 self.addEventListener('fetch', event => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
+  // Skip cross-origin requests (CDN fonts, Quill, etc.) — let browser handle them
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      // Return cached response if found
-      if (cachedResponse) {
-        // Fetch from network in background to update cache (stale-while-revalidate)
-        fetch(event.request).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, networkResponse.clone());
-            });
-          }
-        }).catch(err => console.log('Offline: cannot update cache', err));
-        return cachedResponse;
-      }
-      
-      // If not in cache, fetch from network
-      return fetch(event.request).then(response => {
-        // Cache new successful requests
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
+    fetch(event.request)
+      .then(networkResponse => {
+        // Got a fresh response — update the cache in background
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseToCache);
           });
         }
-        return response;
-      }).catch(err => {
-        console.error('Fetch failed', err);
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        // Network failed (offline) — serve from cache
+        return caches.match(event.request).then(cachedResponse => {
+          return cachedResponse || new Response('Offline', { status: 503 });
+        });
+      })
   );
 });
+
