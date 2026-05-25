@@ -61,14 +61,27 @@ window.LM.views.home = (function () {
       sharp.style.setProperty('--radius', '120px');
     }, { passive: true });
 
+    let hasEntered = false;
     overlay.addEventListener('click', enter);
+    overlay.addEventListener('touchend', enter);
+
     function onKey(e) {
-      if (['Enter', ' '].includes(e.key)) { document.removeEventListener('keydown', onKey); enter(); }
+      if (['Enter', ' '].includes(e.key)) {
+        document.removeEventListener('keydown', onKey);
+        enter(e);
+      }
     }
     document.addEventListener('keydown', onKey);
 
-    function enter() {
+    function enter(e) {
+      if (hasEntered) return;
+      hasEntered = true;
+      if (e && e.cancelable) {
+        e.preventDefault();
+      }
       overlay.removeEventListener('click', enter);
+      overlay.removeEventListener('touchend', enter);
+      document.removeEventListener('keydown', onKey);
       hide(() => { window.location.hash = '#dashboard'; });
     }
   }

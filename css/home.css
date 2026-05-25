@@ -11,6 +11,7 @@
 #home-overlay.home-visible {
   opacity: 1;
   pointer-events: all;
+  cursor: pointer;
 }
 
 .home-bg-blur {
