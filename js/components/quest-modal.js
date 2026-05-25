@@ -293,8 +293,8 @@ window.LM.components.questModal = (function () {
       subTasks: ['project','boss'].includes(type) ? (subTasks.length ? subTasks : null) : null,
       timedResearch: {
         enabled: timedEnabled,
-        xpPerSecond: parseFloat(document.getElementById('qm-xp-per-sec')?.value || 0.05),
-        sessionXPCap: parseFloat(document.getElementById('qm-xp-cap')?.value || 50),
+        xpPerSecond: isNaN(parseFloat(document.getElementById('qm-xp-per-sec')?.value)) ? 0.05 : parseFloat(document.getElementById('qm-xp-per-sec').value),
+        sessionXPCap: isNaN(parseFloat(document.getElementById('qm-xp-cap')?.value)) ? 50 : parseFloat(document.getElementById('qm-xp-cap').value),
         sessions: existing?.timedResearch?.sessions || []
       }
     };

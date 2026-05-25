@@ -55,8 +55,9 @@ window.LM.views.questLog = (function () {
 
   function getFilteredQuests(macros) {
     return S.getQuests().filter(q => {
+      const tSkills = q.targetSkills || [];
       if (filters.type !== 'all' && q.type !== filters.type) return false;
-      if (filters.skill !== 'all' && !q.targetSkills.some(t => t.macroSkillId === filters.skill)) return false;
+      if (filters.skill !== 'all' && !tSkills.some(t => t.macroSkillId === filters.skill)) return false;
       if (filters.status === 'active' && q.status !== 'active') return false;
       if (filters.status === 'completed' && q.status !== 'completed') return false;
       if (filters.status === 'failed' && q.status !== 'failed') return false;
@@ -70,7 +71,8 @@ window.LM.views.questLog = (function () {
     return quests.map(q => {
       const meta = TYPE_META[q.type] || TYPE_META.habit;
       const isExpanded = expanded.has(q.id);
-      const skillTags = q.targetSkills.map(t => {
+      const tSkills = q.targetSkills || [];
+      const skillTags = tSkills.map(t => {
         const m = macros.find(x=>x.id===t.macroSkillId);
         return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name} +${t.xpAmount}xp</span>` : '';
       }).join('');

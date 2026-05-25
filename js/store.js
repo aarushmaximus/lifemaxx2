@@ -105,6 +105,7 @@ window.LM.store = (function () {
 
   // ── Award XP ──
   function awardXP(targetSkills, negative = false, reason = '') {
+    if (!Array.isArray(targetSkills)) return { overallDelta: 0 };
     const macros = getMacros();
     const log = load(KEYS.xplog) || [];
     let overallDelta = 0;
@@ -180,7 +181,8 @@ window.LM.store = (function () {
       quest.completedAt = Date.now();
     }
 
-    const adjustedTargets = quest.targetSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount * xpMultiplier) }));
+    const tSkills = quest.targetSkills || [];
+    const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount * xpMultiplier) }));
     const negative = quest.isNegativeOnComplete || false;
     const actionDesc = negative ? 'Failed' : 'Completed';
     awardXP(adjustedTargets, negative, `${actionDesc}: ${quest.name}`);

@@ -8,7 +8,7 @@ window.LM.views.skillDetail = (function () {
     if (!macro) return `<div class="view-error">Skill not found.</div>`;
 
     const micros = macro.microSkills || [];
-    const quests = S.getQuests().filter(q => q.targetSkills.some(t => t.macroSkillId === macroId));
+    const quests = S.getQuests().filter(q => (q.targetSkills || []).some(t => t.macroSkillId === macroId));
     const research = quests.filter(q => q.type === 'research');
     const allEntries = research.flatMap(q => (q.researchLog||[]).map(e => ({ ...e, questName: q.name })));
     allEntries.sort((a,b) => b.createdAt - a.createdAt);

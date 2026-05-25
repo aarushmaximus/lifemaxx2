@@ -88,10 +88,11 @@ window.LM.views.dashboard = (function () {
 
   function renderQuestCards(macros) {
     const quests = S.getQuests().filter(q => {
+      const tSkills = q.targetSkills || [];
       if (q.hiddenFromDashboard) return false;
       if (q.status === 'completed' && q.type !== 'habit' && q.type !== 'weekly' && !q.isReadyToClaim) return false;
       if (activeFilter !== 'all' && q.type !== activeFilter) return false;
-      if (activeSkillFilter !== 'all' && !q.targetSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
+      if (activeSkillFilter !== 'all' && !tSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
       return true;
     });
 
@@ -101,7 +102,8 @@ window.LM.views.dashboard = (function () {
 
     return quests.map(q => {
       const meta = TYPE_META[q.type] || TYPE_META.habit;
-      const skillTags = q.targetSkills.map(t => {
+      const tSkills = q.targetSkills || [];
+      const skillTags = tSkills.map(t => {
         const m = macros.find(x=>x.id===t.macroSkillId);
         return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name} +${t.xpAmount}xp</span>` : '';
       }).join('');

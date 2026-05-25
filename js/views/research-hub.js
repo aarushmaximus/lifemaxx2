@@ -12,7 +12,7 @@ window.LM.views.researchHub = (function () {
     const macros = S.getMacros();
     const researchQuests = S.getQuests().filter(q => q.type === 'research');
     const filtered = skillFilter === 'all' ? researchQuests
-      : researchQuests.filter(q => q.targetSkills.some(t => t.macroSkillId === skillFilter));
+      : researchQuests.filter(q => (q.targetSkills || []).some(t => t.macroSkillId === skillFilter));
 
     return `
       <div class="view-container research-hub-view">
@@ -53,7 +53,8 @@ window.LM.views.researchHub = (function () {
   }
 
   function renderResearchCard(quest, macros) {
-    const skillTags = quest.targetSkills.map(t => {
+    const tSkills = quest.targetSkills || [];
+    const skillTags = tSkills.map(t => {
       const m = macros.find(x=>x.id===t.macroSkillId);
       return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name}</span>` : '';
     }).join('');
@@ -163,7 +164,7 @@ window.LM.views.researchHub = (function () {
       const macros = S.getMacros();
       const researchQuests = S.getQuests().filter(q => q.type === 'research');
       const filtered = skillFilter === 'all' ? researchQuests
-        : researchQuests.filter(q => q.targetSkills.some(t => t.macroSkillId === skillFilter));
+        : researchQuests.filter(q => (q.targetSkills || []).some(t => t.macroSkillId === skillFilter));
       if (grid) grid.innerHTML = filtered.length ? filtered.map(q => renderResearchCard(q, macros)).join('') : '<div class="empty-state"><p>No results.</p></div>';
     });
   }

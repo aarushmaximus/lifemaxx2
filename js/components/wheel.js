@@ -188,7 +188,8 @@ window.LM.components.wheel = (function () {
 
     // Validate skill match (if not "overall", quest must target current skill)
     if (currentSkillId !== 'overall') {
-      const matches = quest.targetSkills.some(t => t.macroSkillId === currentSkillId);
+      const tSkills = quest.targetSkills || [];
+      const matches = tSkills.some(t => t.macroSkillId === currentSkillId);
       if (!matches) {
         dz && dz.classList.add('drag-rejected');
         setTimeout(() => dz && dz.classList.remove('drag-rejected'), 700);
