@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIFEMAXX — Level Up Your Life</title>
+  <meta name="description" content="RPG-style personal development tracker. Level up real-life skills with quests, XP, and live progress tracking.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#030305">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/vision.css">
+  <link rel="stylesheet" href="css/dark-override.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+
+<div id="app">
+  <div class="ambient-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="orb orb-5"></div>
+  </div>
+  <!-- LEFT: Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-logo" id="logo-home-btn" style="cursor:pointer;" title="Back to home">
+      <svg class="logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lgMark" x1="4" y1="4" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/>
+            <stop offset="100%" stop-color="var(--accent)"/>
+          </linearGradient>
+        </defs>
+        <rect x="6.5" y="6.5" width="15" height="15" rx="3" transform="rotate(45 14 14)"
+              fill="rgba(255,255,255,0.08)" stroke="url(#lgMark)" stroke-width="1.2"/>
+        <rect x="9.5" y="9.5" width="9" height="9" rx="1.5" transform="rotate(45 14 14)"
+              fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.6"/>
+      </svg>
+      <span class="logo-text">Lifemaxx</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#dashboard" class="nav-item" data-view="dashboard" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="#quests" class="nav-item" data-view="quests" id="nav-quests">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/><path d="M9 12l2 2 4-4"/></svg>
+        <span>Quest Log</span>
+      </a>
+      <a href="#research" class="nav-item" data-view="research" id="nav-research">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Research Hub</span>
+      </a>
+      <a href="#settings" class="nav-item" data-view="settings" id="nav-settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-skills-section">
+      <div class="sidebar-section-header">
+        <span>SKILLS</span>
+        <button id="btn-manage-skills" class="icon-btn" title="Manage Skills">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div id="sidebar-skill-list"></div>
+    </div>
+
+    <div class="sidebar-footer">
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content"></main>
+</div>
+
+<!-- Floating Create Quest Button -->
+<button id="fab" title="Create Quest">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- Home Overlay -->
+<div id="home-overlay"></div>
+
+<!-- Modal Overlay -->
+<div id="modal-overlay" class="modal-overlay"></div>
+
+<!-- Quest Modal -->
+<div id="quest-modal" class="modal" role="dialog" aria-modal="true" aria-label="Create Quest"></div>
+
+<!-- Skill Modal -->
+<div id="skill-modal" class="modal" role="dialog" aria-modal="true" aria-label="Manage Skills"></div>
+
+<!-- Boss Completion Overlay -->
+<div id="boss-overlay">
+  <div class="boss-content">
+    <div id="boss-particles"></div>
+    <div class="boss-ring"></div>
+    <div class="boss-text">
+      <p class="boss-eyebrow">BOSS QUEST COMPLETE</p>
+      <h1 id="boss-quest-name"></h1>
+      <div id="boss-xp-list"></div>
+    </div>
+    <button id="boss-continue" onclick="document.getElementById('boss-overlay').classList.remove('active')">CONTINUE</button>
+  </div>
+</div>
+
+<!-- Level Up Bloom Overlay -->
+<div id="level-up-bloom" class="glass-bloom">
+  <div class="bloom-shatter"></div>
+  <div class="bloom-text">LEVEL UP</div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Scripts — order matters (no ES modules for file:// compat) -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>window.LM = { views: {}, components: {}, timerState: null };</script>
+<script src="js/formulas.js"></script>
+<script src="js/store.js"></script>
+<script src="js/seed.js"></script>
+<script src="js/components/notifications.js"></script>
+<script src="js/components/theme.js"></script>
+<script src="js/components/wheel.js"></script>
+<script src="js/components/quest-modal.js"></script>
+<script src="js/components/skill-modal.js"></script>
+<script src="js/components/research-timer.js"></script>
+<script src="js/views/dashboard.js"></script>
+<script src="js/views/skill-detail.js"></script>
+<script src="js/views/quest-log.js"></script>
+<script src="js/views/research-hub.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/settings.js"></script>
+<script src="js/main.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('SW registered: ', reg.scope);
+      }).catch(err => console.log('SW registration failed: ', err));
+    });
+  }
+</script>
+</body>
+</html>

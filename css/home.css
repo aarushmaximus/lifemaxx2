@@ -1,0 +1,149 @@
+/* ── Home Overlay ──────────────────────────────────────────── */
+#home-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.65s ease;
+}
+#home-overlay.home-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.home-bg-blur {
+  position: absolute;
+  inset: -50px;
+  background: url('wp13908387-frutiger-aero-wallpapers.png') center / cover;
+  filter: blur(35px) saturate(1.5) brightness(0.82);
+}
+
+.home-bg-sharp {
+  position: absolute;
+  inset: 0;
+  background: url('wp13908387-frutiger-aero-wallpapers.png') center / cover;
+  clip-path: circle(var(--radius, 0px) at var(--mx, 50%) var(--my, 50%));
+  transition: clip-path 0.28s ease;
+}
+
+.home-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 80% at 50% 50%,
+    rgba(0,20,50,0.15) 0%,
+    rgba(0,10,30,0.65) 100%
+  );
+  pointer-events: none;
+}
+
+.home-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  pointer-events: none;
+  padding: 24px;
+}
+
+.home-eyebrow {
+  font-family: 'Instrument Serif', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.4em;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  animation: homeIn 1.4s ease forwards;
+  opacity: 0;
+}
+
+.home-card {
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  background: rgba(255, 255, 255, 0.13);
+  border-top:    1px solid rgba(255,255,255,0.65);
+  border-left:   1px solid rgba(255,255,255,0.4);
+  border-right:  1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  border-radius: 28px;
+  padding: 40px 64px;
+  box-shadow:
+    0 30px 80px rgba(0,20,60,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 0 40px rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+  animation: homeCardIn 1s 0.3s var(--spring-soft) forwards;
+  opacity: 0;
+}
+
+.home-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.home-greeting {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2rem, 5.5vw, 4.2rem);
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.25), 0 0 80px rgba(255,255,255,0.12);
+  text-align: center;
+  line-height: 1.2;
+  margin: 0;
+  position: relative;
+}
+
+.home-cta {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.08em;
+  animation: homeIn 1.6s 1.2s ease forwards, homePulse 3s 2.8s ease infinite;
+  opacity: 0;
+}
+
+@keyframes homeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes homeCardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes homePulse {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 0.9; }
+}
+
+/* Dark theme home */
+html[data-aero-off="true"] .home-vignette {
+  background: radial-gradient(ellipse 90% 80% at 50% 50%,
+    rgba(0,0,10,0.3) 0%,
+    rgba(0,0,15,0.75) 100%
+  );
+}
+html[data-aero-off="true"] .home-bg-blur {
+  filter: blur(35px) saturate(0.7) brightness(0.45);
+}
+html[data-aero-off="true"] .home-card {
+  background: rgba(20,10,50,0.45);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.1);
+  border-right-color: rgba(255,255,255,0.05);
+  border-bottom-color: rgba(255,255,255,0.03);
+}
+
+@media (max-width: 600px) {
+  .home-card { padding: 28px 28px; }
+}
