@@ -36,7 +36,7 @@ window.LM.components.questModal = (function () {
     return `
       <div class="modal-header">
         <h2 class="font-display">${quest ? 'EDIT QUEST' : 'CREATE QUEST'}</h2>
-        <button class="modal-close" onclick="LM.components.questModal.close()">✕</button>
+        <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -51,7 +51,7 @@ window.LM.components.questModal = (function () {
           <label>Quest Type</label>
           <div class="type-tabs" id="qm-type-tabs">
             ${Object.entries(TYPE_LABELS).map(([k,v]) =>
-              `<button class="type-tab type-selector ${type===k?'active':''}" data-type="${k}">${v}</button>`
+              `<button type="button" class="type-tab type-selector ${type===k?'active':''}" data-type="${k}">${v}</button>`
             ).join('')}
           </div>
           <input type="hidden" id="qm-type" value="${type}">
@@ -72,7 +72,7 @@ window.LM.components.questModal = (function () {
           <label>Scheduled Days (Repeats Weekly)</label>
           <div class="type-tabs" id="qm-habit-days">
             ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => 
-              `<button class="type-tab day-tab ${(q.scheduledDays||[]).includes(i)?'active':''}" data-day="${i}">${d}</button>`
+              `<button type="button" class="type-tab day-tab ${(q.scheduledDays||[]).includes(i)?'active':''}" data-day="${i}">${d}</button>`
             ).join('')}
           </div>
         </div>
@@ -106,7 +106,7 @@ window.LM.components.questModal = (function () {
           <div id="qm-skills-list">
             ${(q.targetSkills||[]).map((t,i) => buildSkillRow(t, i, macros, type)).join('')}
           </div>
-          <button class="btn-add-skill" id="qm-add-skill">+ Add Skill</button>
+          <button type="button" class="btn-add-skill" id="qm-add-skill">+ Add Skill</button>
         </div>
 
         <!-- Sub-tasks (project/boss) -->
@@ -115,30 +115,33 @@ window.LM.components.questModal = (function () {
           <div id="qm-subtasks-list">
             ${(q.subTasks||[]).map((st,i) => buildSubtaskRow(st,i)).join('')}
           </div>
-          <button class="btn-add-skill" id="qm-add-subtask">+ Add Sub-task</button>
+          <button type="button" class="btn-add-skill" id="qm-add-subtask">+ Add Sub-task</button>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="LM.components.questModal.close()">Cancel</button>
-        <button class="btn btn-primary" id="qm-submit">${quest ? 'Save Changes' : 'Create Quest'}</button>
+        <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="qm-submit">${quest ? 'Save Changes' : 'Create Quest'}</button>
       </div>`;
   }
 
   function buildSkillRow(target, index, macros, type) {
     const defaultXP = TYPE_XP[type] || 20;
+    const activeMacroId = target?.macroSkillId || (macros[0]?.id || '');
+    const microSkills = activeMacroId ? S.getMicroSkills(activeMacroId) : [];
+
     return `
       <div class="skill-row" data-idx="${index}">
         <select class="form-input skill-macro-sel" style="flex:1">
-          ${macros.map(m => `<option value="${m.id}" ${target?.macroSkillId===m.id?'selected':''}>${m.name}</option>`).join('')}
+          ${macros.map(m => `<option value="${m.id}" ${activeMacroId===m.id?'selected':''}>${m.name}</option>`).join('')}
         </select>
         <select class="form-input skill-micro-sel" style="flex:1">
           <option value="">— No Micro Skill —</option>
-          ${target?.macroSkillId ? S.getMicroSkills(target.macroSkillId).map(ms =>
+          ${microSkills.map(ms =>
             `<option value="${ms.id}" ${target?.microSkillId===ms.id?'selected':''}>${ms.name}</option>`
-          ).join('') : ''}
+          ).join('')}
         </select>
         <input class="form-input skill-xp-input" type="number" value="${target?.xpAmount||defaultXP}" min="1" style="width:80px">
-        <button class="btn-remove-row" onclick="this.closest('.skill-row').remove()">✕</button>
+        <button type="button" class="btn-remove-row" onclick="this.closest('.skill-row').remove(); return false;">✕</button>
       </div>`;
   }
 
@@ -147,14 +150,15 @@ window.LM.components.questModal = (function () {
       <div class="subtask-row" data-idx="${index}">
         <input type="checkbox" ${st?.completed?'checked':''} class="st-check">
         <input class="form-input" type="text" value="${st?.name||''}" placeholder="Sub-task name..." style="flex:1">
-        <button class="btn-remove-row" onclick="this.closest('.subtask-row').remove()">✕</button>
+        <button type="button" class="btn-remove-row" onclick="this.closest('.subtask-row').remove(); return false;">✕</button>
       </div>`;
   }
 
   function initEvents(modal, macros) {
     // Type tabs
     modal.querySelectorAll('.type-tab.type-selector').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         modal.querySelectorAll('.type-tab.type-selector').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const type = btn.dataset.type;
@@ -168,7 +172,10 @@ window.LM.components.questModal = (function () {
 
     // Day tabs
     modal.querySelectorAll('.day-tab').forEach(btn => {
-      btn.addEventListener('click', () => btn.classList.toggle('active'));
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        btn.classList.toggle('active');
+      });
     });
 
     // Timed research toggle
@@ -179,7 +186,8 @@ window.LM.components.questModal = (function () {
     });
 
     // Add skill row
-    document.getElementById('qm-add-skill')?.addEventListener('click', () => {
+    document.getElementById('qm-add-skill')?.addEventListener('click', (e) => {
+      e.preventDefault();
       const list = document.getElementById('qm-skills-list');
       const idx = list.children.length;
       const type = document.getElementById('qm-type').value;
@@ -193,7 +201,8 @@ window.LM.components.questModal = (function () {
     modal.querySelectorAll('.skill-row').forEach(row => initMacroSelChange(row));
 
     // Add subtask
-    document.getElementById('qm-add-subtask')?.addEventListener('click', () => {
+    document.getElementById('qm-add-subtask')?.addEventListener('click', (e) => {
+      e.preventDefault();
       const list = document.getElementById('qm-subtasks-list');
       const idx = list.children.length;
       const div = document.createElement('div');
@@ -216,7 +225,8 @@ window.LM.components.questModal = (function () {
     });
   }
 
-  function submit() {
+  function submit(e) {
+    if (e) e.preventDefault();
     const name = document.getElementById('qm-name')?.value?.trim();
     if (!name) { N.show('Quest name is required', 'warning'); return; }
 
