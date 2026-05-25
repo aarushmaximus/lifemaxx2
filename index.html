@@ -142,13 +142,43 @@
 <script src="js/views/settings.js"></script>
 <script src="js/main.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        console.log('SW registered: ', reg.scope);
-      }).catch(err => console.log('SW registration failed: ', err));
-    });
+  // ── Auto-update for iOS Safari (and all browsers) ──────────
+  // Increment APP_VERSION with every deploy to force a fresh load.
+  // When the version changes, we nuke all SW caches & reload.
+  const APP_VERSION = '3';
+
+  async function clearAndReload() {
+    // 1. Unregister every service worker
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    // 2. Delete every cache entry
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    // 3. Save new version so we don't loop
+    localStorage.setItem('lm_app_version', APP_VERSION);
+    // 4. Hard reload (bypasses browser cache)
+    window.location.reload(true);
+  }
+
+  const storedVersion = localStorage.getItem('lm_app_version');
+  if (storedVersion !== APP_VERSION) {
+    // New version detected — clear everything then reload
+    clearAndReload();
+  } else {
+    // Same version — just register the SW normally
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          console.log('[SW] Registered, scope:', reg.scope);
+        }).catch(err => console.log('[SW] Registration failed:', err));
+      });
+    }
   }
 </script>
+
 </body>
 </html>
