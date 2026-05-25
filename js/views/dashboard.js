@@ -97,6 +97,8 @@ window.LM.views.dashboard = (function () {
 
     if (!quests.length) return `<div class="empty-state"><p>No active quests. Create one!</p></div>`;
 
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
     return quests.map(q => {
       const meta = TYPE_META[q.type] || TYPE_META.habit;
       const skillTags = q.targetSkills.map(t => {
@@ -146,7 +148,10 @@ window.LM.views.dashboard = (function () {
           ${timerWidget}
           <div class="quest-card-footer">
             ${(S.getSettings().dragToRegister !== false && q.isReadyToClaim) 
-              ? `<button class="btn-complete" style="background:transparent;border:1px dashed var(--border);color:var(--text-3);cursor:grab;pointer-events:none;">✓ Completed (Drag to Claim XP)</button>`
+              ? (isTouch 
+                  ? `<button class="btn-complete" onclick="LM.views.dashboard.claimXPMobile('${q.id}')" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);cursor:pointer;pointer-events:all;">✓ Claim XP</button>`
+                  : `<button class="btn-complete" style="background:transparent;border:1px dashed var(--border);color:var(--text-3);cursor:grab;pointer-events:none;">✓ Completed (Drag to Claim XP)</button>`
+                )
               : `<button class="btn-complete" onclick="LM.views.dashboard.completeQuest('${q.id}')">✓ Complete</button>`
             }
           </div>
@@ -215,9 +220,16 @@ window.LM.views.dashboard = (function () {
     }
   }
 
+  function claimXPMobile(questId) {
+    const s = S.getSettings();
+    W.handleDrop(questId);
+    updateBar(s.wheelSkillId || 'overall');
+    refreshCards();
+  }
+
   function deleteQuest(questId) {
     if (confirm('Delete this quest?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, deleteQuest, updateBar, refreshCards };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards };
 })();

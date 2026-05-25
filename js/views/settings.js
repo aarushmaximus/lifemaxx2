@@ -75,10 +75,10 @@ window.LM.views.settings = (function () {
               <button class="btn btn-ghost" id="btn-theme-toggle">Toggle Night/Morning Mode</button>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:0.85rem;color:var(--text-2);font-family:var(--font-display);">ACCENT COLOR</span>
-                <button id="btn-accent-color" class="icon-btn accent-btn" title="Change Accent Color">
-                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || '#7c3aed'}"></div>
-                </button>
-                <input type="color" id="accent-color-input" value="${s.accentColor || '#7c3aed'}" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
+                <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                  <input type="color" id="accent-color-input" value="${s.accentColor || '#7c3aed'}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;">
+                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || '#7c3aed'};position:absolute;inset:2px;z-index:1;pointer-events:none;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 6px rgba(0,0,0,0.15);width:20px;height:20px;"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -217,10 +217,12 @@ window.LM.views.settings = (function () {
       });
     }
 
-    const accentBtn = document.getElementById('btn-accent-color');
     const accentInput = document.getElementById('accent-color-input');
-    if (accentBtn && accentInput) {
-      accentBtn.addEventListener('click', () => accentInput.click());
+    if (accentInput) {
+      const accentBtn = document.getElementById('btn-accent-color');
+      if (accentBtn) {
+        accentBtn.addEventListener('click', () => accentInput.click());
+      }
       accentInput.addEventListener('input', (e) => {
         const color = e.target.value;
         window.LM.components.theme.applyAccent(color);
