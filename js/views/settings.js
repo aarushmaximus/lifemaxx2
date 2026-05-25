@@ -108,32 +108,6 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
-        <div class="section-block">
-          <h2>Home Screen Greetings</h2>
-          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">One of these is picked randomly each time you open the app.</p>
-
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-            <div>
-              <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Show on launch</div>
-              <div style="font-size:0.8rem;color:var(--text-3);">Display the intro screen each time the app loads.</div>
-            </div>
-            <label class="aero-toggle">
-              <input type="checkbox" id="set-home-splash" ${s.homeSplash !== false ? 'checked' : ''}>
-              <span class="aero-toggle-track"></span>
-            </label>
-          </div>
-          <div id="greetings-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-            ${(s.greetings || LM.views.home.DEFAULT_GREETINGS).map((g, i) => `
-              <div style="display:flex;align-items:center;gap:8px;background:var(--bg-raised);padding:8px 14px;border-radius:10px;border:1px solid var(--border);">
-                <span style="flex:1;font-size:0.88rem;font-style:italic;">${g}</span>
-                <button class="btn-remove-row" onclick="LM.views.settings.removeGreeting(${i})">✕</button>
-              </div>`).join('')}
-          </div>
-          <div style="display:flex;gap:8px;">
-            <input class="form-input" id="new-greeting-input" placeholder="Add a greeting..." style="flex:1">
-            <button class="btn btn-primary" onclick="LM.views.settings.addGreeting()">Add</button>
-          </div>
-        </div>
       </div>
     `;
   }
@@ -196,15 +170,7 @@ window.LM.views.settings = (function () {
       });
     }
 
-    // Home splash toggle
-    const homeSplashCheck = document.getElementById('set-home-splash');
-    if (homeSplashCheck) {
-      homeSplashCheck.addEventListener('change', (e) => {
-        const st = S.getSettings();
-        st.homeSplash = e.target.checked;
-        S.saveSettings(st);
-      });
-    }
+
 
     // Aero theme toggle
     const aeroCheck = document.getElementById('set-aero');
