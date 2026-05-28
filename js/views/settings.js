@@ -146,11 +146,22 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
-        <!-- Data Backup & Recovery Section -->
+        <!-- Cloud Auto-Sync Section -->
+        <div class="section-block">
+          <h2>Cloud Auto-Sync</h2>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Synchronize your levels, custom presets, XP progress, and active quests automatically in real-time across your PC and mobile devices.
+          </p>
+          <div id="qm-sync-container">
+            ${buildSyncStatusHTML(s)}
+          </div>
+        </div>
+
+        <!-- Data Migration & Backup Section -->
         <div class="section-block">
           <h2>Data Migration & Backup</h2>
           <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
-            Migrating from Netlify to Cloudflare or switching devices? Export your progress from your old site and import it here to restore your levels, XP, and presets instantly!
+            Export your complete database as a JSON backup file to archive your progress or manually transfer stats between browsers.
           </p>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <button class="btn btn-ghost" id="btn-export-data">📤 Export Backup File</button>
@@ -159,6 +170,49 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
+      </div>
+    `;
+  }
+
+  function buildSyncStatusHTML(settings) {
+    if (settings.syncKey) {
+      return `
+        <div style="background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="background:#10b981; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px #10b981;"></div>
+              <span style="font-size:0.9rem; font-weight:600; color:var(--text-1);">Cloud Sync Connected</span>
+            </div>
+            <button class="btn btn-ghost" id="btn-sync-force" style="padding:4px 10px; font-size:0.75rem; font-family:var(--font-display);">🔄 Sync Now</button>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+            <label style="font-size:0.75rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em;">Your Secret Sync Key</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" readonly value="${settings.syncKey}" style="flex:1; background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-family:monospace; font-size:0.9rem; color:var(--accent); text-align:center;" id="qm-sync-key-input">
+              <button class="btn btn-ghost" id="btn-sync-copy" style="padding:8px 12px; font-size:0.85rem;">📋 Copy</button>
+            </div>
+            <p style="font-size:0.7rem; color:var(--text-3); margin-top:2px;">
+              Enter this exact key on your other devices to link them instantly.
+            </p>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+            <button class="btn btn-ghost" id="btn-sync-disconnect" style="color:#ef4444; border-color:rgba(239,68,68,0.2); font-size:0.8rem; padding:6px 12px;">Disconnect Sync</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:14px; text-align:center;">
+        <p style="font-size:0.8rem; color:var(--text-2); margin:0;">
+          Cloud sync is currently inactive. You can activate it to backup your progress, or enter an existing key to link this device.
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:4px;">
+          <button class="btn btn-primary" id="btn-sync-enable">☁️ Activate Cloud Sync</button>
+          <button class="btn btn-ghost" id="btn-sync-link">🔗 Link Existing Device</button>
+        </div>
       </div>
     `;
   }
@@ -335,6 +389,147 @@ window.LM.views.settings = (function () {
           }
         };
         reader.readAsText(file);
+      });
+    }
+
+    // ── Enable Cloud Sync ──
+    const enableSyncBtn = document.getElementById('btn-sync-enable');
+    if (enableSyncBtn) {
+      enableSyncBtn.addEventListener('click', async () => {
+        enableSyncBtn.disabled = true;
+        enableSyncBtn.textContent = 'Activating...';
+        
+        try {
+          const backup = S.exportBackup();
+          const res = await fetch('https://jsonhosting.com/api/json', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(backup)
+          });
+          
+          if (!res.ok) throw new Error("Server response not OK");
+          const data = await res.json();
+          
+          if (data.id && data.editKey) {
+            const st = S.getSettings();
+            st.syncKey = data.id;
+            st.syncEditKey = data.editKey;
+            S.saveSettings(st);
+            
+            // Push updated settings with sync parameters embedded
+            await S.pushCloudSync();
+            
+            window.LM.components.notifications.show('Cloud sync successfully activated!', 'success');
+            window.LM.router.render(); // Redraw settings view
+          } else {
+            throw new Error("Invalid server data response");
+          }
+        } catch (err) {
+          window.LM.components.notifications.show('Failed to connect to cloud sync host.', 'error');
+          console.error(err);
+          enableSyncBtn.disabled = false;
+          enableSyncBtn.textContent = '☁️ Activate Cloud Sync';
+        }
+      });
+    }
+
+    // ── Link Existing Device via Sync Key ──
+    const linkSyncBtn = document.getElementById('btn-sync-link');
+    if (linkSyncBtn) {
+      linkSyncBtn.addEventListener('click', async () => {
+        const key = prompt("Enter your 8-character Secret Sync Key (e.g. xa41fz8b):");
+        if (!key) return;
+        const cleanKey = key.trim().toLowerCase();
+        if (cleanKey.length !== 8) {
+          alert("Invalid key format. Sync keys are exactly 8 characters long.");
+          return;
+        }
+        
+        linkSyncBtn.disabled = true;
+        linkSyncBtn.textContent = 'Linking...';
+        
+        try {
+          const res = await fetch(`https://jsonhosting.com/get/${cleanKey}`);
+          if (!res.ok) throw new Error("Sync Key not found");
+          
+          const cloudData = await res.json();
+          if (cloudData && cloudData.macros && cloudData.settings) {
+            const success = S.importBackup(cloudData);
+            if (success) {
+              // Ensure local settings have the sync parameters
+              const st = S.getSettings();
+              st.syncKey = cleanKey;
+              st.syncEditKey = cloudData.settings.syncEditKey;
+              S.saveSettings(st);
+              
+              window.LM.components.notifications.show('Sync linked successfully!', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              throw new Error("Failed to restore save data");
+            }
+          } else {
+            throw new Error("Invalid save file structure");
+          }
+        } catch (err) {
+          alert("Failed to link device: " + err.message);
+          linkSyncBtn.disabled = false;
+          linkSyncBtn.textContent = '🔗 Link Existing Device';
+        }
+      });
+    }
+
+    // ── Force Sync ──
+    const forceSyncBtn = document.getElementById('btn-sync-force');
+    if (forceSyncBtn) {
+      forceSyncBtn.addEventListener('click', async () => {
+        forceSyncBtn.disabled = true;
+        forceSyncBtn.textContent = 'Syncing...';
+        
+        const result = await S.pullCloudSync();
+        if (result === 'pulled') {
+          window.LM.components.notifications.show('Pulled newest cloud progress!', 'success');
+          setTimeout(() => { window.location.reload(); }, 800);
+        } else if (result === 'pushed') {
+          window.LM.components.notifications.show('Uploaded local progress to cloud!', 'success');
+          forceSyncBtn.disabled = false;
+          forceSyncBtn.textContent = '🔄 Sync Now';
+        } else if (result === 'synced') {
+          window.LM.components.notifications.show('All devices fully in sync!', 'success');
+          forceSyncBtn.disabled = false;
+          forceSyncBtn.textContent = '🔄 Sync Now';
+        } else {
+          window.LM.components.notifications.show('Cloud sync check failed.', 'error');
+          forceSyncBtn.disabled = false;
+          forceSyncBtn.textContent = '🔄 Sync Now';
+        }
+      });
+    }
+
+    // ── Copy Sync Key ──
+    const copySyncBtn = document.getElementById('btn-sync-copy');
+    const syncKeyInput = document.getElementById('qm-sync-key-input');
+    if (copySyncBtn && syncKeyInput) {
+      copySyncBtn.addEventListener('click', () => {
+        syncKeyInput.select();
+        navigator.clipboard.writeText(syncKeyInput.value);
+        window.LM.components.notifications.show('Sync Key copied to clipboard!', 'info');
+      });
+    }
+
+    // ── Disconnect Sync ──
+    const disconnectSyncBtn = document.getElementById('btn-sync-disconnect');
+    if (disconnectSyncBtn) {
+      disconnectSyncBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to disconnect cloud sync? This device will stop backing up or downloading shared progress.")) {
+          const st = S.getSettings();
+          delete st.syncKey;
+          delete st.syncEditKey;
+          S.saveSettings(st);
+          window.LM.components.notifications.show('Cloud sync deactivated.', 'warning');
+          window.LM.router.render();
+        }
       });
     }
   }

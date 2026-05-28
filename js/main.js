@@ -126,6 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Pull cloud sync on boot
+  if (LM.store.getSettings().syncKey) {
+    LM.store.pullCloudSync().then(result => {
+      if (result === 'pulled') {
+        window.LM.components.notifications.show('☁️ Synced latest progress from the cloud!', 'success');
+        window.LM.router.render();
+      }
+    });
+  }
+
   // Router
   LM.router.init();
 });

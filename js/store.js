@@ -265,7 +265,8 @@ window.LM.store = (function () {
       overall: getOverall(),
       settings: getSettings(),
       presets: getPresets(),
-      xplog: load(KEYS.xplog) || []
+      xplog: load(KEYS.xplog) || [],
+      lastUpdated: Date.now()
     };
   }
 
@@ -281,6 +282,64 @@ window.LM.store = (function () {
     return true;
   }
 
+  let isSyncing = false;
+  async function pushCloudSync() {
+    const settings = getSettings();
+    if (!settings.syncKey || !settings.syncEditKey || isSyncing) return;
+    
+    isSyncing = true;
+    try {
+      const backup = exportBackup();
+      const res = await fetch(`https://jsonhosting.com/api/json/${settings.syncKey}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Edit-Key': settings.syncEditKey
+        },
+        body: JSON.stringify(backup)
+      });
+      if (!res.ok) console.warn("Cloud sync update response not OK:", res.status);
+    } catch (err) {
+      console.warn("Cloud sync push failed:", err);
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  async function pullCloudSync() {
+    const settings = getSettings();
+    if (!settings.syncKey) return false;
+    
+    try {
+      const res = await fetch(`https://jsonhosting.com/get/${settings.syncKey}`);
+      if (!res.ok) return false;
+      
+      const cloudData = await res.json();
+      const localBackup = exportBackup();
+      const cloudTime = cloudData.lastUpdated || 0;
+      const localTime = localBackup.lastUpdated || 0;
+      
+      if (cloudTime > localTime) {
+        // Cloud is newer, import it
+        importBackup(cloudData);
+        return 'pulled';
+      } else if (localTime > cloudTime) {
+        // Local is newer, update cloud
+        pushCloudSync();
+        return 'pushed';
+      }
+      return 'synced';
+    } catch (err) {
+      console.warn("Cloud pull failed:", err);
+      return false;
+    }
+  }
+
+  // Trigger background uploader whenever store data changes
+  on('change', () => {
+    pushCloudSync();
+  });
+
   return {
     on, emit,
     getMacros, getMacro, upsertMacro, deleteMacro,
@@ -291,6 +350,6 @@ window.LM.store = (function () {
     getSettings, saveSettings,
     getXPLog, saveXPLog,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers,
-    uid, exportBackup, importBackup
+    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync
   };
 })();
