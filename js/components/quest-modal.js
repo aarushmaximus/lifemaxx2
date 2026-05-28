@@ -1,22 +1,29 @@
-// LIFEMAXX — Quest Preset Manager Modal
+// LIFEMAXX — Quest and Preset Creation / Edit Modal
 window.LM.components.questModal = (function () {
   const S = window.LM.store;
   const N = window.LM.components.notifications;
 
-  let editingPresetId = null;
+  let editingId = null;
+  let isPresetMode = false;
 
-  function open(presetId = null) {
-    editingPresetId = presetId;
-    const preset = presetId ? S.getPreset(presetId) : null;
+  function open(id = null, isPreset = false) {
+    editingId = id;
+    isPresetMode = isPreset;
+    
+    const item = id 
+      ? (isPresetMode ? S.getPreset(id) : S.getQuest(id))
+      : null;
+      
+    const presets = S.getPresets();
     const macros = S.getMacros();
     const modal = document.getElementById('quest-modal');
     const overlay = document.getElementById('modal-overlay');
 
-    modal.innerHTML = buildHTML(preset, macros);
+    modal.innerHTML = buildHTML(item, presets, macros);
     modal.classList.add('modal-open');
     overlay.classList.add('overlay-open');
 
-    initEvents(modal, macros);
+    initEvents(modal, presets, macros);
   }
 
   function close() {
@@ -24,77 +31,200 @@ window.LM.components.questModal = (function () {
     const overlay = document.getElementById('modal-overlay');
     modal.classList.remove('modal-open');
     overlay.classList.remove('overlay-open');
-    editingPresetId = null;
+    editingId = null;
+    isPresetMode = false;
   }
 
-  function buildHTML(preset, macros) {
-    const p = preset || {};
-    const scheduledDays = p.scheduledDays || [0, 1, 2, 3, 4, 5, 6]; // Default to every day
-    const hasTimeWindow = !!p.timeWindow;
-    const timeWindow = p.timeWindow || { start: '09:00', end: '17:00' };
+  function buildHTML(item, presets, macros) {
+    const it = item || {};
+    
+    // Core parameters
+    const name = it.name || '';
+    const description = it.description || '';
+    const targetSkills = it.targetSkills || [];
 
+    // Advanced / Schedule parameters
+    const scheduledDays = it.scheduledDays || [0, 1, 2, 3, 4, 5, 6];
+    const hasTimeWindow = !!it.timeWindow;
+    const timeWindow = it.timeWindow || { start: '09:00', end: '17:00' };
+    const hasTimeLimit = !!(it.expiresAt || it.hasTimeLimit);
+    const isNegativeOnMiss = it.isNegativeOnMiss || false;
+    const isNegativeOnComplete = it.isNegativeOnComplete || false;
+
+    // ── PRESET MODE HTML ──
+    if (isPresetMode) {
+      return `
+        <div class="modal-header">
+          <h2 class="font-display">${item ? 'EDIT PRESET TEMPLATE' : 'CREATE PRESET TEMPLATE'}</h2>
+          <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Preset Template Name</label>
+            <input id="qm-name" class="form-input" type="text" placeholder="e.g. Gym Session, Morning Ritual..." value="${name}">
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this preset cover?">${description}</textarea>
+          </div>
+
+          <div class="form-group" style="margin-top: 5px;">
+            <label>Target Skills & XP Rewards</label>
+            <div id="qm-skills-list">
+              ${targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('')}
+              ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros) : ''}
+            </div>
+            <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
+          </div>
+
+          <h3 class="font-display" style="font-size: 0.85rem; letter-spacing: 0.08em; color: var(--accent); margin-top: 20px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px;">PRESET SCHEDULING & CONFIGURATION</h3>
+
+          <!-- Scheduled Days -->
+          <div class="form-group">
+            <label>Scheduled Days (Auto-Spawns on these days)</label>
+            <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
+              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
+                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <!-- Time Window -->
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
+              <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
+            </div>
+            <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>Start Time</label>
+                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
+              </div>
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>End Time</label>
+                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
+              </div>
+            </div>
+          </div>
+
+          <!-- Expiration Limits -->
+          <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="form-check">
+              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
+              <label for="qm-has-time-limit">24-Hour Expiration Time Limit (Transition to missed if incomplete in 24h)</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
+              <label for="qm-neg-miss">Negative XP penalty if missed</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
+              <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
+          <button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Preset' : 'Create Preset'}</button>
+        </div>`;
+    }
+
+    // ── INDIVIDUAL QUEST MODE HTML ──
     return `
       <div class="modal-header">
-        <h2 class="font-display">${preset ? 'EDIT QUEST PRESET' : 'CREATE QUEST PRESET'}</h2>
+        <h2 class="font-display">${item ? 'EDIT QUEST' : 'CREATE QUEST'}</h2>
         <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
       </div>
       <div class="modal-body">
+        <!-- Name -->
         <div class="form-group">
-          <label>Preset Name</label>
-          <input id="qm-name" class="form-input" type="text" placeholder="e.g. Morning Cardio, Deep Work..." value="${p.name || ''}">
+          <label>Quest Name / Action</label>
+          <input id="qm-name" class="form-input" type="text" placeholder="e.g. Read 15 pages, Run 5km..." value="${name}">
         </div>
         
+        <!-- Description -->
         <div class="form-group">
           <label>Description</label>
-          <textarea id="qm-desc" class="form-input form-textarea" placeholder="Describe this quest's routine...">${p.description || ''}</textarea>
+          <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this quest involve?">${description}</textarea>
         </div>
 
+        <!-- Preset Selection -->
         <div class="form-group">
-          <label>Scheduled Days (Appears Automatically)</label>
-          <div class="type-tabs" id="qm-preset-days" style="display: flex; gap: 4px; flex-wrap: wrap;">
-            ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-              `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
-            ).join('')}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-check">
-            <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
-            <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
-          </div>
-          <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
-            <div class="form-group" style="flex: 1; margin: 0;">
-              <label>Start Time</label>
-              <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
-            </div>
-            <div class="form-group" style="flex: 1; margin: 0;">
-              <label>End Time</label>
-              <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row" style="margin-top: 5px;">
-          <div class="form-check">
-            <input type="checkbox" id="qm-has-time-limit" ${p.hasTimeLimit ? 'checked' : ''}>
-            <label for="qm-has-time-limit">24-Hour Expiration Time Limit (Missed if incomplete in 24h)</label>
-          </div>
+          <label>Apply Preset Template (Optional)</label>
+          <select id="qm-preset-select" class="form-input" style="cursor: pointer; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);">
+            <option value="">— No Preset (Manual Setup) —</option>
+            ${presets.map(p => `<option value="${p.id}" ${it.presetId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+          </select>
         </div>
 
         <!-- Target Skills -->
-        <div class="form-group" style="margin-top: 10px;">
+        <div class="form-group" style="margin-top: 5px;">
           <label>Target Skills & XP Rewards</label>
           <div id="qm-skills-list">
-            ${(p.targetSkills || []).map((t, i) => buildSkillRow(t, i, macros)).join('')}
-            ${(!p.targetSkills || p.targetSkills.length === 0) ? buildSkillRow(null, 0, macros) : ''}
+            ${targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('')}
+            ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros) : ''}
           </div>
           <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
+        </div>
+
+        <!-- Collapsible Advanced Options Accordion -->
+        <div id="qm-advanced-toggle" class="advanced-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 16px 0; font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.08em; color:var(--text-2); user-select:none;">
+          <span id="qm-advanced-arrow">▶</span>
+          <span>Advanced Quest Options</span>
+        </div>
+        
+        <div id="qm-advanced-content" class="advanced-content" style="display:none; flex-direction:column; gap:16px; border-left: 2px solid var(--border); padding-left: 14px; margin-left: 6px; padding-bottom: 8px;">
+          
+          <!-- Scheduled Days -->
+          <div class="form-group">
+            <label>Scheduled Days (Weekly Repeat)</label>
+            <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
+              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
+                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <!-- Time Window Restrict -->
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
+              <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
+            </div>
+            <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>Start Time</label>
+                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
+              </div>
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>End Time</label>
+                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
+              </div>
+            </div>
+          </div>
+
+          <!-- Expiration & Penalties -->
+          <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="form-check">
+              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
+              <label for="qm-has-time-limit">24-Hour Expiration Time Limit (Missed if incomplete in 24h)</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
+              <label for="qm-neg-miss">Negative XP penalty if missed</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
+              <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
+            </div>
+          </div>
+          
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
-        <button type="button" class="btn btn-primary" id="qm-submit">${preset ? 'Save Changes' : 'Create Preset'}</button>
+        <button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Changes' : 'Create Quest'}</button>
       </div>`;
   }
 
@@ -118,8 +248,21 @@ window.LM.components.questModal = (function () {
       </div>`;
   }
 
-  function initEvents(modal, macros) {
-    // Day tabs multi-select toggle
+  function initEvents(modal, presets, macros) {
+    // Collapsible toggle handler (Only exists in Quest Mode)
+    const advToggle = document.getElementById('qm-advanced-toggle');
+    const advContent = document.getElementById('qm-advanced-content');
+    const advArrow = document.getElementById('qm-advanced-arrow');
+    
+    if (advToggle && advContent && advArrow) {
+      advToggle.addEventListener('click', () => {
+        const isCollapsed = advContent.style.display === 'none';
+        advContent.style.display = isCollapsed ? 'flex' : 'none';
+        advArrow.textContent = isCollapsed ? '▼' : '▶';
+      });
+    }
+
+    // Day tabs toggle
     modal.querySelectorAll('.day-tab').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -127,7 +270,7 @@ window.LM.components.questModal = (function () {
       });
     });
 
-    // Time window fields display toggle
+    // Time window display toggle
     const twCheck = document.getElementById('qm-time-window-check');
     const twFields = document.getElementById('qm-time-window-fields');
     if (twCheck && twFields) {
@@ -136,7 +279,7 @@ window.LM.components.questModal = (function () {
       });
     }
 
-    // Add skill row action
+    // Add skill row
     document.getElementById('qm-add-skill')?.addEventListener('click', (e) => {
       e.preventDefault();
       const list = document.getElementById('qm-skills-list');
@@ -147,10 +290,62 @@ window.LM.components.questModal = (function () {
       initMacroSelChange(list.lastElementChild);
     });
 
-    // Attach macro change listeners to existing rows
     modal.querySelectorAll('.skill-row').forEach(row => initMacroSelChange(row));
 
-    // Submit handler
+    // Preset dropdown auto-fill logic (Only in Quest Mode)
+    const presetSelect = document.getElementById('qm-preset-select');
+    if (presetSelect) {
+      presetSelect.addEventListener('change', () => {
+        const presetId = presetSelect.value;
+        if (!presetId) return;
+
+        const preset = presets.find(p => p.id === presetId);
+        if (!preset) return;
+
+        // 1. Fill Name
+        const nameInput = document.getElementById('qm-name');
+        if (nameInput) {
+          nameInput.value = preset.name;
+        }
+
+        // 2. Fill Skills
+        const skillsList = document.getElementById('qm-skills-list');
+        if (skillsList && preset.targetSkills) {
+          skillsList.innerHTML = preset.targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('');
+          skillsList.querySelectorAll('.skill-row').forEach(row => initMacroSelChange(row));
+        }
+
+        // 3. Fill Advanced options
+        // Days
+        modal.querySelectorAll('.day-tab').forEach(btn => {
+          const day = parseInt(btn.dataset.day);
+          btn.classList.toggle('active', preset.scheduledDays.includes(day));
+        });
+
+        // Time window
+        const presetHasTW = !!preset.timeWindow;
+        if (twCheck) twCheck.checked = presetHasTW;
+        if (twFields) twFields.style.display = presetHasTW ? 'flex' : 'none';
+        if (presetHasTW) {
+          document.getElementById('qm-time-start').value = preset.timeWindow.start;
+          document.getElementById('qm-time-end').value = preset.timeWindow.end;
+        }
+
+        // Expiration
+        const expirationCheck = document.getElementById('qm-has-time-limit');
+        if (expirationCheck) expirationCheck.checked = !!preset.hasTimeLimit;
+
+        // Penalties
+        const negMiss = document.getElementById('qm-neg-miss');
+        if (negMiss) negMiss.checked = !!preset.isNegativeOnMiss;
+        const negComplete = document.getElementById('qm-neg-complete');
+        if (negComplete) negComplete.checked = !!preset.isNegativeOnComplete;
+
+        N.show(`Applied template settings from "${preset.name}"`, 'info');
+      });
+    }
+
+    // Submit
     document.getElementById('qm-submit')?.addEventListener('click', submit);
   }
 
@@ -168,7 +363,7 @@ window.LM.components.questModal = (function () {
   function submit(e) {
     if (e) e.preventDefault();
     const name = document.getElementById('qm-name')?.value?.trim();
-    if (!name) { N.show('Preset name is required', 'warning'); return; }
+    if (!name) { N.show('Name is required', 'warning'); return; }
 
     const desc = document.getElementById('qm-desc')?.value?.trim() || '';
 
@@ -177,10 +372,6 @@ window.LM.components.questModal = (function () {
     document.querySelectorAll('.day-tab.active').forEach(btn => {
       scheduledDays.push(parseInt(btn.dataset.day));
     });
-    if (scheduledDays.length === 0) {
-      N.show('Select at least one scheduled day', 'warning');
-      return;
-    }
 
     // Collect time window bounds
     const twCheck = document.getElementById('qm-time-window-check')?.checked || false;
@@ -191,8 +382,10 @@ window.LM.components.questModal = (function () {
       timeWindow = { start, end };
     }
 
-    // Collect 24h timer expiration check
+    // Collect timer flags
     const hasTimeLimit = document.getElementById('qm-has-time-limit')?.checked || false;
+    const isNegativeOnMiss = document.getElementById('qm-neg-miss')?.checked || false;
+    const isNegativeOnComplete = document.getElementById('qm-neg-complete')?.checked || false;
 
     // Collect skill rewards
     const targetSkills = [];
@@ -210,19 +403,50 @@ window.LM.components.questModal = (function () {
       return;
     }
 
-    const preset = {
-      id: editingPresetId || S.uid(),
+    // ── SAVE PRESET MODE ──
+    if (isPresetMode) {
+      const preset = {
+        id: editingId || S.uid(),
+        name,
+        description: desc,
+        targetSkills,
+        scheduledDays: scheduledDays.length ? scheduledDays : [0,1,2,3,4,5,6],
+        timeWindow,
+        hasTimeLimit,
+        isNegativeOnMiss,
+        isNegativeOnComplete
+      };
+      
+      S.upsertPreset(preset);
+      close();
+      N.show(`Preset template "${name}" saved!`, 'success');
+      window.LM.router.render(); // Refreshes Settings list
+      return;
+    }
+
+    // ── SAVE QUEST MODE ──
+    const presetId = document.getElementById('qm-preset-select')?.value || null;
+    const existing = editingId ? S.getQuest(editingId) : null;
+
+    const quest = {
+      id: editingId || S.uid(),
       name,
       description: desc,
-      scheduledDays,
+      presetId,
+      status: existing?.status || 'active',
+      scheduledDate: existing?.scheduledDate || new Date().toDateString(),
+      createdAt: existing?.createdAt || Date.now(),
+      expiresAt: hasTimeLimit ? (existing?.expiresAt || (Date.now() + 24 * 60 * 60 * 1000)) : null,
       timeWindow,
-      hasTimeLimit,
+      scheduledDays: scheduledDays.length ? scheduledDays : [0,1,2,3,4,5,6],
+      isNegativeOnMiss,
+      isNegativeOnComplete,
       targetSkills
     };
 
-    S.upsertPreset(preset);
+    S.upsertQuest(quest);
     close();
-    N.show(`Quest Preset "${name}" saved successfully!`, 'success');
+    N.show(`Quest "${name}" saved!`, 'success');
   }
 
   return { open, close };

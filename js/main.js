@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-manage-skills')?.addEventListener('click', () => LM.components.skillModal.open());
 
   // FAB — Create Quest
-  document.getElementById('fab')?.addEventListener('click', () => LM.components.questModal.open());
+  document.getElementById('fab')?.addEventListener('click', () => LM.components.questModal.open(null, false));
 
   // Modal overlay click to close
   document.getElementById('modal-overlay')?.addEventListener('click', () => {

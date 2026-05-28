@@ -33,7 +33,7 @@ window.LM.views.questLog = (function () {
       <div class="view-container quest-log-view">
         <div class="view-header">
           <h1 class="font-display">QUEST LOG</h1>
-          <button class="btn btn-primary" onclick="LM.components.questModal.open()">+ Create Preset</button>
+          <button class="btn btn-primary" onclick="LM.components.questModal.open(null, false)">+ New Quest</button>
         </div>
 
         <div class="quest-log-filters">

@@ -167,7 +167,7 @@ window.LM.views.settings = (function () {
     const createPresetBtn = document.getElementById('btn-create-preset-settings');
     if (createPresetBtn) {
       createPresetBtn.addEventListener('click', () => {
-        window.LM.components.questModal.open();
+        window.LM.components.questModal.open(null, true);
       });
     }
 
@@ -175,7 +175,7 @@ window.LM.views.settings = (function () {
     document.querySelectorAll('.btn-edit-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.target.dataset.id;
-        if (id) window.LM.components.questModal.open(id);
+        if (id) window.LM.components.questModal.open(id, true);
       });
     });
 
