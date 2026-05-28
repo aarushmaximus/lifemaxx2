@@ -469,7 +469,8 @@ window.LM.views.settings = (function () {
           if (!res.ok) throw new Error("Sync Key not found");
           
           const responseBody = await res.json();
-          const cloudData = responseBody.data;
+          // jsonbin-zeta returns stored data at root level (not wrapped in .data)
+          const cloudData = (responseBody && responseBody.macros) ? responseBody : responseBody.data;
           
           if (cloudData && cloudData.macros && cloudData.settings) {
             const success = S.importBackup(cloudData);

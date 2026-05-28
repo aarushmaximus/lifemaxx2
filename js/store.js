@@ -351,8 +351,9 @@ window.LM.store = (function () {
       }
       
       const responseBody = await res.json();
-      const cloudData = responseBody.data;
-      if (!cloudData) {
+      // jsonbin-zeta returns stored data at root level (not wrapped in .data)
+      const cloudData = (responseBody && responseBody.macros) ? responseBody : responseBody.data;
+      if (!cloudData || !cloudData.macros) {
         isSyncing = false;
         return false;
       }
