@@ -290,7 +290,8 @@ window.LM.store = (function () {
     isSyncing = true;
     try {
       const backup = exportBackup();
-      const res = await fetch(`https://corsproxy.io/?url=https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`, {
+      const target = `https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`;
+      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -310,7 +311,8 @@ window.LM.store = (function () {
     if (!settings.syncKey) return false;
     
     try {
-      const res = await fetch(`https://corsproxy.io/?url=https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`);
+      const target = `https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`;
+      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`);
       if (!res.ok) return false;
       
       const responseBody = await res.json();

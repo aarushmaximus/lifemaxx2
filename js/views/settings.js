@@ -166,6 +166,7 @@ window.LM.views.settings = (function () {
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <button class="btn btn-ghost" id="btn-export-data">📤 Export Backup File</button>
             <button class="btn btn-ghost" id="btn-import-trigger">📥 Import Backup File</button>
+            <button class="btn btn-ghost" id="btn-force-update-app" style="color:var(--accent); border-color:var(--accent); font-weight:600;">🚀 Force Update App</button>
             <input type="file" id="import-data-file" accept=".json" style="display:none;">
           </div>
         </div>
@@ -267,6 +268,20 @@ window.LM.views.settings = (function () {
         st.theme = next;
         S.saveSettings(st);
         window.LM.components.theme.applyTheme(next);
+      });
+    }
+
+    // Force Update App button
+    const forceUpdateAppBtn = document.getElementById('btn-force-update-app');
+    if (forceUpdateAppBtn) {
+      forceUpdateAppBtn.addEventListener('click', async () => {
+        if (confirm("Force update will clear all cached resources and hard-reload your app to the newest version. Proceed?")) {
+          if (window.clearAndReload) {
+            await window.clearAndReload();
+          } else {
+            window.location.reload(true);
+          }
+        }
       });
     }
 
@@ -401,7 +416,8 @@ window.LM.views.settings = (function () {
         
         try {
           const backup = S.exportBackup();
-          const res = await fetch('https://corsproxy.io/?url=https://jsonbin-zeta.vercel.app/api/bins', {
+          const target = 'https://jsonbin-zeta.vercel.app/api/bins';
+          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(backup)
@@ -448,7 +464,8 @@ window.LM.views.settings = (function () {
         linkSyncBtn.textContent = 'Linking...';
         
         try {
-          const res = await fetch(`https://corsproxy.io/?url=https://jsonbin-zeta.vercel.app/api/bins/${cleanKey}`);
+          const target = `https://jsonbin-zeta.vercel.app/api/bins/${cleanKey}`;
+          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`);
           if (!res.ok) throw new Error("Sync Key not found");
           
           const responseBody = await res.json();
