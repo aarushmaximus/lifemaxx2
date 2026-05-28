@@ -1,6 +1,13 @@
 // LIFEMAXX — Data Store (localStorage)
 window.LM.store = (function () {
-  const KEYS = { macros: 'lm_macros', quests: 'lm_quests', overall: 'lm_overall', settings: 'lm_settings', xplog: 'lm_xplog' };
+  const KEYS = {
+    macros: 'lm_macros',
+    quests: 'lm_quests',
+    overall: 'lm_overall',
+    settings: 'lm_settings',
+    xplog: 'lm_xplog',
+    presets: 'lm_presets'
+  };
   const listeners = [];
   const F = window.LM.formulas;
 
@@ -28,7 +35,7 @@ window.LM.store = (function () {
     saveMacros(list);
     // Clean quest references
     const quests = getQuests().map(q => {
-      q.targetSkills = q.targetSkills.filter(t => t.macroSkillId !== id);
+      q.targetSkills = (q.targetSkills || []).filter(t => t.macroSkillId !== id);
       return q;
     });
     save(KEYS.quests, quests);
@@ -60,21 +67,29 @@ window.LM.store = (function () {
     saveMacros(list);
   }
 
-  // ── Quests ──
-  function getQuests() { 
-    let qs = load(KEYS.quests) || []; 
-    let migrated = false;
-    qs.forEach(q => {
-      if (q.type === 'daily') {
-        q.type = 'habit';
-        q.scheduledDays = [0,1,2,3,4,5,6];
-        q.isNegativeOnMiss = true;
-        migrated = true;
-      }
-    });
-    if (migrated) save(KEYS.quests, qs);
-    return qs;
+  // ── Quest Presets (Custom Quest Types) ──
+  function getPresets() { return load(KEYS.presets) || []; }
+  function savePresets(list) { save(KEYS.presets, list); emit('change'); }
+  function getPreset(id) { return getPresets().find(p => p.id === id) || null; }
+
+  function upsertPreset(preset) {
+    const list = getPresets();
+    const idx = list.findIndex(p => p.id === preset.id);
+    if (idx >= 0) list[idx] = preset; else list.push(preset);
+    savePresets(list);
+    checkPresetSpawns();
   }
+
+  function deletePreset(id) {
+    savePresets(getPresets().filter(p => p.id !== id));
+    // Also delete any active quest instances spawned from this preset
+    const quests = getQuests().filter(q => q.presetId !== id || q.status === 'completed');
+    save(KEYS.quests, quests);
+    emit('change');
+  }
+
+  // ── Quest Instances ──
+  function getQuests() { return load(KEYS.quests) || []; }
   function saveQuests(list) { save(KEYS.quests, list); emit('change'); }
   function getQuest(id) { return getQuests().find(q => q.id === id) || null; }
 
@@ -164,81 +179,62 @@ window.LM.store = (function () {
     // Prevent double complete unless it's ready to claim
     if (quest.status === 'completed' && !quest.isReadyToClaim) return null;
 
-    const today = new Date().toDateString();
-
-    let xpMultiplier = 1;
-    if (quest.type === 'habit') {
-      const streak = (quest.streak || 0) + 1;
-      quest.streak = streak;
-      quest.lastCompletedDate = today;
-      if (streak >= 30) xpMultiplier = 2.0;
-      else if (streak >= 7) xpMultiplier = 1.5;
-      
-      quest.status = 'completed'; // Mark completed so it doesn't fail
-      quest.completedAt = Date.now();
-    } else {
-      quest.status = 'completed';
-      quest.completedAt = Date.now();
-    }
-
     const tSkills = quest.targetSkills || [];
-    const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount * xpMultiplier) }));
-    const negative = quest.isNegativeOnComplete || false;
-    const actionDesc = negative ? 'Failed' : 'Completed';
-    awardXP(adjustedTargets, negative, `${actionDesc}: ${quest.name}`);
+    const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount) }));
+    awardXP(adjustedTargets, false, `Completed: ${quest.name}`);
     
-    quest.isReadyToClaim = false;
-    if (getSettings().deleteAfterDragged) {
-      quest.hiddenFromDashboard = true;
-    }
-
-    save(KEYS.quests, quests);
+    // Requirement 2: Auto-delete on XP claim!
+    // The quest immediately deletes itself from local storage when XP is claimed.
+    const filteredQuests = quests.filter(q => q.id !== questId);
+    save(KEYS.quests, filteredQuests);
     emit('change');
-    return { quest, xpMultiplier, adjustedTargets };
+    return { quest, xpMultiplier: 1, adjustedTargets };
   }
 
-  // ── Daily/Weekly Reset Check ──
-  function checkResets() {
+  // ── Auto-spawning Custom Quests from Presets ──
+  function checkPresetSpawns() {
+    const presets = getPresets();
     const quests = getQuests();
     const now = new Date();
+    const todayDay = now.getDay(); // 0 = Sun, 1 = Mon, etc.
     const todayStr = now.toDateString();
-    const currentMonday = getMonday(now).toDateString();
     let changed = false;
 
-    const todayDay = now.getDay();
-
-    quests.forEach(q => {
-      if (q.type === 'habit') {
-        if (q.scheduledDays && q.scheduledDays.includes(todayDay)) {
-          if (q.lastResetDate !== todayStr) {
-            q.lastResetDate = todayStr;
-            q.status = 'active';
-            q.isReadyToClaim = false;
-            
-            // Set expiresAt to 23:59:59.999 of today
-            const endOfDay = new Date();
-            endOfDay.setHours(23, 59, 59, 999);
-            q.expiresAt = endOfDay.getTime();
-            changed = true;
-          }
-        }
-      }
-      if (q.type === 'weekly') {
-        if (q.lastWeekReset !== currentMonday) {
-          if (q.lastWeekReset && q.status !== 'completed' && q.isNegativeOnMiss) {
-            awardXP(q.targetSkills, true);
-          }
-          q.status = 'active';
-          q.lastWeekReset = currentMonday;
+    presets.forEach(p => {
+      // Check if preset is scheduled for today
+      if (p.scheduledDays && p.scheduledDays.includes(todayDay)) {
+        // Check if quest already spawned for this preset today
+        const alreadySpawned = quests.some(q => q.presetId === p.id && q.scheduledDate === todayStr);
+        if (!alreadySpawned) {
+          quests.push({
+            id: uid(),
+            presetId: p.id,
+            name: p.name,
+            description: p.description || '',
+            targetSkills: p.targetSkills || [],
+            scheduledDate: todayStr,
+            createdAt: Date.now(),
+            status: 'active',
+            isReadyToClaim: false,
+            expiresAt: p.hasTimeLimit ? (Date.now() + 24 * 60 * 60 * 1000) : null,
+            timeWindow: p.timeWindow || null
+          });
           changed = true;
         }
       }
     });
 
-    if (changed) saveQuests(quests);
+    if (changed) {
+      save(KEYS.quests, quests);
+      emit('change');
+    }
   }
 
-  // ── Timer Check ──
+  function checkResets() {
+    checkPresetSpawns();
+  }
+
+  // ── Expiration / Timer Check ──
   function checkTimers() {
     const quests = getQuests();
     let changed = false;
@@ -247,17 +243,9 @@ window.LM.store = (function () {
     quests.forEach(q => {
       if (q.expiresAt && q.expiresAt <= now) {
         if (q.status === 'active') {
-          if (q.isNegativeOnMiss || q.type === 'habit') {
-            awardXP(q.targetSkills, true, `Missed: ${q.name}`);
-          }
-          if (q.type === 'habit') {
-            q.streak = 0;
-            q.status = 'failed';
-            changed = true;
-          } else if (q.status !== 'failed' && q.status !== 'completed') {
-            q.status = 'failed';
-            changed = true;
-          }
+          // Requirement 1: Expired active quests transition to 'missed' state and remain in the quest log.
+          q.status = 'missed';
+          changed = true;
         }
       }
     });
@@ -268,17 +256,13 @@ window.LM.store = (function () {
     }
   }
 
-  function getMonday(d) {
-    const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  }
-
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
   return {
     on, emit,
     getMacros, getMacro, upsertMacro, deleteMacro,
     getMicroSkills, upsertMicroSkill, deleteMicroSkill,
+    getPresets, getPreset, upsertPreset, deletePreset,
     getQuests, getQuest, upsertQuest, deleteQuest,
     getOverall, saveOverall,
     getSettings, saveSettings,

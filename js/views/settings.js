@@ -32,6 +32,44 @@ window.LM.views.settings = (function () {
           <h1 class="font-display">SETTINGS</h1>
         </div>
         
+        <!-- Quest Presets Administration Section -->
+        <div class="section-block">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Quest Presets</h2>
+            <button class="btn btn-primary btn-sm" id="btn-create-preset-settings">+ Create Preset</button>
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Create custom quest templates. Quests will automatically spawn in your active list on scheduled days.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;" id="presets-list-container">
+            ${S.getPresets().map(p => {
+              const daysStr = p.scheduledDays.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ');
+              const timeStr = p.timeWindow ? `${p.timeWindow.start} - ${p.timeWindow.end}` : 'Anytime';
+              const xpSummary = p.targetSkills.map(ts => {
+                const macro = S.getMacro(ts.macroSkillId);
+                return `${macro ? macro.name : 'Skill'}: +${ts.xpAmount}xp`;
+              }).join(', ');
+              return `
+                <div style="display:flex;flex-direction:column;gap:8px;background:var(--bg-raised);padding:14px;border-radius:10px;border:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <strong style="font-size:0.95rem;color:var(--text-1);">${p.name}</strong>
+                    <div style="display:flex;gap:8px;">
+                      <button class="btn-icon btn-edit-preset" data-id="${p.id}" title="Edit Preset">✎</button>
+                      <button class="btn-icon danger btn-delete-preset" data-id="${p.id}" title="Delete Preset">✕</button>
+                    </div>
+                  </div>
+                  <div style="font-size:0.8rem;color:var(--text-2);">${p.description || 'No description'}</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:0.75rem;color:var(--text-3);margin-top:4px;">
+                    <span>📅 ${daysStr}</span>
+                    <span>⏳ ${timeStr}</span>
+                    <span style="color:var(--accent); font-weight:500;">★ ${xpSummary}</span>
+                  </div>
+                </div>
+              `;
+            }).join('') || `<div style="font-size:0.85rem;color:var(--text-3);text-align:center;padding:12px;">No quest presets created yet. Click "+ Create Preset" to start!</div>`}
+          </div>
+        </div>
+
         <div class="section-block">
           <h2>Gameplay Mechanics</h2>
           <div class="form-group" style="margin-top:16px;gap:12px">
@@ -120,43 +158,38 @@ window.LM.views.settings = (function () {
     }
   }
 
-  function _defaultGreetings() {
-    return [...(window.LM.views.home?.DEFAULT_GREETINGS || ['welcome, aarush', 'locking in time aarush??', 'salutations batman'])];
-  }
-
-  function _saveAndRefreshGreetings(list) {
-    const st = S.getSettings();
-    st.greetings = list;
-    S.saveSettings(st);
-    const el = document.getElementById('greetings-list');
-    if (el) el.innerHTML = list.map((g, i) => `
-      <div style="display:flex;align-items:center;gap:8px;background:var(--bg-raised);padding:8px 14px;border-radius:10px;border:1px solid var(--border);">
-        <span style="flex:1;font-size:0.88rem;font-style:italic;">${g}</span>
-        <button class="btn-remove-row" onclick="LM.views.settings.removeGreeting(${i})">✕</button>
-      </div>`).join('');
-  }
-
-  function addGreeting() {
-    const input = document.getElementById('new-greeting-input');
-    const val = input?.value.trim();
-    if (!val) return;
-    const st = S.getSettings();
-    const list = st.greetings || _defaultGreetings();
-    list.push(val);
-    _saveAndRefreshGreetings(list);
-    input.value = '';
-  }
-
-  function removeGreeting(idx) {
-    const st = S.getSettings();
-    const list = (st.greetings || _defaultGreetings()).filter((_, i) => i !== idx);
-    _saveAndRefreshGreetings(list);
-  }
-
   function init() {
     // Restore aero preference on load
     const s = S.getSettings();
     applyAeroTheme(s.aeroTheme !== false);
+
+    // Create preset click handler
+    const createPresetBtn = document.getElementById('btn-create-preset-settings');
+    if (createPresetBtn) {
+      createPresetBtn.addEventListener('click', () => {
+        window.LM.components.questModal.open();
+      });
+    }
+
+    // Edit preset click handlers
+    document.querySelectorAll('.btn-edit-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        if (id) window.LM.components.questModal.open(id);
+      });
+    });
+
+    // Delete preset click handlers
+    document.querySelectorAll('.btn-delete-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        if (id && confirm('Are you sure you want to delete this quest preset? This will also remove any uncompleted instances of it.')) {
+          S.deletePreset(id);
+          window.LM.router.render(); // Redraw view
+        }
+      });
+    });
+
     // Theme bindings
     const toggleBtn = document.getElementById('btn-theme-toggle');
     if (toggleBtn) {
@@ -169,8 +202,6 @@ window.LM.views.settings = (function () {
         window.LM.components.theme.applyTheme(next);
       });
     }
-
-
 
     // Aero theme toggle
     const aeroCheck = document.getElementById('set-aero');
@@ -239,5 +270,5 @@ window.LM.views.settings = (function () {
     });
   }
 
-  return { render, init, applyAeroTheme, addGreeting, removeGreeting };
+  return { render, init, applyAeroTheme };
 })();

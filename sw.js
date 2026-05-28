@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v12';
+const CACHE_NAME = 'lifemaxx-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -20,7 +20,6 @@ const ASSETS = [
   './js/views/dashboard.js',
   './js/views/skill-detail.js',
   './js/views/quest-log.js',
-  './js/views/research-hub.js',
   './js/views/home.js',
   './js/views/settings.js',
   './js/main.js'
@@ -30,7 +29,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets v12');
+      console.log('[SW] Caching assets v13');
       return cache.addAll(ASSETS);
     })
   );

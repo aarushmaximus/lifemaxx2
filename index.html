@@ -66,14 +66,6 @@
             <path d="M9 12l2 2 4-4" />
           </svg>
           <span>Quest Log</span>
-        </a>
-        <a href="#research" class="nav-item" data-view="research" id="nav-research">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span>Research Hub</span>
-        </a>
         <a href="#settings" class="nav-item" data-view="settings" id="nav-settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path
@@ -164,7 +156,6 @@
   <script src="js/views/dashboard.js"></script>
   <script src="js/views/skill-detail.js"></script>
   <script src="js/views/quest-log.js"></script>
-  <script src="js/views/research-hub.js"></script>
   <script src="js/views/home.js"></script>
   <script src="js/views/settings.js"></script>
   <script src="js/main.js"></script>
@@ -172,7 +163,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '12';
+    const APP_VERSION = '13';
 
     async function clearAndReload() {
       // 1. Unregister every service worker

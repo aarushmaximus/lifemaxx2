@@ -4,7 +4,6 @@ window.LM.router = (function () {
   const views = {
     dashboard: window.LM.views.dashboard,
     quests: window.LM.views.questLog,
-    research: window.LM.views.researchHub,
     settings: window.LM.views.settings,
   };
 
@@ -15,7 +14,7 @@ window.LM.router = (function () {
     const hash = window.location.hash || '#dashboard';
     if (hash.startsWith('#skill/')) return { view: 'skillDetail', skillId: hash.split('/')[1] };
     const v = hash.replace('#','');
-    return { view: ['dashboard','quests','research','settings'].includes(v) ? v : 'dashboard' };
+    return { view: ['dashboard','quests','settings'].includes(v) ? v : 'dashboard' };
   }
 
   function navigate(hash) {

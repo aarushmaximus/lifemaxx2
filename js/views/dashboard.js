@@ -3,18 +3,28 @@ window.LM.views.dashboard = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
   const W = window.LM.components.wheel;
-  const RT = window.LM.components.researchTimer;
 
-  const TYPE_META = {
-    weekly:   { label: 'Weekly',   color: '#3b82f6', icon: '' },
-    project:  { label: 'Project',  color: '#8b5cf6', icon: '' },
-    boss:     { label: 'Boss',     color: '#ef4444', icon: '' },
-    research: { label: 'Research', color: '#f59e0b', icon: '' },
-    habit:    { label: 'Habit',    color: '#14b8a6', icon: '' },
-  };
-
-  let activeFilter = 'all';
+  let activeStatusFilter = 'all'; // 'all', 'active', 'missed'
   let activeSkillFilter = 'all';
+
+  function isWithinTimeWindow(timeWindow) {
+    if (!timeWindow || !timeWindow.start || !timeWindow.end) return true;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    const [startH, startM] = timeWindow.start.split(':').map(Number);
+    const [endH, endM] = timeWindow.end.split(':').map(Number);
+    
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    
+    if (startMinutes <= endMinutes) {
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    } else {
+      // Overnight window (e.g. 22:00 to 04:00)
+      return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+    }
+  }
 
   function render() {
     const macros = S.getMacros();
@@ -47,10 +57,10 @@ window.LM.views.dashboard = (function () {
 
           <!-- Quest Filters -->
           <div class="quest-filter-bar">
-            <div class="filter-chips" id="type-filter-chips">
-              ${['all','weekly','project','boss','research','habit'].map(f =>
-                `<button class="chip ${activeFilter===f?'chip-active':''}" data-filter="${f}">
-                  ${f==='all'?'All':TYPE_META[f]?.label||f}
+            <div class="filter-chips" id="status-filter-chips">
+              ${['all', 'active', 'missed'].map(f =>
+                `<button class="chip ${activeStatusFilter===f?'chip-active':''}" data-filter="${f}">
+                  ${f==='all'?'All Quests':f==='active'?'Active':'Missed'}
                 </button>`
               ).join('')}
             </div>
@@ -90,26 +100,31 @@ window.LM.views.dashboard = (function () {
     const quests = S.getQuests().filter(q => {
       const tSkills = q.targetSkills || [];
       if (q.hiddenFromDashboard) return false;
-      if (q.status === 'completed' && q.type !== 'habit' && q.type !== 'weekly' && !q.isReadyToClaim) return false;
-      if (activeFilter !== 'all' && q.type !== activeFilter) return false;
+      if (q.status === 'completed' && !q.isReadyToClaim) return false;
+      
+      // Status Filter
+      if (activeStatusFilter === 'active' && q.status !== 'active') return false;
+      if (activeStatusFilter === 'missed' && q.status !== 'missed') return false;
+      
+      // Skill Filter
       if (activeSkillFilter !== 'all' && !tSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
       return true;
     });
 
-    if (!quests.length) return `<div class="empty-state"><p>No active quests. Create one!</p></div>`;
+    if (!quests.length) return `<div class="empty-state"><p>No active quests today. Lock in some presets!</p></div>`;
 
     const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
     return quests.map(q => {
-      const meta = TYPE_META[q.type] || TYPE_META.habit;
+      const isMissed = q.status === 'missed';
+      const withinWindow = isWithinTimeWindow(q.timeWindow);
+      const isLocked = q.status === 'active' && !withinWindow;
+
       const tSkills = q.targetSkills || [];
       const skillTags = tSkills.map(t => {
         const m = macros.find(x=>x.id===t.macroSkillId);
         return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name} +${t.xpAmount}xp</span>` : '';
       }).join('');
-
-      const streakBadge = (q.type==='habit') && q.streak
-        ? `<span class="streak-badge">${q.streak}d streak</span>` : '';
 
       let timeStr = '';
       if (q.expiresAt && q.status === 'active') {
@@ -117,44 +132,58 @@ window.LM.views.dashboard = (function () {
         if (leftMs > 0) {
           const h = Math.floor(leftMs / 3600000);
           const m = Math.floor((leftMs % 3600000) / 60000);
-          timeStr = `<span style="font-size:0.75rem;color:var(--text-3);display:flex;align-items:center;gap:4px">${h}h ${m}m left</span>`;
+          timeStr = `<span style="font-size:0.75rem;color:var(--text-3);">${h}h ${m}m remaining</span>`;
         } else {
-          timeStr = `<span style="font-size:0.75rem;color:var(--danger);display:flex;align-items:center;gap:4px">Expired</span>`;
+          timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
         }
       }
 
-      const subProg = q.subTasks?.length
-        ? `<div class="subtask-prog"><span>${q.subTasks.filter(s=>s.completed).length}/${q.subTasks.length} tasks</span>
-           <div class="mini-bar"><div style="width:${(q.subTasks.filter(s=>s.completed).length/q.subTasks.length*100).toFixed(0)}%;background:${meta.color}"></div></div></div>` : '';
+      // Time Window label
+      let windowBadge = '';
+      if (q.timeWindow) {
+        windowBadge = `<span class="quest-type-badge" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--border);">${q.timeWindow.start} - ${q.timeWindow.end}</span>`;
+      } else {
+        windowBadge = `<span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">Anytime</span>`;
+      }
 
-      const timerWidget = RT.renderButton(q);
-      const isBoss = q.type === 'boss';
+      let statusBadge = '';
+      if (isMissed) {
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.3);">MISSED</span>`;
+      } else if (isLocked) {
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(120,120,140,0.15);color:var(--text-3);border:1px solid var(--border);">LOCKED</span>`;
+      }
+
+      let cardClass = '';
+      if (isMissed) cardClass = 'quest-card-missed';
+      else if (isLocked) cardClass = 'quest-card-disabled';
 
       return `
-        <div class="quest-card ${isBoss?'quest-boss':''}" draggable="true" data-quest-id="${q.id}"
-          ondragstart="LM.views.dashboard.onDragStart(event,'${q.id}')"
+        <div class="quest-card ${cardClass}" draggable="${(!isLocked && !isMissed) ? 'true' : 'false'}" data-quest-id="${q.id}"
+          ondragstart="${(!isLocked && !isMissed) ? `LM.views.dashboard.onDragStart(event,'${q.id}')` : ''}"
           ondragend="this.classList.remove('card-dragging')">
           <div class="quest-card-header">
-            <span class="quest-type-badge" style="background:${meta.color}22;color:${meta.color}">${meta.icon} ${meta.label}</span>
-            ${streakBadge}
+            ${windowBadge}
+            ${statusBadge}
             ${timeStr}
             <div class="quest-card-actions">
-              <button class="btn-icon" onclick="LM.components.questModal.open('${q.id}')" title="Edit">✎</button>
               <button class="btn-icon danger" onclick="LM.views.dashboard.deleteQuest('${q.id}')" title="Delete">✕</button>
             </div>
           </div>
-          <h3 class="quest-card-name">${q.name}</h3>
-          ${q.description ? `<p class="quest-card-desc">${q.description}</p>` : ''}
+          <h3 class="quest-card-name" style="${isMissed ? 'text-decoration:line-through;opacity:0.6;' : ''}">${q.name}</h3>
+          ${q.description ? `<p class="quest-card-desc" style="${isMissed ? 'opacity:0.5;' : ''}">${q.description}</p>` : ''}
           <div class="quest-skill-tags">${skillTags}</div>
-          ${subProg}
-          ${timerWidget}
+          
           <div class="quest-card-footer">
-            ${(S.getSettings().dragToRegister !== false && q.isReadyToClaim) 
-              ? (isTouch 
-                  ? `<button class="btn-complete" onclick="LM.views.dashboard.claimXPMobile('${q.id}')" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);cursor:pointer;pointer-events:all;">✓ Claim XP</button>`
-                  : `<button class="btn-complete" style="background:transparent;border:1px dashed var(--border);color:var(--text-3);cursor:grab;pointer-events:none;">✓ Completed (Drag to Claim XP)</button>`
-                )
-              : `<button class="btn-complete" onclick="LM.views.dashboard.completeQuest('${q.id}')">✓ Complete</button>`
+            ${isMissed 
+              ? `<button class="btn-complete" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--text-3);cursor:not-allowed;" disabled>Missed (Click ✕ to delete)</button>`
+              : isLocked
+                ? `<button class="btn-complete" style="background:var(--bg-raised);border:1px solid var(--border);color:var(--text-3);cursor:not-allowed;" disabled>Locked (Available ${q.timeWindow.start} - ${q.timeWindow.end})</button>`
+                : (S.getSettings().dragToRegister !== false && q.isReadyToClaim)
+                  ? (isTouch 
+                      ? `<button class="btn-complete" onclick="LM.views.dashboard.claimXPMobile('${q.id}')" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);cursor:pointer;pointer-events:all;">✓ Claim XP</button>`
+                      : `<button class="btn-complete" style="background:transparent;border:1px dashed var(--border);color:var(--text-3);cursor:grab;pointer-events:none;">✓ Completed (Drag to Claim XP)</button>`
+                    )
+                  : `<button class="btn-complete" onclick="LM.views.dashboard.completeQuest('${q.id}')">✓ Complete</button>`
             }
           </div>
         </div>`;
@@ -173,13 +202,13 @@ window.LM.views.dashboard = (function () {
       W.update(0);
     });
 
-    // Type filter
-    document.getElementById('type-filter-chips')?.addEventListener('click', (e) => {
+    // Status filter
+    document.getElementById('status-filter-chips')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.chip');
       if (!btn) return;
-      activeFilter = btn.dataset.filter || 'all';
+      activeStatusFilter = btn.dataset.filter || 'all';
       refreshCards();
-      document.querySelectorAll('#type-filter-chips .chip').forEach(c => c.classList.toggle('chip-active', c.dataset.filter===activeFilter));
+      document.querySelectorAll('#status-filter-chips .chip').forEach(c => c.classList.toggle('chip-active', c.dataset.filter===activeStatusFilter));
     });
 
     // Skill filter
@@ -230,7 +259,7 @@ window.LM.views.dashboard = (function () {
   }
 
   function deleteQuest(questId) {
-    if (confirm('Delete this quest?')) { S.deleteQuest(questId); refreshCards(); }
+    if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
   return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards };

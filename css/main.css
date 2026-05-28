@@ -105,3 +105,29 @@
   /* Quest card actions always visible on mobile (no hover) */
   .quest-card-actions { opacity: 1; }
 }
+
+/* Custom Quest System Overhaul Styles */
+.quest-card-disabled {
+  opacity: 0.55;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+.quest-card-disabled .btn-complete, .quest-card-disabled .quest-card-actions {
+  pointer-events: none;
+}
+
+.quest-card-missed {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.03) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.04) !important;
+}
+[data-theme=light] .quest-card-missed {
+  background: rgba(239, 68, 68, 0.02) !important;
+}
+.quest-card-missed:hover {
+  border-color: var(--danger) !important;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15) !important;
+}
+
