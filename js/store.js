@@ -285,16 +285,15 @@ window.LM.store = (function () {
   let isSyncing = false;
   async function pushCloudSync() {
     const settings = getSettings();
-    if (!settings.syncKey || !settings.syncEditKey || isSyncing) return;
+    if (!settings.syncKey || isSyncing) return;
     
     isSyncing = true;
     try {
       const backup = exportBackup();
-      const res = await fetch(`https://jsonhosting.com/api/json/${settings.syncKey}`, {
-        method: 'PATCH',
+      const res = await fetch(`https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`, {
+        method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Edit-Key': settings.syncEditKey
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(backup)
       });
@@ -311,10 +310,13 @@ window.LM.store = (function () {
     if (!settings.syncKey) return false;
     
     try {
-      const res = await fetch(`https://jsonhosting.com/get/${settings.syncKey}`);
+      const res = await fetch(`https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`);
       if (!res.ok) return false;
       
-      const cloudData = await res.json();
+      const responseBody = await res.json();
+      const cloudData = responseBody.data;
+      if (!cloudData) return false;
+      
       const localBackup = exportBackup();
       const cloudTime = cloudData.lastUpdated || 0;
       const localTime = localBackup.lastUpdated || 0;

@@ -401,7 +401,7 @@ window.LM.views.settings = (function () {
         
         try {
           const backup = S.exportBackup();
-          const res = await fetch('https://jsonhosting.com/api/json', {
+          const res = await fetch('https://jsonbin-zeta.vercel.app/api/bins', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(backup)
@@ -410,10 +410,9 @@ window.LM.views.settings = (function () {
           if (!res.ok) throw new Error("Server response not OK");
           const data = await res.json();
           
-          if (data.id && data.editKey) {
+          if (data.id) {
             const st = S.getSettings();
             st.syncKey = data.id;
-            st.syncEditKey = data.editKey;
             S.saveSettings(st);
             
             // Push updated settings with sync parameters embedded
@@ -437,11 +436,11 @@ window.LM.views.settings = (function () {
     const linkSyncBtn = document.getElementById('btn-sync-link');
     if (linkSyncBtn) {
       linkSyncBtn.addEventListener('click', async () => {
-        const key = prompt("Enter your 8-character Secret Sync Key (e.g. xa41fz8b):");
+        const key = prompt("Enter your Secret Sync Key (e.g. uI5bfPDhOe):");
         if (!key) return;
-        const cleanKey = key.trim().toLowerCase();
-        if (cleanKey.length !== 8) {
-          alert("Invalid key format. Sync keys are exactly 8 characters long.");
+        const cleanKey = key.trim();
+        if (cleanKey.length < 5) {
+          alert("Invalid key format. Sync keys are usually 10 characters long.");
           return;
         }
         
@@ -449,17 +448,18 @@ window.LM.views.settings = (function () {
         linkSyncBtn.textContent = 'Linking...';
         
         try {
-          const res = await fetch(`https://jsonhosting.com/get/${cleanKey}`);
+          const res = await fetch(`https://jsonbin-zeta.vercel.app/api/bins/${cleanKey}`);
           if (!res.ok) throw new Error("Sync Key not found");
           
-          const cloudData = await res.json();
+          const responseBody = await res.json();
+          const cloudData = responseBody.data;
+          
           if (cloudData && cloudData.macros && cloudData.settings) {
             const success = S.importBackup(cloudData);
             if (success) {
               // Ensure local settings have the sync parameters
               const st = S.getSettings();
               st.syncKey = cleanKey;
-              st.syncEditKey = cloudData.settings.syncEditKey;
               S.saveSettings(st);
               
               window.LM.components.notifications.show('Sync linked successfully!', 'success');
@@ -525,7 +525,6 @@ window.LM.views.settings = (function () {
         if (confirm("Are you sure you want to disconnect cloud sync? This device will stop backing up or downloading shared progress.")) {
           const st = S.getSettings();
           delete st.syncKey;
-          delete st.syncEditKey;
           S.saveSettings(st);
           window.LM.components.notifications.show('Cloud sync deactivated.', 'warning');
           window.LM.router.render();
