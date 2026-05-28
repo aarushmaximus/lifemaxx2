@@ -383,10 +383,24 @@ window.LM.store = (function () {
     }
   }
 
-  // Trigger background uploader whenever store data changes
+  // Debounced cloud push — waits 600ms after last change event before pushing.
+  // This prevents the race condition where completeQuest() fires multiple change
+  // events (one for XP award, one for quest deletion) and the push captures an
+  // intermediate state (XP updated but quest not yet deleted).
+  let _pushTimer = null;
+  function schedulePush() {
+    if (_pushTimer) clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(() => {
+      _pushTimer = null;
+      pushCloudSync();
+    }, 600);
+  }
+
+  // Trigger debounced background upload whenever store data changes
   on('change', () => {
-    pushCloudSync();
+    schedulePush();
   });
+
 
   return {
     on, emit,
