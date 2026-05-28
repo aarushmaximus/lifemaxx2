@@ -5,11 +5,11 @@ window.LM.views.questLog = (function () {
   const RT = window.LM.components.researchTimer;
 
   const TYPE_META = {
-    weekly:   { label: 'Weekly',   color: '#3b82f6', icon: '📅' },
-    project:  { label: 'Project',  color: '#8b5cf6', icon: '🔨' },
-    boss:     { label: 'Boss',     color: '#ef4444', icon: '⚔️' },
-    research: { label: 'Research', color: '#f59e0b', icon: '🔬' },
-    habit:    { label: 'Habit',    color: '#14b8a6', icon: '🔄' },
+    weekly:   { label: 'Weekly',   color: '#3b82f6', icon: '' },
+    project:  { label: 'Project',  color: '#8b5cf6', icon: '' },
+    boss:     { label: 'Boss',     color: '#ef4444', icon: '' },
+    research: { label: 'Research', color: '#f59e0b', icon: '' },
+    habit:    { label: 'Habit',    color: '#14b8a6', icon: '' },
   };
 
   let filters = { type: 'all', skill: 'all', status: 'active' };
@@ -77,7 +77,7 @@ window.LM.views.questLog = (function () {
         return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name} +${t.xpAmount}xp</span>` : '';
       }).join('');
 
-      const streakInfo = (q.type==='habit') ? `<span class="streak-badge">🔥 ${q.streak||0}d streak</span>` : '';
+      const streakInfo = (q.type==='habit') ? `<span class="streak-badge">${q.streak||0}d streak</span>` : '';
       const resetInfo = q.type==='weekly' ? `<span class="reset-info">Resets Monday</span>` : '';
 
       let timeStr = '';
@@ -86,9 +86,9 @@ window.LM.views.questLog = (function () {
         if (leftMs > 0) {
           const h = Math.floor(leftMs / 3600000);
           const m = Math.floor((leftMs % 3600000) / 60000);
-          timeStr = `<span class="time-left">⏳ ${h}h ${m}m</span>`;
+          timeStr = `<span class="time-left">${h}h ${m}m</span>`;
         } else {
-          timeStr = `<span class="time-left" style="color:var(--danger)">⚠️ Expired</span>`;
+          timeStr = `<span class="time-left" style="color:var(--danger)">Expired</span>`;
         }
       }
 

@@ -6,11 +6,11 @@ window.LM.views.dashboard = (function () {
   const RT = window.LM.components.researchTimer;
 
   const TYPE_META = {
-    weekly:   { label: 'Weekly',   color: '#3b82f6', icon: '📅' },
-    project:  { label: 'Project',  color: '#8b5cf6', icon: '🔨' },
-    boss:     { label: 'Boss',     color: '#ef4444', icon: '⚔️' },
-    research: { label: 'Research', color: '#f59e0b', icon: '🔬' },
-    habit:    { label: 'Habit',    color: '#14b8a6', icon: '🔄' },
+    weekly:   { label: 'Weekly',   color: '#3b82f6', icon: '' },
+    project:  { label: 'Project',  color: '#8b5cf6', icon: '' },
+    boss:     { label: 'Boss',     color: '#ef4444', icon: '' },
+    research: { label: 'Research', color: '#f59e0b', icon: '' },
+    habit:    { label: 'Habit',    color: '#14b8a6', icon: '' },
   };
 
   let activeFilter = 'all';
@@ -32,7 +32,7 @@ window.LM.views.dashboard = (function () {
           <div class="skill-bar-panel">
             <div class="skill-bar-header">
               <select id="dash-skill-sel" class="skill-bar-select">
-                <option value="overall" ${wheelSkillId==='overall'?'selected':''}>⬡ Overall Level</option>
+                <option value="overall" ${wheelSkillId==='overall'?'selected':''}>Overall Level</option>
                 ${macros.map(m=>`<option value="${m.id}" ${wheelSkillId===m.id?'selected':''}>${m.name}</option>`).join('')}
               </select>
               <span class="skill-bar-level" id="dash-level-label">Lvl <strong>${barData.level}</strong></span>
@@ -109,7 +109,7 @@ window.LM.views.dashboard = (function () {
       }).join('');
 
       const streakBadge = (q.type==='habit') && q.streak
-        ? `<span class="streak-badge">🔥 ${q.streak}d</span>` : '';
+        ? `<span class="streak-badge">${q.streak}d streak</span>` : '';
 
       let timeStr = '';
       if (q.expiresAt && q.status === 'active') {
@@ -117,9 +117,9 @@ window.LM.views.dashboard = (function () {
         if (leftMs > 0) {
           const h = Math.floor(leftMs / 3600000);
           const m = Math.floor((leftMs % 3600000) / 60000);
-          timeStr = `<span style="font-size:0.75rem;color:var(--text-3);display:flex;align-items:center;gap:4px">⏳ ${h}h ${m}m left</span>`;
+          timeStr = `<span style="font-size:0.75rem;color:var(--text-3);display:flex;align-items:center;gap:4px">${h}h ${m}m left</span>`;
         } else {
-          timeStr = `<span style="font-size:0.75rem;color:var(--danger);display:flex;align-items:center;gap:4px">⚠️ Expired</span>`;
+          timeStr = `<span style="font-size:0.75rem;color:var(--danger);display:flex;align-items:center;gap:4px">Expired</span>`;
         }
       }
 

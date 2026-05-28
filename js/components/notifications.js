@@ -46,7 +46,7 @@ window.LM.components.notifications = (function () {
 
   function streakMilestone(questName, streak) {
     const mult = streak >= 30 ? '2.0x' : '1.5x';
-    show(`🔥 ${streak}-Day Streak on "${questName}" — ${mult} XP Multiplier!`, 'warning', 4000);
+    show(`${streak}-Day Streak on "${questName}" — ${mult} XP Multiplier!`, 'warning', 4000);
   }
 
   return { show, xpGain, levelUp, streakMilestone };

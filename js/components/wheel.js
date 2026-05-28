@@ -23,7 +23,7 @@ window.LM.components.wheel = (function () {
     currentSkillId = settings.wheelSkillId || 'overall';
 
     const options = [
-      `<option value="overall" ${currentSkillId === 'overall' ? 'selected' : ''}>⬡ Overall</option>`,
+      `<option value="overall" ${currentSkillId === 'overall' ? 'selected' : ''}>Overall</option>`,
       ...macros.map(m => `<option value="${m.id}" ${currentSkillId === m.id ? 'selected' : ''}>${m.name}</option>`)
     ].join('');
 
