@@ -146,6 +146,19 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
+        <!-- Data Backup & Recovery Section -->
+        <div class="section-block">
+          <h2>Data Migration & Backup</h2>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Migrating from Netlify to Cloudflare or switching devices? Export your progress from your old site and import it here to restore your levels, XP, and presets instantly!
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" id="btn-export-data">📤 Export Backup File</button>
+            <button class="btn btn-ghost" id="btn-import-trigger">📥 Import Backup File</button>
+            <input type="file" id="import-data-file" accept=".json" style="display:none;">
+          </div>
+        </div>
+
       </div>
     `;
   }
@@ -268,6 +281,62 @@ window.LM.views.settings = (function () {
         }
       });
     });
+
+    // ── Export Progress ──
+    const exportBtn = document.getElementById('btn-export-data');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const backup = S.exportBackup();
+        const str = JSON.stringify(backup, null, 2);
+        const blob = new Blob([str], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lifemaxx_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        window.LM.components.notifications.show('Progress Backup exported successfully!', 'success');
+      });
+    }
+
+    // ── Import Progress ──
+    const importTrigger = document.getElementById('btn-import-trigger');
+    const importFile = document.getElementById('import-data-file');
+    if (importTrigger && importFile) {
+      importTrigger.addEventListener('click', () => {
+        importFile.click();
+      });
+      
+      importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const backup = JSON.parse(event.target.result);
+            if (backup && backup.macros && backup.overall) {
+              const success = S.importBackup(backup);
+              if (success) {
+                window.LM.components.notifications.show('Progress restored! Reloading...', 'success');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                window.LM.components.notifications.show('Invalid backup file structure.', 'error');
+              }
+            } else {
+              window.LM.components.notifications.show('Invalid backup file content.', 'error');
+            }
+          } catch (err) {
+            window.LM.components.notifications.show('Error parsing backup file.', 'error');
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
   }
 
   return { render, init, applyAeroTheme };

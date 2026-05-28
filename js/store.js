@@ -258,6 +258,29 @@ window.LM.store = (function () {
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
+  function exportBackup() {
+    return {
+      macros: getMacros(),
+      quests: getQuests(),
+      overall: getOverall(),
+      settings: getSettings(),
+      presets: getPresets(),
+      xplog: load(KEYS.xplog) || []
+    };
+  }
+
+  function importBackup(data) {
+    if (!data) return false;
+    if (data.macros) save(KEYS.macros, data.macros);
+    if (data.quests) save(KEYS.quests, data.quests);
+    if (data.overall) save(KEYS.overall, data.overall);
+    if (data.settings) save(KEYS.settings, data.settings);
+    if (data.presets) save(KEYS.presets, data.presets);
+    if (data.xplog) save(KEYS.xplog, data.xplog);
+    emit('change');
+    return true;
+  }
+
   return {
     on, emit,
     getMacros, getMacro, upsertMacro, deleteMacro,
@@ -268,6 +291,6 @@ window.LM.store = (function () {
     getSettings, saveSettings,
     getXPLog, saveXPLog,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers,
-    uid
+    uid, exportBackup, importBackup
   };
 })();
