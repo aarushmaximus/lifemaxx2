@@ -416,8 +416,8 @@ window.LM.views.settings = (function () {
         
         try {
           const backup = S.exportBackup();
-          const target = 'https://jsonbin-zeta.vercel.app/api/bins';
-          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`, {
+          const endpoint = S.getSyncEndpoint();
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(backup)
@@ -464,8 +464,8 @@ window.LM.views.settings = (function () {
         linkSyncBtn.textContent = 'Linking...';
         
         try {
-          const target = `https://jsonbin-zeta.vercel.app/api/bins/${cleanKey}`;
-          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`);
+          const endpoint = S.getSyncEndpoint(cleanKey);
+          const res = await fetch(endpoint);
           if (!res.ok) throw new Error("Sync Key not found");
           
           const responseBody = await res.json();

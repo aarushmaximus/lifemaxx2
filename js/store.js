@@ -282,6 +282,19 @@ window.LM.store = (function () {
     return true;
   }
 
+  function getSyncEndpoint(key = "") {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocal) {
+      return key 
+        ? `https://jsonbin-zeta.vercel.app/api/bins/${key}`
+        : `https://jsonbin-zeta.vercel.app/api/bins`;
+    } else {
+      return key
+        ? `/api/sync?key=${key}`
+        : `/api/sync`;
+    }
+  }
+
   let isSyncing = false;
   async function pushCloudSync() {
     const settings = getSettings();
@@ -290,8 +303,8 @@ window.LM.store = (function () {
     isSyncing = true;
     try {
       const backup = exportBackup();
-      const target = `https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`;
-      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`, {
+      const endpoint = getSyncEndpoint(settings.syncKey);
+      const res = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -311,8 +324,8 @@ window.LM.store = (function () {
     if (!settings.syncKey) return false;
     
     try {
-      const target = `https://jsonbin-zeta.vercel.app/api/bins/${settings.syncKey}`;
-      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`);
+      const endpoint = getSyncEndpoint(settings.syncKey);
+      const res = await fetch(endpoint);
       if (!res.ok) return false;
       
       const responseBody = await res.json();
@@ -354,6 +367,6 @@ window.LM.store = (function () {
     getSettings, saveSettings,
     getXPLog, saveXPLog,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers,
-    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync
+    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
   };
 })();
