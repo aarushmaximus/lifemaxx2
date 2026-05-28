@@ -283,16 +283,10 @@ window.LM.store = (function () {
   }
 
   function getSyncEndpoint(key = "") {
-    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    if (isLocal) {
-      return key 
-        ? `https://jsonbin-zeta.vercel.app/api/bins/${key}`
-        : `https://jsonbin-zeta.vercel.app/api/bins`;
-    } else {
-      return key
-        ? `/api/sync?key=${key}`
-        : `/api/sync`;
-    }
+    const target = key 
+      ? `https://jsonbin-zeta.vercel.app/api/bins/${key}`
+      : `https://jsonbin-zeta.vercel.app/api/bins`;
+    return `https://corsproxy.io/?url=${encodeURIComponent(target)}`;
   }
 
   let isSyncing = false;
