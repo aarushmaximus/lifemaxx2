@@ -1,6 +1,7 @@
 [build]
   publish = "."
 
+
 # Never cache index.html or the service worker — they must always be fresh
 # so the browser gets the new SW version and triggers the cache bust
 [[headers]]

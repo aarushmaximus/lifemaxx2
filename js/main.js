@@ -126,15 +126,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Pull cloud sync on boot
-  if (LM.store.getSettings().syncKey) {
-    LM.store.pullCloudSync().then(result => {
-      if (result === 'pulled') {
-        window.LM.components.notifications.show('☁️ Synced latest progress from the cloud!', 'success');
-        window.LM.router.render();
+  // Cloud Sync Real-Time Polling & Resurfacing Check
+  function setupCloudSyncPolling() {
+    let lastPollTime = 0;
+    
+    const checkAndSync = () => {
+      if (!LM.store.getSettings().syncKey) return;
+      
+      const now = Date.now();
+      if (now - lastPollTime < 5000) return; // Throttle to prevent duplicate concurrent pulls
+      lastPollTime = now;
+
+      LM.store.pullCloudSync().then(result => {
+        if (result === 'pulled') {
+          window.LM.components.notifications.show('☁️ Real-time cloud sync updated!', 'success');
+          window.LM.router.render();
+        }
+      });
+    };
+
+    // Pull immediately on startup
+    checkAndSync();
+
+    // Pull when tab is resumed or window focused
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkAndSync();
       }
     });
+    window.addEventListener('focus', checkAndSync);
+
+    // Periodic pull check every 15 seconds
+    setInterval(checkAndSync, 15000);
   }
+
+  // Initialize Polling
+  setupCloudSyncPolling();
 
   // Router
   LM.router.init();

@@ -6,7 +6,8 @@ window.LM.store = (function () {
     overall: 'lm_overall',
     settings: 'lm_settings',
     xplog: 'lm_xplog',
-    presets: 'lm_presets'
+    presets: 'lm_presets',
+    lastUpdated: 'lm_last_updated'
   };
   const listeners = [];
   const F = window.LM.formulas;
@@ -15,7 +16,12 @@ window.LM.store = (function () {
   function emit(event, data) { listeners.filter(l => l.event === event).forEach(l => l.fn(data)); }
 
   function load(key) { try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; } }
-  function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+  function save(key, val) { 
+    localStorage.setItem(key, JSON.stringify(val)); 
+    if (key !== KEYS.lastUpdated) {
+      localStorage.setItem(KEYS.lastUpdated, JSON.stringify(Date.now()));
+    }
+  }
 
   // ── Macros ──
   function getMacros() { return load(KEYS.macros) || []; }
@@ -266,7 +272,7 @@ window.LM.store = (function () {
       settings: getSettings(),
       presets: getPresets(),
       xplog: load(KEYS.xplog) || [],
-      lastUpdated: Date.now()
+      lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
 
@@ -278,15 +284,33 @@ window.LM.store = (function () {
     if (data.settings) save(KEYS.settings, data.settings);
     if (data.presets) save(KEYS.presets, data.presets);
     if (data.xplog) save(KEYS.xplog, data.xplog);
+    
+    // Crucial: Set the exact timestamp from the cloud backup
+    const cloudTime = data.lastUpdated || Date.now();
+    save(KEYS.lastUpdated, cloudTime);
+    
     emit('change');
     return true;
   }
 
   function getSyncEndpoint(key = "") {
-    const target = key 
-      ? `https://jsonbin-zeta.vercel.app/api/bins/${key}`
-      : `https://jsonbin-zeta.vercel.app/api/bins`;
-    return `https://corsproxy.io/?url=${encodeURIComponent(target)}`;
+    // When deployed on Netlify, use our own serverless function as the proxy
+    // (avoids CORS issues entirely — the function runs server-side)
+    const isDeployed = !window.location.hostname.includes('localhost') && 
+                       !window.location.hostname.includes('127.0.0.1') &&
+                       window.location.protocol !== 'file:';
+    
+    if (isDeployed) {
+      // Use Netlify function as CORS proxy
+      return key 
+        ? `/api/sync?key=${encodeURIComponent(key)}`
+        : `/api/sync`;
+    } else {
+      // Local dev fallback: direct URL (may need browser extension or CORS disabled)
+      return key
+        ? `https://jsonbin-zeta.vercel.app/api/bins/${key}`
+        : `https://jsonbin-zeta.vercel.app/api/bins`;
+    }
   }
 
   let isSyncing = false;
@@ -315,16 +339,23 @@ window.LM.store = (function () {
 
   async function pullCloudSync() {
     const settings = getSettings();
-    if (!settings.syncKey) return false;
+    if (!settings.syncKey || isSyncing) return false;
     
+    isSyncing = true;
     try {
       const endpoint = getSyncEndpoint(settings.syncKey);
       const res = await fetch(endpoint);
-      if (!res.ok) return false;
+      if (!res.ok) {
+        isSyncing = false;
+        return false;
+      }
       
       const responseBody = await res.json();
       const cloudData = responseBody.data;
-      if (!cloudData) return false;
+      if (!cloudData) {
+        isSyncing = false;
+        return false;
+      }
       
       const localBackup = exportBackup();
       const cloudTime = cloudData.lastUpdated || 0;
@@ -333,15 +364,20 @@ window.LM.store = (function () {
       if (cloudTime > localTime) {
         // Cloud is newer, import it
         importBackup(cloudData);
+        isSyncing = false;
         return 'pulled';
       } else if (localTime > cloudTime) {
-        // Local is newer, update cloud
-        pushCloudSync();
+        // Local is newer, update cloud.
+        // We set isSyncing = false first because pushCloudSync checks for it
+        isSyncing = false;
+        await pushCloudSync();
         return 'pushed';
       }
+      isSyncing = false;
       return 'synced';
     } catch (err) {
       console.warn("Cloud pull failed:", err);
+      isSyncing = false;
       return false;
     }
   }
