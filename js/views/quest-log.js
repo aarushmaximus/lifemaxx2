@@ -6,24 +6,7 @@ window.LM.views.questLog = (function () {
   let filters = { skill: 'all', status: 'all' }; // status: 'all', 'active', 'missed'
   let expanded = new Set();
 
-  function isWithinTimeWindow(timeWindow) {
-    if (!timeWindow || !timeWindow.start || !timeWindow.end) return true;
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    const [startH, startM] = timeWindow.start.split(':').map(Number);
-    const [endH, endM] = timeWindow.end.split(':').map(Number);
-    
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    
-    if (startMinutes <= endMinutes) {
-      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
-    } else {
-      // Overnight window (e.g. 22:00 to 04:00)
-      return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
-    }
-  }
+  const isWithinTimeWindow = F.isWithinTimeWindow;
 
   function render() {
     const macros = S.getMacros();

@@ -49,7 +49,7 @@ window.LM.router = (function () {
         window.LM.views.skillChains.init(route.skillId);
       } else if (route.view === 'skillWidgets') {
         main.innerHTML = window.LM.views.skillWidgets.render(route.skillId);
-        window.LM.views.skillWidgets.init();
+        window.LM.views.skillWidgets.init(route.skillId);
       } else {
         const view = views[route.view] || views.dashboard;
         main.innerHTML = view.render();
