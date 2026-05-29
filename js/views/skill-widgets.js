@@ -393,18 +393,22 @@ window.LM.views.skillWidgets = (function () {
     ex.completedSets[setIdx] = true;
     S.upsertQuest(quest);
 
-    // Check if this was NOT the last set → start rest timer
+    // Check if this was NOT the last set → we'll start rest timer after refresh
     var nextUnchecked = ex.completedSets.indexOf(false);
-    if (nextUnchecked !== -1) {
-      startRestTimer(ex.restSeconds || 60);
-    }
+    var needsRest = nextUnchecked !== -1;
+    var restSec = ex.restSeconds || 60;
 
     // Check if ALL exercises are fully done
     var allDone = quest.workout.exercises.every(function(e) {
       return (e.completedSets || []).every(function(s){ return s === true; });
     });
 
+    // Refresh DOM first, THEN start timer on the fresh elements
     refresh();
+
+    if (needsRest) {
+      startRestTimer(restSec);
+    }
 
     if (allDone) {
       LM.components.notifications.toast('All exercises complete! Claim your XP.', 'success');
