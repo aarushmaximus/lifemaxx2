@@ -8,6 +8,7 @@ window.LM.views.skillWidgets = (function () {
   var restInterval = null;
   var restRemaining = 0;
   var restTotal = 0;
+  var restEndTime = 0;
 
   var MUSCLES = [
     { id: 'back',       label: 'Back',       color: '#4ade80' },
@@ -449,6 +450,7 @@ window.LM.views.skillWidgets = (function () {
   function startRestTimer(seconds) {
     stopRestTimer();
     restTotal = seconds;
+    restEndTime = Date.now() + (seconds * 1000);
     restRemaining = seconds;
 
     var panel = document.getElementById('rest-timer-panel');
@@ -456,14 +458,16 @@ window.LM.views.skillWidgets = (function () {
 
     updateTimerDisplay();
     restInterval = setInterval(function() {
-      restRemaining--;
+      // Timestamp-based: works even when phone screen is off
+      var now = Date.now();
+      restRemaining = Math.ceil((restEndTime - now) / 1000);
       if (restRemaining <= 0) {
         stopRestTimer();
         LM.components.notifications.toast('Rest over — next set!', 'info');
         return;
       }
       updateTimerDisplay();
-    }, 1000);
+    }, 250);
   }
 
   function updateTimerDisplay() {
@@ -471,19 +475,21 @@ window.LM.views.skillWidgets = (function () {
     var ringEl = document.getElementById('rest-ring-fg');
     if (!timeEl || !ringEl) return;
 
-    var min = Math.floor(restRemaining / 60);
-    var sec = restRemaining % 60;
+    var display = Math.max(0, restRemaining);
+    var min = Math.floor(display / 60);
+    var sec = display % 60;
     timeEl.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
 
     // SVG circle: circumference = 2 * PI * 52 ≈ 326.73
     var circ = 326.73;
-    var progress = restTotal > 0 ? restRemaining / restTotal : 0;
+    var progress = restTotal > 0 ? Math.max(0, restRemaining) / restTotal : 0;
     ringEl.setAttribute('stroke-dashoffset', circ * (1 - progress));
   }
 
   function stopRestTimer() {
     if (restInterval) { clearInterval(restInterval); restInterval = null; }
     restRemaining = 0;
+    restEndTime = 0;
     var panel = document.getElementById('rest-timer-panel');
     if (panel) panel.style.display = 'none';
   }
