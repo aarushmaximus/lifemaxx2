@@ -5,6 +5,7 @@ window.LM.router = (function () {
     dashboard: window.LM.views.dashboard,
     quests: window.LM.views.questLog,
     settings: window.LM.views.settings,
+    skills: window.LM.views.skills,
   };
 
   let currentView = null;
@@ -12,9 +13,12 @@ window.LM.router = (function () {
 
   function getRoute() {
     const hash = window.location.hash || '#dashboard';
-    if (hash.startsWith('#skill/')) return { view: 'skillDetail', skillId: hash.split('/')[1] };
+    if (hash.startsWith('#skill-hub/'))     return { view: 'skillHub',     skillId: hash.split('/')[1] };
+    if (hash.startsWith('#skill-chains/'))  return { view: 'skillChains',  skillId: hash.split('/')[1] };
+    if (hash.startsWith('#skill-widgets/')) return { view: 'skillWidgets', skillId: hash.split('/')[1] };
+    if (hash.startsWith('#skill/'))         return { view: 'skillDetail',  skillId: hash.split('/')[1] };
     const v = hash.replace('#','');
-    return { view: ['dashboard','quests','settings'].includes(v) ? v : 'dashboard' };
+    return { view: ['dashboard','quests','settings','skills'].includes(v) ? v : 'dashboard' };
   }
 
   function navigate(hash) {
@@ -37,6 +41,15 @@ window.LM.router = (function () {
       if (route.view === 'skillDetail') {
         main.innerHTML = window.LM.views.skillDetail.render(route.skillId);
         window.LM.views.skillDetail.init();
+      } else if (route.view === 'skillHub') {
+        main.innerHTML = window.LM.views.skillHub.render(route.skillId);
+        window.LM.views.skillHub.init(route.skillId);
+      } else if (route.view === 'skillChains') {
+        main.innerHTML = window.LM.views.skillChains.render(route.skillId);
+        window.LM.views.skillChains.init(route.skillId);
+      } else if (route.view === 'skillWidgets') {
+        main.innerHTML = window.LM.views.skillWidgets.render(route.skillId);
+        window.LM.views.skillWidgets.init();
       } else {
         const view = views[route.view] || views.dashboard;
         main.innerHTML = view.render();
@@ -44,8 +57,9 @@ window.LM.router = (function () {
       }
 
       // Update sidebar active state
+      const activeView = route.view.startsWith('skill') ? 'skills' : route.view;
       document.querySelectorAll('.nav-item').forEach(el => {
-        el.classList.toggle('nav-active', el.dataset.view === route.view);
+        el.classList.toggle('nav-active', el.dataset.view === activeView);
       });
 
       // Animate in via CSS class

@@ -7,6 +7,7 @@ window.LM.store = (function () {
     settings: 'lm_settings',
     xplog: 'lm_xplog',
     presets: 'lm_presets',
+    chains: 'lm_chains',
     lastUpdated: 'lm_last_updated'
   };
   const listeners = [];
@@ -264,6 +265,36 @@ window.LM.store = (function () {
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
+  // ── Chain Quests ──
+  function getAllChains() { return load(KEYS.chains) || []; }
+  function getChains(macroId) { return getAllChains().filter(c => c.macroId === macroId); }
+  function getChain(id) { return getAllChains().find(c => c.id === id) || null; }
+  function saveChainsList(list) { save(KEYS.chains, list); emit('change'); }
+
+  function upsertChain(chain) {
+    const list = getAllChains();
+    const idx = list.findIndex(c => c.id === chain.id);
+    if (idx >= 0) list[idx] = chain; else list.push(chain);
+    saveChainsList(list);
+  }
+
+  function deleteChain(id) { saveChainsList(getAllChains().filter(c => c.id !== id)); }
+
+  function completeChainStep(chainId, stepId) {
+    const list = getAllChains();
+    const chain = list.find(c => c.id === chainId);
+    if (!chain) return null;
+    const activeIdx = chain.steps.findIndex(s => !s.completedAt);
+    const stepIdx = chain.steps.findIndex(s => s.id === stepId);
+    if (stepIdx < 0 || stepIdx !== activeIdx) return null;
+    chain.steps[stepIdx].completedAt = Date.now();
+    if (chain.steps[stepIdx].xpAmount) {
+      awardXP([{ macroSkillId: chain.macroId, xpAmount: chain.steps[stepIdx].xpAmount }], false, `Chain: ${chain.name} — ${chain.steps[stepIdx].name}`);
+    }
+    saveChainsList(list);
+    return chain.steps[stepIdx];
+  }
+
   function exportBackup() {
     return {
       macros: getMacros(),
@@ -271,6 +302,7 @@ window.LM.store = (function () {
       overall: getOverall(),
       settings: getSettings(),
       presets: getPresets(),
+      chains: getAllChains(),
       xplog: load(KEYS.xplog) || [],
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
@@ -283,12 +315,10 @@ window.LM.store = (function () {
     if (data.overall) save(KEYS.overall, data.overall);
     if (data.settings) save(KEYS.settings, data.settings);
     if (data.presets) save(KEYS.presets, data.presets);
+    if (data.chains) save(KEYS.chains, data.chains);
     if (data.xplog) save(KEYS.xplog, data.xplog);
-    
-    // Crucial: Set the exact timestamp from the cloud backup
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
-    
     emit('change');
     return true;
   }
@@ -408,6 +438,7 @@ window.LM.store = (function () {
     getMicroSkills, upsertMicroSkill, deleteMicroSkill,
     getPresets, getPreset, upsertPreset, deletePreset,
     getQuests, getQuest, upsertQuest, deleteQuest,
+    getChains, getChain, upsertChain, deleteChain, completeChainStep,
     getOverall, saveOverall,
     getSettings, saveSettings,
     getXPLog, saveXPLog,

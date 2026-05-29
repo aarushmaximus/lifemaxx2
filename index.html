@@ -66,6 +66,13 @@
             <path d="M9 12l2 2 4-4" />
           </svg>
           <span>Quest Log</span>
+        <a href="#skills" class="nav-item" data-view="skills" id="nav-skills">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/>
+            <circle cx="8" cy="16" r="3"/><circle cx="16" cy="16" r="3"/>
+          </svg>
+          <span>Skills</span>
+        </a>
         <a href="#settings" class="nav-item" data-view="settings" id="nav-settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path
@@ -158,12 +165,16 @@
   <script src="js/views/quest-log.js"></script>
   <script src="js/views/home.js"></script>
   <script src="js/views/settings.js"></script>
+  <script src="js/views/skills.js"></script>
+  <script src="js/views/skill-hub.js"></script>
+  <script src="js/views/skill-widgets.js"></script>
+  <script src="js/views/skill-chains.js"></script>
   <script src="js/main.js"></script>
   <script>
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '26';
+    const APP_VERSION = '27';
 
     async function clearAndReload() {
       // 1. Unregister every service worker
