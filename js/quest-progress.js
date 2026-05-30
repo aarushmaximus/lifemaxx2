@@ -118,7 +118,7 @@ window.LM.questProgress = (function () {
 
   function completeQuest(questId) {
     // Play notification toast
-    LM.components.notifications.toast('Quest Completed! +XP claimed.', 'success');
+    LM.components.notifications.show('Quest Completed! +XP claimed.', 'success');
     
     const isDashboard = window.location.hash === '#dashboard' || !window.location.hash;
     if (isDashboard) {

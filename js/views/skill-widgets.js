@@ -378,7 +378,10 @@ window.LM.views.skillWidgets = (function () {
     if (quest) {
       var workout = quest.workout || { exercises: [] };
       var exercises = workout.exercises || [];
-      if (exercises.length === 0) {
+      if (exercises.length === 0 && !quest.workoutAutoLoadAttempted) {
+        // Mark as attempted so we don't repeat auto-loading if the user deletes exercises or goes back
+        quest.workoutAutoLoadAttempted = true;
+        
         var templates = S.getWorkoutTemplates() || [];
         var today = new Date().getDay();
         var autoTpl = templates.find(function(t) {
@@ -391,10 +394,12 @@ window.LM.views.skillWidgets = (function () {
             ex.completedSets = Array(ex.sets).fill(false);
           });
           S.upsertQuest(quest);
-          // Toast after short delay so PWA views are ready
+          // Show Toast after short delay so PWA views are ready
           setTimeout(function() {
-            LM.components.notifications.toast('Today\'s scheduled template "' + autoTpl.name + '" auto-loaded!', 'success');
+            LM.components.notifications.show('Today\'s scheduled template "' + autoTpl.name + '" auto-loaded!', 'success');
           }, 150);
+        } else {
+          S.upsertQuest(quest); // Save the workoutAutoLoadAttempted flag
         }
       }
     }
@@ -411,13 +416,13 @@ window.LM.views.skillWidgets = (function () {
   function confirmSaveTemplate() {
     var nameEl = document.getElementById('wo-tpl-name');
     if (!nameEl || !nameEl.value.trim()) {
-      LM.components.notifications.toast('Enter a template name', 'warning');
+      LM.components.notifications.show('Enter a template name', 'warning');
       return;
     }
     
     var quest = S.getQuest(selectedQuestId);
     if (!quest || !quest.workout || !quest.workout.exercises || quest.workout.exercises.length === 0) {
-      LM.components.notifications.toast('Cannot save empty workout', 'warning');
+      LM.components.notifications.show('Cannot save empty workout', 'warning');
       return;
     }
 
@@ -434,7 +439,7 @@ window.LM.views.skillWidgets = (function () {
     };
 
     S.upsertWorkoutTemplate(template);
-    LM.components.notifications.toast('Template "' + template.name + '" saved permanently!', 'success');
+    LM.components.notifications.show('Template "' + template.name + '" saved permanently!', 'success');
     
     var box = document.getElementById('wo-template-save-box');
     if (box) box.style.display = 'none';
@@ -456,7 +461,7 @@ window.LM.views.skillWidgets = (function () {
     });
 
     S.upsertQuest(quest);
-    LM.components.notifications.toast('Loaded routine template "' + template.name + '"!', 'success');
+    LM.components.notifications.show('Loaded routine template "' + template.name + '"!', 'success');
     refresh();
   }
 
@@ -466,7 +471,7 @@ window.LM.views.skillWidgets = (function () {
     var t = templates.find(function(x) { return x.id === tplId; });
     if (t) {
       S.deleteWorkoutTemplate(tplId);
-      LM.components.notifications.toast('Template "' + t.name + '" deleted.', 'info');
+      LM.components.notifications.show('Template "' + t.name + '" deleted.', 'info');
       refresh();
     }
   }
@@ -491,7 +496,7 @@ window.LM.views.skillWidgets = (function () {
     var repsEl = document.getElementById('wo-ex-reps');
     var restEl = document.getElementById('wo-ex-rest');
     if (!nameEl || !nameEl.value.trim()) {
-      LM.components.notifications.toast('Enter an exercise name', 'warning');
+      LM.components.notifications.show('Enter an exercise name', 'warning');
       return;
     }
     var numSets = parseInt(setsEl.value) || 3;
@@ -578,7 +583,7 @@ window.LM.views.skillWidgets = (function () {
     }
 
     if (allDone) {
-      LM.components.notifications.toast('All exercises complete! Claim your XP.', 'success');
+      LM.components.notifications.show('All exercises complete! Claim your XP.', 'success');
     }
   }
 
@@ -586,7 +591,7 @@ window.LM.views.skillWidgets = (function () {
     if (!selectedQuestId) return;
     var result = S.completeQuest(selectedQuestId);
     if (result) {
-      LM.components.notifications.toast('Workout complete! +' + F.formatXP(result.adjustedTargets.reduce(function(s,t){ return s + t.xpAmount; }, 0)) + ' XP', 'xp');
+      LM.components.notifications.show('Workout complete! +' + F.formatXP(result.adjustedTargets.reduce(function(s,t){ return s + t.xpAmount; }, 0)) + ' XP', 'xp');
       // Trigger boss overlay
       var overlay = document.getElementById('boss-overlay');
       var nameEl = document.getElementById('boss-quest-name');
@@ -629,7 +634,7 @@ window.LM.views.skillWidgets = (function () {
       restRemaining = Math.ceil((restEndTime - now) / 1000);
       if (restRemaining <= 0) {
         stopRestTimer();
-        LM.components.notifications.toast('Rest over — next set!', 'info');
+        LM.components.notifications.show('Rest over — next set!', 'info');
         return;
       }
       updateTimerDisplay();
