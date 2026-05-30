@@ -177,6 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Polling
   setupCloudSyncPolling();
 
+  // Check background timers
+  if (window.LM.questProgress) {
+    window.LM.questProgress.checkRunningTimers();
+  }
+
   // Router
   LM.router.init();
 });

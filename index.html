@@ -154,6 +154,7 @@
   <script>window.LM = { views: {}, components: {}, timerState: null };</script>
   <script src="js/formulas.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/quest-progress.js"></script>
   <script src="js/seed.js"></script>
   <script src="js/components/notifications.js"></script>
   <script src="js/components/theme.js"></script>
@@ -175,7 +176,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '29';
+    const APP_VERSION = '30';
 
     async function clearAndReload() {
       // 1. Unregister every service worker

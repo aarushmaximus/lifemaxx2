@@ -8,6 +8,7 @@ window.LM.store = (function () {
     xplog: 'lm_xplog',
     presets: 'lm_presets',
     chains: 'lm_chains',
+    woTemplates: 'lm_workout_templates',
     lastUpdated: 'lm_last_updated'
   };
   const listeners = [];
@@ -432,6 +433,19 @@ window.LM.store = (function () {
   });
 
 
+  // ── Workout Templates ──
+  function getWorkoutTemplates() { return load(KEYS.woTemplates) || []; }
+  function upsertWorkoutTemplate(tpl) {
+    const list = getWorkoutTemplates();
+    const idx = list.findIndex(t => t.id === tpl.id);
+    if (idx >= 0) list[idx] = tpl; else list.push(tpl);
+    save(KEYS.woTemplates, list); emit('change');
+  }
+  function deleteWorkoutTemplate(id) {
+    save(KEYS.woTemplates, getWorkoutTemplates().filter(t => t.id !== id)); emit('change');
+  }
+
+
   return {
     on, emit,
     getMacros, getMacro, upsertMacro, deleteMacro,
@@ -442,6 +456,7 @@ window.LM.store = (function () {
     getOverall, saveOverall,
     getSettings, saveSettings,
     getXPLog, saveXPLog,
+    getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers,
     uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
   };

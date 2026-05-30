@@ -111,6 +111,7 @@ window.LM.views.questLog = (function () {
                   ${skillTags}
                   ${timeStr}
                 </div>
+                ${window.LM.questProgress ? window.LM.questProgress.renderIndicator(q) : ''}
               </div>
             </div>
             <div class="quest-log-right" style="display: flex; align-items: center; gap: 8px;">

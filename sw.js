@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v29';
+const CACHE_NAME = 'lifemaxx-v30';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './css/aero-bg-mobile.jpg',
   './js/formulas.js',
   './js/store.js',
+  './js/quest-progress.js',
   './js/seed.js',
   './js/components/notifications.js',
   './js/components/theme.js',

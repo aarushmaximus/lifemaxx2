@@ -154,6 +154,7 @@ window.LM.views.dashboard = (function () {
           </div>
           <h3 class="quest-card-name" style="${isMissed ? 'text-decoration:line-through;opacity:0.6;' : ''}">${q.name}</h3>
           ${q.description ? `<p class="quest-card-desc" style="${isMissed ? 'opacity:0.5;' : ''}">${q.description}</p>` : ''}
+          ${window.LM.questProgress ? window.LM.questProgress.renderIndicator(q) : ''}
           <div class="quest-skill-tags">${skillTags}</div>
           
           <div class="quest-card-footer">

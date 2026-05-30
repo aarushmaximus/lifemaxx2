@@ -458,3 +458,133 @@
 [data-aero-off="true"] .skill-card { background: rgba(22, 22, 42, 0.7); }
 [data-aero-off="true"] .wo-exercise-card { background: rgba(22, 22, 42, 0.5); }
 [data-aero-off="true"] .workout-quest-card { background: rgba(22, 22, 42, 0.5); }
+
+/* ══════════════════════════════════════════
+   QUEST PROGRESS INDICATORS STYLES
+   ══════════════════════════════════════════ */
+.quest-pi-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.pi-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.pi-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, #a78bfa 100%);
+  border-radius: 3px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pi-manual-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.pi-slider {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+.pi-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--text-1);
+  box-shadow: 0 0 10px var(--accent-glow);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.pi-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+.pi-percent {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  min-width: 32px;
+  text-align: right;
+}
+.pi-checks-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pi-check-bubble {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pi-check-bubble:hover {
+  border-color: var(--accent);
+  color: var(--text-1);
+  transform: scale(1.05);
+}
+.pi-check-done {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.pi-timer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-play-pause {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.btn-play-pause:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.1);
+}
+.btn-play-pause.playing {
+  animation: timerPulse 1.5s infinite;
+}
+@keyframes timerPulse {
+  0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+  50% { box-shadow: 0 0 15px var(--accent-glow); }
+}
+.pi-timer-label {
+  font-size: 0.8rem;
+  color: var(--text-2);
+}
+

@@ -51,6 +51,48 @@ window.LM.components.questModal = (function () {
     const isNegativeOnMiss = it.isNegativeOnMiss || false;
     const isNegativeOnComplete = it.isNegativeOnComplete || false;
 
+    // Progress Indicator parameters
+    const hasPI = !!it.progressIndicator;
+    const piType = it.progressIndicator?.type || 'manual';
+    const piChecksCount = it.progressIndicator?.checksCount || 4;
+    const piTimerDuration = it.progressIndicator ? Math.round(it.progressIndicator.timerDuration / 60) : 20;
+
+    const piAccordionHTML = `
+        <!-- Progress Indicators Accordion -->
+        <div id="qm-pi-toggle" class="advanced-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 16px 0; font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.08em; color:var(--text-2); user-select:none;">
+          <span id="qm-pi-arrow">▶</span>
+          <span>Quest Progress Indicators</span>
+        </div>
+        
+        <div id="qm-pi-content" class="advanced-content" style="display:none; flex-direction:column; gap:16px; border-left: 2px solid var(--border); padding-left: 14px; margin-left: 6px; padding-bottom: 8px;">
+          <div class="form-check">
+            <input type="checkbox" id="qm-pi-enable" \${hasPI ? 'checked' : ''}>
+            <label for="qm-pi-enable">Enable Progress Indicator</label>
+          </div>
+          
+          <div id="qm-pi-fields" style="display: \${hasPI ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 10px;">
+            <div class="form-group" style="margin: 0;">
+              <label>Indicator Type</label>
+              <select id="qm-pi-type" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);">
+                <option value="manual" \${piType === 'manual' ? 'selected' : ''}>Manual Slider (0% - 100%)</option>
+                <option value="checks" \${piType === 'checks' ? 'selected' : ''}>Checklists (Custom number of steps)</option>
+                <option value="timer" \${piType === 'timer' ? 'selected' : ''}>Time Tracker (Study/Practice countdown timer)</option>
+              </select>
+            </div>
+            
+            <div class="form-group" id="qm-pi-checks-group" style="display: \${piType === 'checks' ? 'block' : 'none'}; margin: 0;">
+              <label>Number of Checklist Steps</label>
+              <input type="number" id="qm-pi-checks-count" class="form-input" min="1" max="20" value="\${piChecksCount}">
+            </div>
+            
+            <div class="form-group" id="qm-pi-timer-group" style="display: \${piType === 'timer' ? 'block' : 'none'}; margin: 0;">
+              <label>Timer Target Duration (Minutes)</label>
+              <input type="number" id="qm-pi-timer-duration" class="form-input" min="1" max="600" value="\${piTimerDuration}">
+            </div>
+          </div>
+        </div>
+    `;
+
     // ── PRESET MODE HTML ──
     if (isPresetMode) {
       return `
@@ -123,6 +165,7 @@ window.LM.components.questModal = (function () {
               <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
             </div>
           </div>
+          ${piAccordionHTML}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
@@ -221,6 +264,7 @@ window.LM.components.questModal = (function () {
           </div>
           
         </div>
+        ${piAccordionHTML}
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
@@ -259,6 +303,39 @@ window.LM.components.questModal = (function () {
         const isCollapsed = advContent.style.display === 'none';
         advContent.style.display = isCollapsed ? 'flex' : 'none';
         advArrow.textContent = isCollapsed ? '▼' : '▶';
+      });
+    }
+
+    // Progress Indicator collapsible toggle
+    const piToggle = document.getElementById('qm-pi-toggle');
+    const piContent = document.getElementById('qm-pi-content');
+    const piArrow = document.getElementById('qm-pi-arrow');
+    if (piToggle && piContent && piArrow) {
+      piToggle.addEventListener('click', () => {
+        const isCollapsed = piContent.style.display === 'none';
+        piContent.style.display = isCollapsed ? 'flex' : 'none';
+        piArrow.textContent = isCollapsed ? '▼' : '▶';
+      });
+    }
+
+    // Progress Indicator enable toggle
+    const piEnable = document.getElementById('qm-pi-enable');
+    const piFields = document.getElementById('qm-pi-fields');
+    if (piEnable && piFields) {
+      piEnable.addEventListener('change', () => {
+        piFields.style.display = piEnable.checked ? 'flex' : 'none';
+      });
+    }
+
+    // Progress Indicator type options toggle
+    const piTypeSel = document.getElementById('qm-pi-type');
+    const piChecksGroup = document.getElementById('qm-pi-checks-group');
+    const piTimerGroup = document.getElementById('qm-pi-timer-group');
+    if (piTypeSel && piChecksGroup && piTimerGroup) {
+      piTypeSel.addEventListener('change', () => {
+        const val = piTypeSel.value;
+        piChecksGroup.style.display = val === 'checks' ? 'block' : 'none';
+        piTimerGroup.style.display = val === 'timer' ? 'block' : 'none';
       });
     }
 
@@ -340,6 +417,28 @@ window.LM.components.questModal = (function () {
         if (negMiss) negMiss.checked = !!preset.isNegativeOnMiss;
         const negComplete = document.getElementById('qm-neg-complete');
         if (negComplete) negComplete.checked = !!preset.isNegativeOnComplete;
+        // Progress Indicator copy
+        const piEnable = document.getElementById('qm-pi-enable');
+        const piType = document.getElementById('qm-pi-type');
+        const piChecksCount = document.getElementById('qm-pi-checks-count');
+        const piTimerDuration = document.getElementById('qm-pi-timer-duration');
+        const piFields = document.getElementById('qm-pi-fields');
+        const piChecksGroup = document.getElementById('qm-pi-checks-group');
+        const piTimerGroup = document.getElementById('qm-pi-timer-group');
+
+        const presetHasPI = !!preset.progressIndicator;
+        if (piEnable) piEnable.checked = presetHasPI;
+        if (piFields) piFields.style.display = presetHasPI ? 'flex' : 'none';
+
+        if (presetHasPI) {
+          const pi = preset.progressIndicator;
+          if (piType) piType.value = pi.type;
+          if (piChecksCount && pi.checksCount) piChecksCount.value = pi.checksCount;
+          if (piTimerDuration && pi.timerDuration) piTimerDuration.value = Math.round(pi.timerDuration / 60);
+          
+          if (piChecksGroup) piChecksGroup.style.display = pi.type === 'checks' ? 'block' : 'none';
+          if (piTimerGroup) piTimerGroup.style.display = pi.type === 'timer' ? 'block' : 'none';
+        }
 
         N.show(`Applied template settings from "${preset.name}"`, 'info');
       });
@@ -403,6 +502,31 @@ window.LM.components.questModal = (function () {
       return;
     }
 
+    // Gather Progress Indicator details
+    const piEnable = document.getElementById('qm-pi-enable')?.checked || false;
+    let progressIndicator = null;
+    if (piEnable) {
+      const type = document.getElementById('qm-pi-type')?.value || 'manual';
+      const checksCount = parseInt(document.getElementById('qm-pi-checks-count')?.value || 4);
+      const durationMin = parseFloat(document.getElementById('qm-pi-timer-duration')?.value || 20);
+
+      const existingItem = editingId ? (isPresetMode ? S.getPreset(editingId) : S.getQuest(editingId)) : null;
+      const existingPI = existingItem?.progressIndicator;
+
+      progressIndicator = {
+        type,
+        value: existingPI && existingPI.type === type ? existingPI.value : 0,
+        checksCount,
+        checklist: existingPI && existingPI.type === type && existingPI.checklist && existingPI.checklist.length === checksCount 
+          ? existingPI.checklist 
+          : Array(checksCount).fill(false),
+        timerDuration: durationMin * 60,
+        timerRemaining: existingPI && existingPI.type === type ? existingPI.timerRemaining : durationMin * 60,
+        timerEndTime: existingPI && existingPI.type === type ? existingPI.timerEndTime : 0,
+        timerIsRunning: existingPI && existingPI.type === type ? existingPI.timerIsRunning : false
+      };
+    }
+
     // ── SAVE PRESET MODE ──
     if (isPresetMode) {
       const preset = {
@@ -414,7 +538,8 @@ window.LM.components.questModal = (function () {
         timeWindow,
         hasTimeLimit,
         isNegativeOnMiss,
-        isNegativeOnComplete
+        isNegativeOnComplete,
+        progressIndicator
       };
       
       S.upsertPreset(preset);
@@ -441,7 +566,8 @@ window.LM.components.questModal = (function () {
       scheduledDays: scheduledDays.length ? scheduledDays : [0,1,2,3,4,5,6],
       isNegativeOnMiss,
       isNegativeOnComplete,
-      targetSkills
+      targetSkills,
+      progressIndicator
     };
 
     S.upsertQuest(quest);

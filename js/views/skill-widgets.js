@@ -166,6 +166,64 @@ window.LM.views.skillWidgets = (function () {
         '</button>'
       : '';
 
+    // Templates Integration
+    var templates = S.getWorkoutTemplates() || [];
+    var today = new Date().getDay();
+    var daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Template save block HTML
+    var templateSaveHTML = '';
+    if (exercises.length > 0) {
+      templateSaveHTML = '<div class="wo-template-save-box" style="display:none; margin: 16px 0; padding: 14px; background: rgba(255,255,255,0.03); border:1.5px dashed var(--border); border-radius:14px;" id="wo-template-save-box">' +
+        '<h4 class="font-display" style="font-size:0.82rem; margin-bottom:10px; color:var(--sk-accent); letter-spacing:0.06em;">SAVE AS WORKOUT TEMPLATE</h4>' +
+        '<div class="form-group" style="margin-bottom:12px;">' +
+          '<label style="font-size:0.7rem; color:var(--text-2); margin-bottom:4px; display:block;">Template Name</label>' +
+          '<input id="wo-tpl-name" class="form-input" placeholder="e.g. Push Day, Leg Day" />' +
+        '</div>' +
+        '<div class="form-group" style="margin-bottom:14px;">' +
+          '<label style="font-size:0.7rem; color:var(--text-2); margin-bottom:4px; display:block;">Scheduled Days (Weekly repeat)</label>' +
+          '<div style="display: flex; gap: 4px; flex-wrap: wrap;">' +
+            daysOfWeek.map(function(d, i) {
+              return '<button type="button" class="wo-muscle-pill tpl-day-btn ' + (today === i ? 'active' : '') + '" data-day="' + i + '" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;" onclick="this.classList.toggle(\'active\')">' + d + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex; gap:10px; margin-top:8px;">' +
+          '<button class="btn btn-ghost btn-sm" style="flex:1;" onclick="document.getElementById(\'wo-template-save-box\').style.display=\'none\'">Cancel</button>' +
+          '<button class="btn btn-primary btn-sm" style="flex:1;" onclick="LM.views.skillWidgets.confirmSaveTemplate()">Save Template</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // Builder / Template options if empty
+    var emptyBuilderHTML = '';
+    if (exercises.length === 0) {
+      var tplItems = templates.map(function(t) {
+        var tDays = (t.scheduledDays || []).map(function(d) { return daysOfWeek[d]; }).join('/');
+        var isSchToday = (t.scheduledDays || []).indexOf(today) !== -1;
+        var todayBadge = isSchToday ? '<span style="background:var(--sk-accent); color:#fff; font-size:0.6rem; padding:1px 5px; border-radius:100px; margin-left:6px;">Today</span>' : '';
+        
+        return '<div class="wo-template-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; margin-bottom:8px;">' +
+          '<div style="cursor:pointer; flex:1; text-align:left;" onclick="LM.views.skillWidgets.loadTemplate(\'' + t.id + '\')">' +
+            '<div style="font-weight:500; font-size:0.85rem; color:var(--text-1); display:flex; align-items:center;">' + t.name + todayBadge + '</div>' +
+            '<div style="font-size:0.72rem; color:var(--text-3); margin-top:2px;">' + t.exercises.length + ' exercises · ' + tDays + '</div>' +
+          '</div>' +
+          '<button class="btn-icon danger" onclick="LM.views.skillWidgets.deleteTemplate(\'' + t.id + '\'); event.stopPropagation();" title="Delete Template" style="padding:4px 8px; font-size:0.8rem;">✕</button>' +
+        '</div>';
+      }).join('');
+
+      emptyBuilderHTML = '<div class="wo-builder-dashboard" style="text-align:center; padding: 20px 0;">' +
+        '<h3 class="font-display" style="font-size:0.95rem; margin-bottom:12px; letter-spacing:0.06em; color:var(--sk-accent);">CHOOSE AN OPTION</h3>' +
+        '<button class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="LM.views.skillWidgets.showAddForm()">+ Build Workout From Scratch</button>' +
+        (templates.length > 0 ? (
+          '<div class="wo-templates-loader-box" style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">' +
+            '<h4 class="font-display" style="font-size:0.75rem; margin-bottom:12px; color:var(--text-2); letter-spacing:0.08em; text-align:left;">LOAD SAVED TEMPLATE</h4>' +
+            '<div class="wo-templates-list">' + tplItems + '</div>' +
+          '</div>'
+        ) : '') +
+      '</div>';
+    }
+
     return '<div class="workout-active">' +
       '<div class="workout-active-header">' +
         '<button class="btn-back workout-back-btn" onclick="LM.views.skillWidgets.deselectQuest()">← Quests</button>' +
@@ -188,8 +246,12 @@ window.LM.views.skillWidgets = (function () {
         '<button class="btn-ghost btn-sm" onclick="LM.views.skillWidgets.skipRest()">Skip</button>' +
       '</div>' +
 
+      emptyBuilderHTML +
+
       // Exercises
       '<div class="workout-exercises">' + exCards + '</div>' +
+
+      templateSaveHTML +
 
       // Add exercise form
       '<div id="wo-add-form" class="wo-add-form" style="display:none;">' +
@@ -236,11 +298,18 @@ window.LM.views.skillWidgets = (function () {
         '<button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="LM.views.skillWidgets.addExercise()">Add Exercise</button>' +
       '</div>' +
 
-      // Add button
-      '<button class="workout-add-btn" id="wo-add-btn" onclick="LM.views.skillWidgets.showAddForm()">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg>' +
-        ' Add Exercise' +
-      '</button>' +
+      // Add & Template buttons row
+      (exercises.length > 0 ? (
+        '<div style="display:flex; gap:10px; margin-bottom:12px;">' +
+          '<button class="workout-add-btn" id="wo-add-btn" onclick="LM.views.skillWidgets.showAddForm()" style="flex:1; margin:0;">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16" style="margin-right:4px;"><path d="M12 5v14M5 12h14"/></svg>' +
+            ' Add Exercise' +
+          '</button>' +
+          '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'wo-template-save-box\').style.display=\'block\'; document.getElementById(\'wo-tpl-name\').focus();" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--border);">' +
+            '✦ Save as Template' +
+          '</button>' +
+        '</div>'
+      ) : '') +
 
       finishBtn +
     '</div>';
@@ -303,6 +372,33 @@ window.LM.views.skillWidgets = (function () {
   // ══════════════════════════════════════
   function selectQuest(qId) {
     selectedQuestId = qId;
+    
+    // Auto-loading template logic
+    var quest = S.getQuest(qId);
+    if (quest) {
+      var workout = quest.workout || { exercises: [] };
+      var exercises = workout.exercises || [];
+      if (exercises.length === 0) {
+        var templates = S.getWorkoutTemplates() || [];
+        var today = new Date().getDay();
+        var autoTpl = templates.find(function(t) {
+          return (t.scheduledDays || []).indexOf(today) !== -1;
+        });
+        if (autoTpl) {
+          quest.workout = { exercises: JSON.parse(JSON.stringify(autoTpl.exercises)) };
+          // reset sets
+          quest.workout.exercises.forEach(function(ex) {
+            ex.completedSets = Array(ex.sets).fill(false);
+          });
+          S.upsertQuest(quest);
+          // Toast after short delay so PWA views are ready
+          setTimeout(function() {
+            LM.components.notifications.toast('Today\'s scheduled template "' + autoTpl.name + '" auto-loaded!', 'success');
+          }, 150);
+        }
+      }
+    }
+
     refresh();
   }
 
@@ -310,6 +406,69 @@ window.LM.views.skillWidgets = (function () {
     selectedQuestId = null;
     stopRestTimer();
     refresh();
+  }
+
+  function confirmSaveTemplate() {
+    var nameEl = document.getElementById('wo-tpl-name');
+    if (!nameEl || !nameEl.value.trim()) {
+      LM.components.notifications.toast('Enter a template name', 'warning');
+      return;
+    }
+    
+    var quest = S.getQuest(selectedQuestId);
+    if (!quest || !quest.workout || !quest.workout.exercises || quest.workout.exercises.length === 0) {
+      LM.components.notifications.toast('Cannot save empty workout', 'warning');
+      return;
+    }
+
+    var scheduledDays = [];
+    document.querySelectorAll('.tpl-day-btn.active').forEach(function(btn) {
+      scheduledDays.push(parseInt(btn.dataset.day));
+    });
+
+    var template = {
+      id: S.uid(),
+      name: nameEl.value.trim(),
+      exercises: JSON.parse(JSON.stringify(quest.workout.exercises)),
+      scheduledDays: scheduledDays
+    };
+
+    S.upsertWorkoutTemplate(template);
+    LM.components.notifications.toast('Template "' + template.name + '" saved permanently!', 'success');
+    
+    var box = document.getElementById('wo-template-save-box');
+    if (box) box.style.display = 'none';
+    refresh();
+  }
+
+  function loadTemplate(tplId) {
+    var quest = S.getQuest(selectedQuestId);
+    if (!quest) return;
+
+    var templates = S.getWorkoutTemplates() || [];
+    var template = templates.find(function(t) { return t.id === tplId; });
+    if (!template) return;
+
+    quest.workout = { exercises: JSON.parse(JSON.stringify(template.exercises)) };
+    // Reset all completed sets state
+    quest.workout.exercises.forEach(function(ex) {
+      ex.completedSets = Array(ex.sets).fill(false);
+    });
+
+    S.upsertQuest(quest);
+    LM.components.notifications.toast('Loaded routine template "' + template.name + '"!', 'success');
+    refresh();
+  }
+
+  function deleteTemplate(tplId) {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    var templates = S.getWorkoutTemplates() || [];
+    var t = templates.find(function(x) { return x.id === tplId; });
+    if (t) {
+      S.deleteWorkoutTemplate(tplId);
+      LM.components.notifications.toast('Template "' + t.name + '" deleted.', 'info');
+      refresh();
+    }
   }
 
   function showAddFormFn() {
@@ -531,6 +690,9 @@ window.LM.views.skillWidgets = (function () {
     toggleMuscle: toggleMuscle,
     toggleSet: toggleSet,
     finishWorkout: finishWorkout,
-    skipRest: skipRest
+    skipRest: skipRest,
+    confirmSaveTemplate: confirmSaveTemplate,
+    loadTemplate: loadTemplate,
+    deleteTemplate: deleteTemplate
   };
 })();
