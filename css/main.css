@@ -134,7 +134,7 @@
 /* ══════════════════════════════════════════
    SKILLS GRID VIEW
 ══════════════════════════════════════════ */
-.skills-view { padding: 20px 16px 60px; max-width: 900px; margin: 0 auto; }
+.skills-view { padding: 20px 16px 100px; max-width: 900px; margin: 0 auto; }
 .skills-view-header { margin-bottom: 20px; }
 .skills-view-header h1 { font-size: 1.15rem; letter-spacing: 0.14em; margin-bottom: 4px; }
 .skills-view-sub { font-size: 0.78rem; color: var(--text-3); }
@@ -157,7 +157,7 @@
   transition: transform 0.25s cubic-bezier(0.25,0.8,0.25,1), box-shadow 0.25s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 140px;
+  min-height: 120px;
 }
 .skill-card:active { transform: scale(0.96); }
 .skill-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.25), 0 0 20px var(--sk-accent, #7c3aed)22; }
