@@ -29,8 +29,15 @@ window.LM.views.skillWidgets = (function () {
     });
   }
 
+  var PHYSIQUE_NAMES = ['physique', 'corpus', 'forge', 'brawn', 'titan'];
+
   function isPhysique(macro) {
-    return macro && macro.name.toLowerCase() === 'physique';
+    if (!macro) return false;
+    // Match by name (including all rename variants from settings)
+    if (PHYSIQUE_NAMES.indexOf(macro.name.toLowerCase()) !== -1) return true;
+    // Fallback: match by original seed accent color
+    if (macro.accentColor === '#ef4444') return true;
+    return false;
   }
 
   // ══════════════════════════════════════
