@@ -223,7 +223,25 @@ window.LM.views.dashboard = (function () {
     event.target.classList.add('card-dragging');
   }
 
+  // Warns user about partial XP when progress indicator is < 100%.
+  // Returns true to proceed, false to abort.
+  function confirmPartialXP(questId) {
+    const quest = S.getQuest(questId);
+    if (!quest || !quest.progressIndicator) return true; // no indicator → always proceed
+    const pct = Math.round(quest.progressIndicator.value || 0);
+    if (pct >= 100) return true; // full progress → no warning needed
+    const totalXP = (quest.targetSkills || []).reduce((sum, t) => sum + t.xpAmount, 0);
+    const earnedXP = Math.round(totalXP * pct / 100);
+    return confirm(
+      `⚠️ Partial Progress Warning\n\n` +
+      `"${quest.name}" is only ${pct}% complete.\n\n` +
+      `You will receive ${earnedXP} XP instead of ${totalXP} XP (${pct}% of the full reward).\n\n` +
+      `Complete anyway?`
+    );
+  }
+
   function completeQuest(questId) {
+    if (!confirmPartialXP(questId)) return;
     const s = S.getSettings();
     if (s.dragToRegister !== false) {
       S.markQuestReady(questId);
@@ -236,6 +254,7 @@ window.LM.views.dashboard = (function () {
   }
 
   function claimXPMobile(questId) {
+    if (!confirmPartialXP(questId)) return;
     const s = S.getSettings();
     W.handleDrop(questId);
     updateBar(s.wheelSkillId || 'overall');

@@ -188,8 +188,12 @@ window.LM.store = (function () {
     if (quest.status === 'completed' && !quest.isReadyToClaim) return null;
 
     const tSkills = quest.targetSkills || [];
-    const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount) }));
-    awardXP(adjustedTargets, false, `Completed: ${quest.name}`);
+    // Scale XP by progress indicator percentage (if present)
+    const progressScale = (quest.progressIndicator && quest.progressIndicator.value != null)
+      ? Math.max(0, Math.min(1, quest.progressIndicator.value / 100))
+      : 1;
+    const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount * progressScale) }));
+    awardXP(adjustedTargets, false, `Completed: ${quest.name} (${Math.round(progressScale * 100)}%)`);
     
     // Requirement 2: Auto-delete on XP claim!
     // The quest immediately deletes itself from local storage when XP is claimed.
