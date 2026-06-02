@@ -108,7 +108,22 @@ window.LM.store = (function () {
     saveQuests(list);
   }
 
-  function deleteQuest(id) { saveQuests(getQuests().filter(q => q.id !== id)); }
+  function deleteQuest(id, forcePermanent = false) {
+    const quests = getQuests();
+    const quest = quests.find(q => q.id === id);
+    if (!quest) return;
+    
+    if (forcePermanent || quest.status === 'completed' || quest.status === 'deleted') {
+      saveQuests(quests.filter(q => q.id !== id));
+    } else if (quest.status === 'active') {
+      quest.status = 'deleted';
+      quest.deletedAt = Date.now();
+      saveQuests(quests);
+    } else if (quest.status === 'missed') {
+      quest.hiddenFromDashboard = true;
+      saveQuests(quests);
+    }
+  }
 
   // ── Overall Level ──
   function getOverall() {
@@ -123,11 +138,14 @@ window.LM.store = (function () {
   function saveSettings(s) { save(KEYS.settings, s); }
 
   // ── XP Log ──
-  function getXPLog(macroId) { return (load(KEYS.xplog) || []).filter(e => e.macroId === macroId); }
+  function getXPLog(macroId) { 
+    const log = load(KEYS.xplog) || []; 
+    return (macroId && macroId !== 'all') ? log.filter(e => e.macroId === macroId) : log; 
+  }
   function saveXPLog(log) { save(KEYS.xplog, log); }
 
   // ── Award XP ──
-  function awardXP(targetSkills, negative = false, reason = '') {
+  function awardXP(targetSkills, negative = false, reason = '', questId = null) {
     if (!Array.isArray(targetSkills)) return { overallDelta: 0 };
     const macros = getMacros();
     const log = load(KEYS.xplog) || [];
@@ -156,7 +174,8 @@ window.LM.store = (function () {
         macroId: macro.id,
         microId: t.microSkillId || null,
         delta: delta,
-        reason: reason
+        reason: reason,
+        questId: questId
       });
     });
 
@@ -193,12 +212,15 @@ window.LM.store = (function () {
       ? Math.max(0, Math.min(1, quest.progressIndicator.value / 100))
       : 1;
     const adjustedTargets = tSkills.map(t => ({ ...t, xpAmount: Math.round(t.xpAmount * progressScale) }));
-    awardXP(adjustedTargets, false, `Completed: ${quest.name} (${Math.round(progressScale * 100)}%)`);
     
-    // Requirement 2: Auto-delete on XP claim!
-    // The quest immediately deletes itself from local storage when XP is claimed.
-    const filteredQuests = quests.filter(q => q.id !== questId);
-    save(KEYS.quests, filteredQuests);
+    // Pass quest.id as the fourth argument to link to timeline
+    awardXP(adjustedTargets, false, `Completed: ${quest.name} (${Math.round(progressScale * 100)}%)`, quest.id);
+    
+    quest.status = 'completed';
+    quest.isReadyToClaim = false;
+    quest.completedAt = Date.now();
+    
+    save(KEYS.quests, quests);
     emit('change');
     return { quest, xpMultiplier: 1, adjustedTargets };
   }
@@ -228,7 +250,8 @@ window.LM.store = (function () {
             createdAt: Date.now(),
             status: 'active',
             isReadyToClaim: false,
-            expiresAt: p.hasTimeLimit ? (Date.now() + 24 * 60 * 60 * 1000) : null,
+            timeLimitHours: p.timeLimitHours || 24,
+            expiresAt: p.hasTimeLimit ? (Date.now() + (p.timeLimitHours || 24) * 60 * 60 * 1000) : null,
             timeWindow: p.timeWindow || null
           });
           changed = true;

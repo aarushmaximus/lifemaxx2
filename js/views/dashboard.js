@@ -111,14 +111,14 @@ window.LM.views.dashboard = (function () {
 
       let timeStr = '';
       if (q.expiresAt && q.status === 'active') {
-        const leftMs = Math.max(0, q.expiresAt - Date.now());
+        const leftMs = q.expiresAt - Date.now();
         if (leftMs > 0) {
-          const h = Math.floor(leftMs / 3600000);
-          const m = Math.floor((leftMs % 3600000) / 60000);
-          timeStr = `<span style="font-size:0.75rem;color:var(--text-3);">${h}h ${m}m remaining</span>`;
+          timeStr = `<span class="quest-countdown-timer" data-expires-at="${q.expiresAt}" style="font-size:0.75rem;color:var(--accent);">Counting down...</span>`;
         } else {
           timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
         }
+      } else if (q.expiresAt && q.status === 'missed') {
+        timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
       }
 
       // Time Window label

@@ -37,6 +37,8 @@ window.LM.components.questModal = (function () {
 
   function buildHTML(item, presets, macros) {
     const it = item || {};
+    const isReadOnly = it.status && it.status !== 'active';
+    const dis = isReadOnly ? 'disabled style="opacity: 0.7; pointer-events: none;"' : '';
     
     // Core parameters
     const name = it.name || '';
@@ -66,28 +68,28 @@ window.LM.components.questModal = (function () {
         
         <div id="qm-pi-content" class="advanced-content" style="display:none; flex-direction:column; gap:16px; border-left: 2px solid var(--border); padding-left: 14px; margin-left: 6px; padding-bottom: 8px;">
           <div class="form-check">
-            <input type="checkbox" id="qm-pi-enable" \${hasPI ? 'checked' : ''}>
+            <input type="checkbox" id="qm-pi-enable" ${hasPI ? 'checked' : ''} ${dis}>
             <label for="qm-pi-enable">Enable Progress Indicator</label>
           </div>
           
-          <div id="qm-pi-fields" style="display: \${hasPI ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 10px;">
+          <div id="qm-pi-fields" style="display: ${hasPI ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 10px;">
             <div class="form-group" style="margin: 0;">
               <label>Indicator Type</label>
-              <select id="qm-pi-type" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);">
-                <option value="manual" \${piType === 'manual' ? 'selected' : ''}>Manual Slider (0% - 100%)</option>
-                <option value="checks" \${piType === 'checks' ? 'selected' : ''}>Checklists (Custom number of steps)</option>
-                <option value="timer" \${piType === 'timer' ? 'selected' : ''}>Time Tracker (Study/Practice countdown timer)</option>
+              <select id="qm-pi-type" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);" ${dis}>
+                <option value="manual" ${piType === 'manual' ? 'selected' : ''}>Manual Slider (0% - 100%)</option>
+                <option value="checks" ${piType === 'checks' ? 'selected' : ''}>Checklists (Custom number of steps)</option>
+                <option value="timer" ${piType === 'timer' ? 'selected' : ''}>Time Tracker (Study/Practice countdown timer)</option>
               </select>
             </div>
             
-            <div class="form-group" id="qm-pi-checks-group" style="display: \${piType === 'checks' ? 'block' : 'none'}; margin: 0;">
+            <div class="form-group" id="qm-pi-checks-group" style="display: ${piType === 'checks' ? 'block' : 'none'}; margin: 0;">
               <label>Number of Checklist Steps</label>
-              <input type="number" id="qm-pi-checks-count" class="form-input" min="1" max="20" value="\${piChecksCount}">
+              <input type="number" id="qm-pi-checks-count" class="form-input" min="1" max="20" value="${piChecksCount}" ${dis}>
             </div>
             
-            <div class="form-group" id="qm-pi-timer-group" style="display: \${piType === 'timer' ? 'block' : 'none'}; margin: 0;">
+            <div class="form-group" id="qm-pi-timer-group" style="display: ${piType === 'timer' ? 'block' : 'none'}; margin: 0;">
               <label>Timer Target Duration (Minutes)</label>
-              <input type="number" id="qm-pi-timer-duration" class="form-input" min="1" max="600" value="\${piTimerDuration}">
+              <input type="number" id="qm-pi-timer-duration" class="form-input" min="1" max="600" value="${piTimerDuration}" ${dis}>
             </div>
           </div>
         </div>
@@ -154,7 +156,13 @@ window.LM.components.questModal = (function () {
           <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
             <div class="form-check">
               <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
-              <label for="qm-has-time-limit">24-Hour Expiration Time Limit (Transition to missed if incomplete in 24h)</label>
+              <label for="qm-has-time-limit">Enable Quest Expiration Timer</label>
+            </div>
+            <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>Expiration Duration (Hours)</label>
+                <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}">
+              </div>
             </div>
             <div class="form-check">
               <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
@@ -176,26 +184,34 @@ window.LM.components.questModal = (function () {
     // ── INDIVIDUAL QUEST MODE HTML ──
     return `
       <div class="modal-header">
-        <h2 class="font-display">${item ? 'EDIT QUEST' : 'CREATE QUEST'}</h2>
+        <h2 class="font-display">${item ? (isReadOnly ? 'VIEW QUEST DETAILS' : 'EDIT QUEST') : 'CREATE QUEST'}</h2>
         <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
       </div>
       <div class="modal-body">
+        <!-- Status Badge if Read Only -->
+        ${isReadOnly ? `
+          <div style="background: var(--bg-raised); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-size: 0.78rem; font-family: var(--font-display); letter-spacing: 0.08em; color: var(--text-2);">QUEST STATUS:</span>
+            <span class="quest-type-badge" style="background: ${it.status === 'completed' ? 'rgba(16,185,129,0.15)' : it.status === 'missed' ? 'rgba(239,68,68,0.15)' : 'rgba(120,120,140,0.15)'}; color: ${it.status === 'completed' ? 'var(--success)' : it.status === 'missed' ? 'var(--danger)' : 'var(--text-2)'}; border: 1px solid currentColor;">${it.status.toUpperCase()}</span>
+          </div>
+        ` : ''}
+
         <!-- Name -->
         <div class="form-group">
           <label>Quest Name / Action</label>
-          <input id="qm-name" class="form-input" type="text" placeholder="e.g. Read 15 pages, Run 5km..." value="${name}">
+          <input id="qm-name" class="form-input" type="text" placeholder="e.g. Read 15 pages, Run 5km..." value="${name}" ${dis}>
         </div>
         
         <!-- Description -->
         <div class="form-group">
           <label>Description</label>
-          <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this quest involve?">${description}</textarea>
+          <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this quest involve?" ${dis}>${description}</textarea>
         </div>
 
         <!-- Preset Selection -->
-        <div class="form-group">
+        <div class="form-group" style="display: ${isReadOnly ? 'none' : 'block'};">
           <label>Apply Preset Template (Optional)</label>
-          <select id="qm-preset-select" class="form-input" style="cursor: pointer; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);">
+          <select id="qm-preset-select" class="form-input" style="cursor: pointer; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);" ${dis}>
             <option value="">— No Preset (Manual Setup) —</option>
             ${presets.map(p => `<option value="${p.id}" ${it.presetId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
           </select>
@@ -205,10 +221,10 @@ window.LM.components.questModal = (function () {
         <div class="form-group" style="margin-top: 5px;">
           <label>Target Skills & XP Rewards</label>
           <div id="qm-skills-list">
-            ${targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('')}
-            ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros) : ''}
+            ${targetSkills.map((t, i) => buildSkillRow(t, i, macros, isReadOnly)).join('')}
+            ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros, isReadOnly) : ''}
           </div>
-          <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
+          ${!isReadOnly ? `<button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>` : ''}
         </div>
 
         <!-- Collapsible Advanced Options Accordion -->
@@ -224,7 +240,7 @@ window.LM.components.questModal = (function () {
             <label>Scheduled Days (Weekly Repeat)</label>
             <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
               ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
+                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center; ${isReadOnly ? 'pointer-events:none; opacity:0.7;' : ''}">${d}</button>`
               ).join('')}
             </div>
           </div>
@@ -232,17 +248,17 @@ window.LM.components.questModal = (function () {
           <!-- Time Window Restrict -->
           <div class="form-group">
             <div class="form-check">
-              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
+              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} ${dis}>
               <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
             </div>
             <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
               <div class="form-group" style="flex: 1; margin: 0;">
                 <label>Start Time</label>
-                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
+                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" ${dis}>
               </div>
               <div class="form-group" style="flex: 1; margin: 0;">
                 <label>End Time</label>
-                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
+                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" ${dis}>
               </div>
             </div>
           </div>
@@ -250,15 +266,21 @@ window.LM.components.questModal = (function () {
           <!-- Expiration & Penalties -->
           <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
             <div class="form-check">
-              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
-              <label for="qm-has-time-limit">24-Hour Expiration Time Limit (Missed if incomplete in 24h)</label>
+              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} ${dis}>
+              <label for="qm-has-time-limit">Enable Quest Expiration Timer</label>
+            </div>
+            <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>Expiration Duration (Hours)</label>
+                <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" ${dis}>
+              </div>
             </div>
             <div class="form-check">
-              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
+              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} ${dis}>
               <label for="qm-neg-miss">Negative XP penalty if missed</label>
             </div>
             <div class="form-check">
-              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
+              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} ${dis}>
               <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
             </div>
           </div>
@@ -268,27 +290,28 @@ window.LM.components.questModal = (function () {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
-        <button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Changes' : 'Create Quest'}</button>
+        ${!isReadOnly ? `<button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Changes' : 'Create Quest'}</button>` : ''}
       </div>`;
   }
 
-  function buildSkillRow(target, index, macros) {
+  function buildSkillRow(target, index, macros, isReadOnly = false) {
     const activeMacroId = target?.macroSkillId || (macros[0]?.id || '');
     const microSkills = activeMacroId ? S.getMicroSkills(activeMacroId) : [];
+    const dis = isReadOnly ? 'disabled style="opacity: 0.7; pointer-events: none;"' : '';
 
     return `
       <div class="skill-row" data-idx="${index}" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-        <select class="form-input skill-macro-sel" style="flex: 1;">
+        <select class="form-input skill-macro-sel" style="flex: 1;" ${dis}>
           ${macros.map(m => `<option value="${m.id}" ${activeMacroId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
         </select>
-        <select class="form-input skill-micro-sel" style="flex: 1;">
+        <select class="form-input skill-micro-sel" style="flex: 1;" ${dis}>
           <option value="">— No Micro Skill —</option>
           ${microSkills.map(ms =>
             `<option value="${ms.id}" ${target?.microSkillId === ms.id ? 'selected' : ''}>${ms.name}</option>`
           ).join('')}
         </select>
-        <input class="form-input skill-xp-input" type="number" value="${target?.xpAmount || 20}" min="1" style="width: 85px; text-align: center;">
-        <button type="button" class="btn-remove-row" onclick="this.closest('.skill-row').remove(); return false;">✕</button>
+        <input class="form-input skill-xp-input" type="number" value="${target?.xpAmount || 20}" min="1" style="width: 85px; text-align: center;" ${dis}>
+        ${!isReadOnly ? `<button type="button" class="btn-remove-row" onclick="this.closest('.skill-row').remove(); return false;">✕</button>` : ''}
       </div>`;
   }
 
@@ -356,6 +379,15 @@ window.LM.components.questModal = (function () {
       });
     }
 
+    // Expiration display toggle
+    const extCheck = document.getElementById('qm-has-time-limit');
+    const extFields = document.getElementById('qm-time-limit-fields');
+    if (extCheck && extFields) {
+      extCheck.addEventListener('change', () => {
+        extFields.style.display = extCheck.checked ? 'flex' : 'none';
+      });
+    }
+
     // Add skill row
     document.getElementById('qm-add-skill')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -410,7 +442,13 @@ window.LM.components.questModal = (function () {
 
         // Expiration
         const expirationCheck = document.getElementById('qm-has-time-limit');
-        if (expirationCheck) expirationCheck.checked = !!preset.hasTimeLimit;
+        if (expirationCheck) {
+          expirationCheck.checked = !!preset.hasTimeLimit;
+          const extFields = document.getElementById('qm-time-limit-fields');
+          if (extFields) extFields.style.display = preset.hasTimeLimit ? 'flex' : 'none';
+          const extDuration = document.getElementById('qm-time-limit-duration');
+          if (extDuration) extDuration.value = preset.timeLimitHours || 24;
+        }
 
         // Penalties
         const negMiss = document.getElementById('qm-neg-miss');
@@ -483,6 +521,7 @@ window.LM.components.questModal = (function () {
 
     // Collect timer flags
     const hasTimeLimit = document.getElementById('qm-has-time-limit')?.checked || false;
+    const timeLimitHours = parseFloat(document.getElementById('qm-time-limit-duration')?.value || 24);
     const isNegativeOnMiss = document.getElementById('qm-neg-miss')?.checked || false;
     const isNegativeOnComplete = document.getElementById('qm-neg-complete')?.checked || false;
 
@@ -537,6 +576,7 @@ window.LM.components.questModal = (function () {
         scheduledDays: scheduledDays.length ? scheduledDays : [0,1,2,3,4,5,6],
         timeWindow,
         hasTimeLimit,
+        timeLimitHours,
         isNegativeOnMiss,
         isNegativeOnComplete,
         progressIndicator
@@ -561,7 +601,8 @@ window.LM.components.questModal = (function () {
       status: existing?.status || 'active',
       scheduledDate: existing?.scheduledDate || new Date().toDateString(),
       createdAt: existing?.createdAt || Date.now(),
-      expiresAt: hasTimeLimit ? (existing?.expiresAt || (Date.now() + 24 * 60 * 60 * 1000)) : null,
+      timeLimitHours,
+      expiresAt: hasTimeLimit ? (existing?.expiresAt || (Date.now() + timeLimitHours * 60 * 60 * 1000)) : null,
       timeWindow,
       scheduledDays: scheduledDays.length ? scheduledDays : [0,1,2,3,4,5,6],
       isNegativeOnMiss,

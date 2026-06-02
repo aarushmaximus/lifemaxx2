@@ -588,3 +588,67 @@
   color: var(--text-2);
 }
 
+/* ══════════════════════════════════════════
+   QUEST OVERHAUL & XP TIMELINE STYLES
+   ══════════════════════════════════════════ */
+.nav-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.25s, opacity 0.25s;
+  opacity: 0.75;
+}
+.nav-tab-btn:hover {
+  color: var(--text-1);
+  opacity: 1;
+}
+.nav-tab-btn.active-tab {
+  color: var(--accent);
+  opacity: 1;
+}
+.nav-tab-btn.active-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.quest-card-completed {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.02) !important;
+}
+
+.quest-card-deleted-status {
+  border-color: rgba(120, 120, 120, 0.2) !important;
+  background: rgba(120, 120, 120, 0.01) !important;
+  opacity: 0.65;
+}
+
+.timeline-row {
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.timeline-row:hover {
+  transform: translateX(3px);
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.timeline-quest-link {
+  transition: color 0.2s;
+}
+.timeline-quest-link:hover {
+  color: var(--accent) !important;
+}
+

@@ -137,6 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.hash === '#dashboard' || !window.location.hash) {
       LM.views.dashboard.updateBar(LM.store.getSettings().wheelSkillId || 'overall');
       LM.views.dashboard.refreshCards?.();
+    } else if (window.location.hash === '#quests') {
+      window.LM.views.questLog.init?.();
     }
   });
 
@@ -181,6 +183,35 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.LM.questProgress) {
     window.LM.questProgress.checkRunningTimers();
   }
+
+  // High-performance second-by-second countdown timer ticking engine
+  setInterval(() => {
+    const countdownEls = document.querySelectorAll('.quest-countdown-timer');
+    if (countdownEls.length === 0) return;
+    
+    let expiredAny = false;
+    countdownEls.forEach(el => {
+      const expiresAt = parseInt(el.dataset.expiresAt);
+      if (!isNaN(expiresAt)) {
+        const leftMs = expiresAt - Date.now();
+        if (leftMs > 0) {
+          const totalSecs = Math.floor(leftMs / 1000);
+          const hrs = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+          el.textContent = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} remaining`;
+        } else {
+          el.textContent = 'Expired';
+          el.style.color = 'var(--danger)';
+          expiredAny = true;
+        }
+      }
+    });
+    
+    if (expiredAny) {
+      LM.store.checkTimers();
+    }
+  }, 1000);
 
   // Router
   LM.router.init();
