@@ -110,33 +110,74 @@ window.LM.views.coach = (function () {
     renderHistory();
   }
 
-  // ── Open chat message ──
+  // ── Open chat message — Fletcher can spawn quests mid-convo ──
   async function sendChatMessage(userText) {
     if (!userText.trim()) return;
     chatHistory.push({ sender: 'user', text: userText });
     addSystemMessage("Fletcher is typing...", true);
     renderHistory();
 
-    const contextMessages = chatHistory.slice(-6).filter(m => m.sender !== 'system');
+    const macros = S.getMacros();
+    const skillsListStr = macros.map(m => `ID: ${m.id}, Name: ${m.name}`).join(' | ');
+    const contextMessages = chatHistory.slice(-8).filter(m => m.sender !== 'system');
     const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\n');
 
-    const response = await window.LM.aiEngine.generateContent(
-      `Here is the ongoing conversation:\n${conversationContext}\n\nFletcher, respond to the user's latest message brutally and in-character. Keep it under 4 sentences.`,
-      FLETCHER_SYSTEM_INSTRUCTION
-    );
+    const prompt =
+      `You are Fletcher. The user has these skill modules available: [${skillsListStr}].\n\n` +
+      `Conversation so far:\n${conversationContext}\n\n` +
+      `Respond to the user's latest message in character — brutal, concise, no more than 4 sentences.\n\n` +
+      `If the user is asking you to CREATE a quest, objective, task, or challenge for them (explicitly or implicitly), ` +
+      `you MUST also include a "quests" array in your response. Otherwise omit it.\n\n` +
+      `You MUST respond ONLY with valid JSON in this exact format:\n` +
+      `{"message":"Your brutal Fletcher reply here","quests":[{"name":"Quest Title","description":"Actionable steps","type":"project","targetSkills":[{"macroSkillId":"VALID_ID_FROM_LIST","microSkillId":null,"xpAmount":50}],"status":"active"}]}\n\n` +
+      `If no quests are needed, respond: {"message":"Your reply here"}\n` +
+      `Use ONLY valid macroSkillIds from the provided list. xpAmount between 20 and 200.`;
+
+    const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
     removeLoadingMessage();
 
     if (response.error) {
       chatHistory.push({ sender: 'fletcher', text: `SYSTEM ERROR: ${response.error}` });
     } else {
       try {
-        chatHistory.push({ sender: 'fletcher', text: response.data.candidates[0].content.parts[0].text });
+        const raw = response.data.candidates[0].content.parts[0].text;
+        let parsed;
+        try {
+          parsed = JSON.parse(cleanJSONString(raw));
+        } catch (_) {
+          // If JSON parse fails, treat the whole response as plain text
+          parsed = { message: raw };
+        }
+
+        // Show Fletcher's message
+        chatHistory.push({ sender: 'fletcher', text: parsed.message || raw });
+
+        // Spawn quests if Fletcher included them
+        if (Array.isArray(parsed.quests) && parsed.quests.length > 0) {
+          parsed.quests.forEach(q => {
+            S.upsertQuest({
+              id: S.uid(), name: q.name, description: q.description || '',
+              type: q.type || 'project', status: 'active',
+              isNegativeOnMiss: q.type === 'habit', isNegativeOnComplete: false,
+              targetSkills: q.targetSkills || [], isCustom: true,
+              createdAt: Date.now(), completedAt: null,
+              streak: q.type === 'habit' ? 0 : null,
+              lastCompletedDate: null, lastResetDate: null,
+              subTasks: null, timedResearch: { enabled: false }
+            });
+          });
+          N.show(`Fletcher created ${parsed.quests.length} quest${parsed.quests.length > 1 ? 's' : ''}!`, 'xp');
+          // Show a system message so the user knows quests were spawned
+          const questNames = parsed.quests.map(q => q.name).join(', ');
+          addSystemMessage(`⚡ Quest${parsed.quests.length > 1 ? 's' : ''} spawned: ${questNames}`);
+        }
       } catch (e) {
         chatHistory.push({ sender: 'fletcher', text: "Stop muttering. Speak clearly." });
       }
     }
     renderHistory();
   }
+
 
   function cleanJSONString(str) {
     let s = str.trim();
