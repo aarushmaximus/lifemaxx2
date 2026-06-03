@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v33';
+const CACHE_NAME = 'lifemaxx-v34';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,9 @@ const ASSETS = [
   './js/views/skill-hub.js',
   './js/views/skill-widgets.js',
   './js/views/skill-chains.js',
+  './js/views/stats.js',
+  './js/views/me.js',
+  './js/views/coach.js',
   './js/main.js'
 ];
 
