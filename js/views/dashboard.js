@@ -270,17 +270,16 @@ window.LM.views.dashboard = (function () {
               ${renderQuestCards(macros, null, true)}
             </div>
           </div>
+        </div> <!-- End dash-center -->
 
-        </div>
-
-        <!-- RIGHT COLUMN — Wheel (Keep circular wheel exact same) -->
+        <!-- RIGHT COLUMN — Wheel -->
         <div class="dash-right">
           <div class="wheel-panel">
             <p class="wheel-hint-top">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
             ${W.renderHTML()}
           </div>
         </div>
-
+        
         <!-- Floating Action Buttons at bottom right -->
         <button class="coach-float-btn" onclick="window.LM.router.navigate('#coach')" title="Chat with Coach Fletcher">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -288,6 +287,7 @@ window.LM.views.dashboard = (function () {
           </svg>
         </button>
       </div>`;
+
   }
 
   function init() {
