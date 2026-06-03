@@ -55,7 +55,7 @@ window.LM.aiEngine = (function () {
 
     const settings = S.getSettings();
     const apiKey = settings.geminiApiKey;
-    const model = settings.geminiModel || 'gemini-2.5-flash';
+    const model = settings.geminiModel || 'gemini-1.5-flash';
     const limit = settings.geminiQuotaLimit || 20;
     if (!apiKey) {
       return { error: "Gemini API key is not configured in Settings." };
