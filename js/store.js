@@ -574,14 +574,14 @@ Please analyze my performance and output a JSON response matching the following 
   }
 
   function getSyncEndpoint(key = "") {
-    // When deployed on Netlify, use our own serverless function as the proxy
+    // When deployed on Cloudflare, use our own serverless function/worker as the proxy
     // (avoids CORS issues entirely — the function runs server-side)
     const isDeployed = !window.location.hostname.includes('localhost') && 
                        !window.location.hostname.includes('127.0.0.1') &&
                        window.location.protocol !== 'file:';
     
     if (isDeployed) {
-      // Use Netlify function as CORS proxy
+      // Use Cloudflare endpoint as CORS proxy
       return key 
         ? `/api/sync?key=${encodeURIComponent(key)}`
         : `/api/sync`;

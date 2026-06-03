@@ -10,7 +10,7 @@ Lifemaxx is a high-fidelity, gamified personal productivity RPG client-side Prog
 *   **Routing**: Native hash-based client-side router (`js/main.js`). Listens to `hashchange` events and matches routes (`#dashboard`, `#quests`, `#stats`, `#me`, `#coach`, `#settings`) to render custom view controllers dynamically in a `<main id="main-content">` area.
 *   **State Management (`js/store.js`)**: Real-time localized state machine acting as a single source of truth. Handles automatic saves to `localStorage` and triggers custom events (`S.emit('change')`) that views subscribe to for automatic re-renders.
 *   **AI Integration (`js/ai-engine.js`)**: Direct interface with the Google Gemini API (defaulting to `gemini-1.5-flash` or newer models in AI Studio) for smart quest recommendations, performance critiques, and chat.
-*   **Synchronization Engine (`worker.js` / Netlify worker)**: Environment-agnostic endpoint handling CORS and token verification for real-time backup, auto-sync, and multi-device data alignment.
+*   **Synchronization Engine (`worker.js` / Cloudflare Pages Function)**: Environment-agnostic endpoint handling CORS and token verification for real-time backup, auto-sync, and multi-device data alignment.
 
 ---
 

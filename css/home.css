@@ -52,7 +52,7 @@
 }
 
 .home-eyebrow {
-  font-family: 'Instrument Serif', serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.4em;
   color: rgba(255,255,255,0.5);
@@ -92,7 +92,7 @@
 }
 
 .home-greeting {
-  font-family: 'Instrument Serif', serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-style: italic;
   font-weight: 400;
   font-size: clamp(2rem, 5.5vw, 4.2rem);
@@ -105,7 +105,7 @@
 }
 
 .home-cta {
-  font-family: 'Instrument Serif', serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-style: italic;
   font-size: 0.88rem;
   color: rgba(255,255,255,0.45);

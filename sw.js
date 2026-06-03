@@ -1,14 +1,9 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v34';
+const CACHE_NAME = 'lifemaxx-v38';
 const ASSETS = [
   './',
   './index.html',
   './css/main.css',
-  './css/vision.css',
-  './css/dark-override.css',
-  './css/neon-horizon.css',
-  './css/home.css',
-  './css/aero-bg-mobile.jpg',
   './js/formulas.js',
   './js/store.js',
   './js/ai-engine.js',
@@ -39,7 +34,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets v27');
+      console.log('[SW] Caching assets v38');
       return cache.addAll(ASSETS);
     })
   );

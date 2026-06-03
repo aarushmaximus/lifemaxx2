@@ -22,9 +22,9 @@ html[data-theme="neon"] {
   --warning:                  #d1bcff; /* Tertiary Purple */
   
   /* Typography */
-  --font-display:             'Sora', sans-serif;
-  --font-body:                'Inter', sans-serif;
-  --font-mono:                'JetBrains Mono', monospace;
+  --font-display:             'Space Grotesk', sans-serif;
+  --font-body:                'Space Grotesk', sans-serif;
+  --font-mono:                'Space Grotesk', sans-serif;
   
   /* Shape Language: Soft-Tech (No pills!) */
   --radius-btn:               4px;
@@ -77,7 +77,7 @@ html[data-theme="neon"] .font-display {
   text-transform: uppercase;
 }
 
-/* label-caps style: JetBrains Mono */
+/* label-caps style: Space Grotesk — uppercase, mono-spaced feel */
 html[data-theme="neon"] label,
 html[data-theme="neon"] .form-group label,
 html[data-theme="neon"] .sidebar-section-header,
@@ -92,7 +92,7 @@ html[data-theme="neon"] .chain-active-label,
 html[data-theme="neon"] .rest-time-label,
 html[data-theme="neon"] .wo-meta-tag,
 html[data-theme="neon"] .widget-canvas-empty-label {
-  font-family: var(--font-mono) !important;
+  font-family: var(--font-display) !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   letter-spacing: 0.1em !important;
@@ -314,7 +314,7 @@ html[data-theme="neon"] .tag,
 html[data-theme="neon"] .wo-muscle-badge,
 html[data-theme="neon"] .wo-muscle-pill {
   border-radius: var(--radius-chip) !important;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -336,7 +336,7 @@ html[data-theme="neon"] .quest-type-badge {
 html[data-theme="neon"] .wo-set-bubble,
 html[data-theme="neon"] .cstep-bubble {
   border-radius: 4px !important; /* Soft tech corners instead of round circles */
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
 }
 
 html[data-theme="neon"] .wo-set-done,

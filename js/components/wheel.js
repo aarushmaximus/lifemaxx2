@@ -31,7 +31,7 @@ window.LM.components.wheel = (function () {
       <div id="wheel-container">
         <select id="wheel-skill-select" class="wheel-select">${options}</select>
         <div id="wheel-drop-zone" class="wheel-drop-zone">
-          <svg id="wheel-svg" viewBox="0 0 260 260" width="260" height="260">
+          <svg id="wheel-svg" viewBox="0 0 260 260" width="100%" height="auto" style="max-width:260px;display:block;margin:0 auto;">
             <defs>
               <filter id="glow-filter">
                 <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -71,14 +71,13 @@ window.LM.components.wheel = (function () {
               style="transition: stroke-dashoffset 1.2s var(--spring-soft), stroke 0.4s ease;"/>
             <!-- Center elements -->
             <text id="wheel-level-text" x="130" y="118" text-anchor="middle"
-              font-family="'Instrument Serif', Georgia, serif" font-size="44" font-weight="400"
-              font-style="italic"
+              font-family="'Space Grotesk', sans-serif" font-size="44" font-weight="300"
               fill="var(--text-1)">0</text>
             <text id="wheel-skill-name" x="130" y="148" text-anchor="middle"
-              font-family="'Instrument Serif', Georgia, serif" font-size="10" font-weight="400"
+              font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="400"
               fill="var(--text-2)" letter-spacing="2">OVERALL</text>
             <text id="wheel-xp-text" x="130" y="168" text-anchor="middle"
-              font-family="'Instrument Serif', Georgia, serif" font-size="9"
+              font-family="'Space Grotesk', sans-serif" font-size="9"
               fill="var(--text-3)"></text>
           </svg>
           <div class="wheel-drop-hint">
