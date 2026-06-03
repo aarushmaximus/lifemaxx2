@@ -234,163 +234,40 @@ window.LM.views.dashboard = (function () {
         <!-- CENTER COLUMN -->
         <div class="dash-center">
           
-          <!-- Mid-review Notification banner if active -->
-          ${cachedReview ? `
-            <div class="section-block" style="border: 1px solid var(--accent); background: rgba(255, 45, 120, 0.02); margin-bottom: 8px; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; color: var(--accent); font-weight: bold;">📢 DAILY REVIEW</span>
-                <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3);">${cachedReview.date}</span>
-              </div>
-              <p style="font-size: 0.88rem; line-height: 1.5; color: var(--text-1); font-style: italic;">"${cachedReview.text}"</p>
+          <!-- XP Bar -->
+          <div style="background:var(--bg-raised); padding:16px; border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-1); text-transform:uppercase;">CURRENT XP PROGRESS</span>
+              <span id="dash-xp-label" style="font-size:0.8rem; color:var(--text-2);">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
             </div>
-          ` : ''}
-
-          <!-- Operator Status Card -->
-          <div class="operator-card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="operator-title">${rankInfo.title}</span>
-              <span style="font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--accent);">LEVEL ${overall.currentLevel || 0}</span>
-            </div>
-            
-            <div class="xp-bar-wrap" style="margin: 8px 0;">
-              <div class="xp-bar-track" style="height: 6px;">
-                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}"></div>
-              </div>
-            </div>
-
-            <div class="operator-stats">
-              <span>RANK: ${rankInfo.title}</span>
-              <span id="dash-xp-label">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
-            </div>
-            <div style="font-family: var(--font-display); font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; margin-top: -4px;">
-              NEXT LEVEL: ${rankInfo.nextTitle}
-            </div>
-          </div>
-
-          <!-- Streak & Active Effects -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div class="streak-banner">
-              <span class="streak-number">🔥 ${streak}</span>
-              <div style="display:flex; flex-direction:column;">
-                <span class="streak-label">Day Win Streak</span>
-                <span style="font-size: 0.72rem; color: var(--text-2);">Complete quests daily to grow</span>
-              </div>
-            </div>
-
-            <!-- Active Status Effects -->
-            <div class="flat-card" style="display:flex; flex-direction:column; justify-content:center; gap:6px;">
-              <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase;">Active Buffs/Debuffs</span>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                ${activeEffects.length > 0 ? activeEffects.map(e => {
-                  const color = e.type === 'buff' ? 'var(--success)' : 'var(--danger)';
-                  const bg = e.type === 'buff' ? 'rgba(16,185,129,0.1)' : 'rgba(255,45,120,0.1)';
-                  return `<span class="quest-type-badge" style="background:${bg};color:${color};border:1px solid ${color}33;">${e.name.toUpperCase()} (x${e.multiplier})</span>`;
-                }).join('') : `<span style="font-size:0.8rem; color:var(--text-3);">No active status modifiers.</span>`}
+            <div class="xp-bar-wrap">
+              <div class="xp-bar-track" style="height: 8px; border-radius:4px; background: rgba(255,255,255,0.05);">
+                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}; border-radius:4px;"></div>
               </div>
             </div>
           </div>
 
-          <!-- Default macro skill expanded showing its micro skills -->
-          ${activeMacro ? `
-            <div class="flat-card flat-card-cyan" style="display:flex; flex-direction:column; gap:16px;">
-              <div>
-                <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase; display:block; margin-bottom:8px;">Macro-to-Micro Skill Progression</span>
-                
-                <!-- Horizontal Tab Toggles for Macro Skills -->
-                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px;">
-                  ${macros.map(m => `
-                    <button class="chip ${m.id === activeMacroId ? 'chip-active' : ''}" style="border-color:${m.accentColor}44; white-space:nowrap;" onclick="LM.views.dashboard.selectMacro('${m.id}')">
-                      ${m.name} (Lv ${m.currentLevel || 0})
-                    </button>
-                  `).join('')}
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight:700; color:#fff;">${activeMacro.name}</h3>
-                  <span style="font-family: var(--font-display); font-size: 0.82rem; color: var(--accent); font-weight:bold;">LEVEL ${activeMacro.currentLevel || 0}</span>
-                </div>
-              </div>
-
-              <!-- Micro Skills List -->
-              <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
-                ${(activeMacro.microSkills || []).length > 0 ? (activeMacro.microSkills || []).map(ms => {
-                  const msPct = F.progressPercent(ms.currentXP || 0, ms);
-                  const msInto = F.xpIntoCurrentLevel(ms.currentXP || 0, ms);
-                  const msReq = F.xpRequiredForNextLevel(ms.currentXP || 0, ms);
-                  return `
-                    <div>
-                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:0.85rem; font-weight:600; color:var(--text-1);">${ms.name}</span>
-                        <span style="font-size:0.75rem; color:var(--text-2);">Lvl ${ms.currentLevel || 0}</span>
-                      </div>
-                      <div class="xp-bar-wrap">
-                        <div class="xp-bar-track" style="height:4px; background: rgba(255,255,255,0.04);">
-                          <div class="xp-bar-fill" style="width:${msPct}%; background:${activeMacro.accentColor}; color:${activeMacro.accentColor};"></div>
-                        </div>
-                      </div>
-                      <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-3); margin-top:3px;">
-                        <span>${F.formatXP(msInto)} / ${F.formatXP(msReq)} XP</span>
-                        <span>${Math.round(msPct)}%</span>
-                      </div>
-                    </div>
-                  `;
-                }).join('') : `<div style="text-align:center; padding:10px; font-size:0.8rem; color:var(--text-3);">No micro skills defined for ${activeMacro.name}.</div>`}
-              </div>
-            </div>
-          ` : ''}
-
-          <!-- NEXT SESSION workout/quest card with background image -->
-          <div class="session-card">
-            <span style="font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--secondary); font-weight: bold; text-transform: uppercase;">
-              NEXT SCHEDULED SESSION
-            </span>
-            <h2 style="font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 4px 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-              ${nextSession ? nextSession.name : 'NO SESSIONS ACTIVE'}
-            </h2>
-            <p style="font-size: 0.82rem; color: var(--text-2); margin: 0; line-height: 1.4;">
-              ${nextSession ? (nextSession.description || 'Lock in and execute this objective to claim your XP.') : 'Spawn daily quests from presets or ask Fletcher to build your agenda.'}
-            </p>
-            ${nextSession ? `
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button class="btn btn-primary btn-sm" onclick="LM.views.dashboard.completeQuest('${nextSession.id}')">COMPLETE SESSION</button>
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- ACTIVE QUESTS (Top 3) -->
+          <!-- ACTIVE QUESTS -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; color: var(--text-1);">
-                ACTIVE OBJECTIVES (TOP 3)
+                ACTIVE OBJECTIVES
               </h2>
-              
-              <!-- Quick Energy & Skill selectors -->
-              <div style="display:flex; align-items:center; gap:8px;">
-                <select id="dash-energy-sel" class="chip" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);padding:3px 8px;font-size:0.72rem;cursor:pointer;border-radius:100px;">
-                  <option value="High" ${currentEnergy === 'High' ? 'selected' : ''}>High ⚡</option>
-                  <option value="Medium" ${currentEnergy === 'Medium' ? 'selected' : ''}>Med 🔋</option>
-                  <option value="Low" ${currentEnergy === 'Low' ? 'selected' : ''}>Low 💤</option>
-                </select>
-                <select class="chip skill-chip-sel" id="skill-filter-sel" style="padding:3px 8px; font-size:0.72rem;">
-                  <option value="all">All Skills</option>
-                  ${macros.map(m=>`<option value="${m.id}" ${activeSkillFilter===m.id?'selected':''}>${m.name}</option>`).join('')}
-                </select>
-              </div>
             </div>
 
             <!-- Active Cards -->
-            <div class="quest-grid ${currentEnergy === 'Low' ? 'low-energy-active' : ''}" id="quest-grid">
-              ${renderQuestCards(macros, 3, false)}
+            <div class="quest-grid" id="quest-grid">
+              ${renderQuestCards(macros, null, false)}
             </div>
           </div>
 
-          <!-- LOCKED / UPCOMING QUESTS (At the bottom, greyed out) -->
-          <div>
+          <!-- LOCKED / UPCOMING QUESTS -->
+          <div style="margin-top:24px;">
             <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
               UPCOMING / LOCKED OBJECTIVES
             </h2>
             <div class="quest-grid" id="upcoming-quest-grid">
-              ${renderQuestCards(macros, 3, true)}
+              ${renderQuestCards(macros, null, true)}
             </div>
           </div>
 
