@@ -13,9 +13,36 @@
   <link rel="apple-touch-icon" href="icons/icon-512.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sora:wght@100;300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
   <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary": "#eceaff", "inverse-primary": "#006875", "inverse-surface": "#e3e0f4",
+            "on-background": "#e3e0f4", "surface-container-lowest": "#0d0d1a", "tertiary-fixed": "#e1e0ff",
+            "surface-container-highest": "#343342", "on-error-container": "#ffdad6", "surface-tint": "#00e5ff",
+            "secondary": "#ff2d78", "on-tertiary": "#2d2e49", "on-secondary": "#ffffff",
+            "error": "#ffb4ab", "surface": "#12121f", "surface-dim": "#12121f",
+            "outline-variant": "#3b494c", "surface-variant": "#343342", "on-error": "#690005",
+            "primary": "#00e5ff", "background": "#0d0d1a", "surface-container": "#1e1e2c",
+            "on-surface": "#e3e0f4", "on-surface-variant": "#bac9cc"
+          },
+          "fontFamily": {
+            "headline-md": ["Space Grotesk"], "label-sm": ["Space Grotesk"],
+            "display-xl": ["Space Grotesk"], "headline-lg": ["Space Grotesk"],
+            "body-md": ["Sora"], "headline-lg-mobile": ["Space Grotesk"],
+            "body-lg": ["Sora"]
+          }
+        }
+      }
+    }
+  </script>
 </head>
 
 <body>
@@ -29,66 +56,56 @@
       <div class="orb orb-5"></div>
       <div class="vapor-sun"></div>
     </div>
-    <!-- LEFT: Sidebar -->
-    <aside id="sidebar">
-      <div class="sidebar-logo" id="logo-home-btn" style="cursor:pointer;" title="Back to home">
-        <svg class="logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="lgMark" x1="4" y1="4" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="rgba(255,255,255,0.95)" />
-              <stop offset="100%" stop-color="var(--accent)" />
-            </linearGradient>
-          </defs>
-          <rect x="6.5" y="6.5" width="15" height="15" rx="3" transform="rotate(45 14 14)" fill="rgba(255,255,255,0.08)"
-            stroke="url(#lgMark)" stroke-width="1.2" />
-          <rect x="9.5" y="9.5" width="9" height="9" rx="1.5" transform="rotate(45 14 14)" fill="none"
-            stroke="rgba(255,255,255,0.3)" stroke-width="0.6" />
-        </svg>
-        <span class="logo-text">Lifemaxx</span>
-      </div>
+    <div class="wireframe-grid"></div>
+    <div class="wireframe-floor"></div>
 
-      <nav class="sidebar-nav">
-        <a href="#dashboard" class="nav-item" data-view="dashboard" id="nav-dashboard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          <span>DASH</span>
-        </a>
-        <a href="#quests" class="nav-item" data-view="quests" id="nav-quests">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>
-          <span>QUESTS</span>
-        </a>
-        <a href="#stats" class="nav-item" data-view="stats" id="nav-stats">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M18.7 8l-5.1 5.2-2.8-2.7-4.8 4.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span>STATS</span>
-        </a>
-        <a href="#me" class="nav-item" data-view="me" id="nav-me">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <span>ME</span>
-        </a>
-        <a href="#settings" class="nav-item" data-view="settings" id="nav-settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span>SETTINGS</span>
-        </a>
-      </nav>
-    </aside>
+    <!-- TopAppBar -->
+    <nav class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-primary/30 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+      <div class="flex justify-between items-center px-6 py-4 md:px-12 w-full">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-primary/10 border border-primary flex items-center justify-center text-primary font-bold neon-border-cyan">
+            L42
+          </div>
+          <h1 class="font-headline-md text-headline-lg-mobile md:text-headline-md tracking-tighter text-primary neon-text-cyan">Lifemaxx</h1>
+        </div>
+        <div class="flex items-center gap-6">
+          <div class="hidden md:flex gap-4 font-headline-md text-sm">
+            <span class="text-secondary neon-text-pink cursor-pointer" onclick="LM.router.navigate('dashboard')">DASH</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('quests')">QUESTS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('stats')">STATS</span>
+          </div>
+          <div class="px-3 py-1 bg-secondary/10 border border-secondary text-secondary font-bold text-xs neon-border-pink">
+            95% XP
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-0 w-full z-50 bg-[#0d0d1a]/95 backdrop-blur-3xl border-t border-primary/30 shadow-[0_-5px_25px_rgba(0,229,255,0.15)]">
+      <div class="flex justify-around items-center px-4 pb-8 pt-4 w-full max-w-lg mx-auto">
+        <div class="flex flex-col items-center justify-center text-primary neon-text-cyan scale-110 cursor-pointer active:scale-95 transition-all" onclick="LM.router.navigate('dashboard')">
+          <span class="material-symbols-outlined text-3xl">dashboard</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">DASH</span>
+        </div>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('quests')">
+          <span class="material-symbols-outlined text-3xl">military_tech</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">QUESTS</span>
+        </div>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('stats')">
+          <span class="material-symbols-outlined text-3xl">query_stats</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">STATS</span>
+        </div>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('me')">
+          <span class="material-symbols-outlined text-3xl">person</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">ME</span>
+        </div>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('coach')">
+          <span class="material-symbols-outlined text-3xl">psychology</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">COACH</span>
+        </div>
+      </div>
+    </nav>
 
     <!-- MAIN -->
     <main id="main-content"></main>
@@ -169,7 +186,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '41';
+    const APP_VERSION = '42';
 
     async function clearAndReload() {
       // 1. Unregister every service worker

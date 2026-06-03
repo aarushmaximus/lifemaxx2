@@ -1,103 +1,10 @@
-window.LM.views.dashboard = (function () {
-  const S = window.LM.store;
-  const F = window.LM.formulas;
-  const W = window.LM.components.wheel;
+import re
 
-  let activeStatusFilter = 'all'; // 'all', 'active', 'missed'
-  let activeSkillFilter = 'all';
-  let activeMacroId = null; // for the expanded macro skill widget
+with open('js/views/dashboard.js', 'r', encoding='utf-8') as f:
+    content = f.read()
 
-  const isWithinTimeWindow = F.isWithinTimeWindow;
-
-  function getPlayerRank(level) {
-    const tiers = [
-      { name: 'RECRUIT', min: 0 },
-      { name: 'INITIATE', min: 10 },
-      { name: 'VANGUARD', min: 20 },
-      { name: 'OPERATOR', min: 30 },
-      { name: 'ELITE OPERATOR', min: 40 },
-      { name: 'CHAMPION', min: 50 },
-      { name: 'LEGEND', min: 70 },
-      { name: 'MYTHIC MASTER', min: 90 }
-    ];
-    let activeTier = tiers[0];
-    let nextTier = tiers[1] || tiers[0];
-    for (let i = 0; i < tiers.length; i++) {
-      if (level >= tiers[i].min) {
-        activeTier = tiers[i];
-        nextTier = tiers[i+1] || { name: 'MAXED OUT', min: 100 };
-      }
-    }
-    const offset = level - activeTier.min;
-    const sub = offset < 5 ? 'I' : 'II';
-    return {
-      title: `${activeTier.name} ${sub}`,
-      nextTitle: nextTier.name
-    };
-  }
-
-  function getDailyStreak(quests, xpLog) {
-    const dates = new Set();
-    quests.forEach(q => {
-      if (q.status === 'completed' && q.completedAt) {
-        dates.add(new Date(q.completedAt).toDateString());
-      }
-    });
-    xpLog.forEach(l => {
-      if (l.timestamp) {
-        dates.add(new Date(l.timestamp).toDateString());
-      }
-    });
-
-    const sortedDates = Array.from(dates).map(d => new Date(d)).sort((a, b) => b - a);
-    if (sortedDates.length === 0) return 0;
-
-    let streak = 0;
-    let current = new Date();
-    current.setHours(0, 0, 0, 0);
-
-    const latest = sortedDates[0];
-    latest.setHours(0, 0, 0, 0);
-
-    const diffMs = current - latest;
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 1) {
-      return 0; // broken
-    }
-
-    let checkDate = new Date(latest);
-    for (let i = 0; i < sortedDates.length; i++) {
-      const d = sortedDates[i];
-      d.setHours(0, 0, 0, 0);
-
-      const diff = Math.round((checkDate - d) / (1000 * 60 * 60 * 24));
-      if (diff === 0) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else if (diff === 1) {
-        streak++;
-        checkDate = new Date(d);
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  }
-
-  function getBarData(skillId, macros) {
-    if (skillId === 'overall') {
-      const o = S.getOverall();
-      return { level: o.currentLevel||0, color:'var(--accent)', into: F.xpIntoCurrentLevel(o.currentXP||0,o), req: F.xpRequiredForNextLevel(o.currentXP||0,o), pct: F.progressPercent(o.currentXP||0,o) };
-    }
-    const m = macros.find(x=>x.id===skillId);
-    if (!m) return { level:0, color:'var(--accent)', into:0, req:1, pct:0 };
-    return { level:m.currentLevel||0, color:m.accentColor, into:F.xpIntoCurrentLevel(m.currentXP||0,m), req:F.xpRequiredForNextLevel(m.currentXP||0,m), pct:F.progressPercent(m.currentXP||0,m) };
-  }
-
-
+# We need to replace the `renderQuestCards` and `render` functions
+new_render_quests = """
   function renderQuestCards(macros, limit = null, upcoming = false) {
     const allQuests = S.getQuests();
     const quests = allQuests.filter(q => {
@@ -187,8 +94,9 @@ window.LM.views.dashboard = (function () {
       `;
     }).join('');
   }
+"""
 
-
+new_render = """
   function render() {
     const macros = S.getMacros();
     const settings = S.getSettings();
@@ -310,112 +218,16 @@ window.LM.views.dashboard = (function () {
       </div>
     `;
   }
+"""
 
-  function init() {
-    // Wheel Component Init
-    W.init();
+start_render_quests = content.find('  function renderQuestCards(')
+end_render_quests = content.find('  function render() {')
+start_render = content.find('  function render() {')
+end_render = content.find('  function init() {')
 
-    // Macro tabs selector
-    document.querySelectorAll('.dashboard-grid .chip').forEach(el => {
-      // Inline onclick runs, but we add event listeners to ensure clean bindings
-    });
+new_content = content[:start_render_quests] + new_render_quests + "\n" + new_render + "\n" + content[end_render:]
 
-    // Skill filter
-    document.getElementById('skill-filter-sel')?.addEventListener('change', (e) => {
-      activeSkillFilter = e.target.value;
-      refreshCards();
-    });
+with open('js/views/dashboard.js', 'w', encoding='utf-8') as f:
+    f.write(new_content)
 
-    // Energy filter
-    document.getElementById('dash-energy-sel')?.addEventListener('change', (e) => {
-      const val = e.target.value;
-      localStorage.setItem('lm_user_energy', val);
-      const grid = document.getElementById('quest-grid');
-      if (grid) {
-        grid.classList.toggle('low-energy-active', val === 'Low');
-      }
-      refreshCards();
-    });
-  }
-
-  function selectMacro(macroId) {
-    activeMacroId = macroId;
-    // Set the settings wheelSkillId to this selected macro skill as well, to sync with progress bar updates and the wheel drop validation
-    const s = S.getSettings();
-    s.wheelSkillId = macroId;
-    S.saveSettings(s);
-    
-    // Re-render
-    const main = document.getElementById('main-content');
-    if (main) {
-      main.innerHTML = render();
-      init();
-    }
-  }
-
-  function updateBar(skillId) {
-    const macros = S.getMacros();
-    const data = getBarData(skillId, macros);
-    const fill = document.getElementById('dash-xp-fill');
-    const label = document.getElementById('dash-xp-label');
-    if (fill) { fill.style.width = `${data.pct}%`; fill.style.background = data.color; }
-    if (label) label.textContent = `${F.formatXP(data.into)} / ${F.formatXP(data.req)} XP (${Math.round(data.pct)}%)`;
-  }
-
-  function refreshCards() {
-    const macros = S.getMacros();
-    const grid = document.getElementById('quest-grid');
-    if (grid) grid.innerHTML = renderQuestCards(macros, 3, false);
-    
-    const upcomingGrid = document.getElementById('upcoming-quest-grid');
-    if (upcomingGrid) upcomingGrid.innerHTML = renderQuestCards(macros, 3, true);
-  }
-
-  function onDragStart(event, questId) {
-    event.dataTransfer.setData('questId', questId);
-    const card = event.target.closest('.quest-card');
-    if (card) card.classList.add('card-dragging');
-  }
-
-  function confirmPartialXP(questId) {
-    const quest = S.getQuest(questId);
-    if (!quest || !quest.progressIndicator) return true;
-    const pct = Math.round(quest.progressIndicator.value || 0);
-    if (pct >= 100) return true;
-    const totalXP = (quest.targetSkills || []).reduce((sum, t) => sum + t.xpAmount, 0);
-    const earnedXP = Math.round(totalXP * pct / 100);
-    return confirm(
-      `⚠️ Partial Progress Warning\n\n` +
-      `"${quest.name}" is only ${pct}% complete.\n\n` +
-      `You will receive ${earnedXP} XP instead of ${totalXP} XP (${pct}% of the full reward).\n\n` +
-      `Complete anyway?`
-    );
-  }
-
-  function completeQuest(questId) {
-    if (!confirmPartialXP(questId)) return;
-    const s = S.getSettings();
-    if (s.dragToRegister !== false) {
-      S.markQuestReady(questId);
-      refreshCards();
-    } else {
-      W.handleDrop(questId);
-      updateBar(s.wheelSkillId || 'overall');
-      refreshCards();
-    }
-  }
-
-  function claimXPMobile(questId) {
-    if (!confirmPartialXP(questId)) return;
-    const s = S.getSettings();
-    W.handleDrop(questId);
-    updateBar(s.wheelSkillId || 'overall');
-    refreshCards();
-  }
-
-  function deleteQuest(questId) {
-    if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
-  }
-
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro };
-})();
+print("Dashboard rewrite complete.")
