@@ -24,7 +24,6 @@ window.LM.views.settings = (function () {
     const s = S.getSettings();
     const dragOn = s.dragToRegister !== false; // default true
     const deleteOn = s.deleteAfterDragged === true; // default false
-    const aeroOn = s.aeroTheme !== false; // default ON
 
     return `
       <div class="view-container">
@@ -98,26 +97,73 @@ window.LM.views.settings = (function () {
         <div class="section-block" id="theme-settings-container">
           <h2>Appearance</h2>
           <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <div>
-                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Frutiger Aero Theme</div>
-                <div style="font-size:0.8rem;color:var(--text-3);">Enables the sky, glass bubbles & nature-inspired background aesthetic.</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Application Theme</div>
+                <div style="font-size:0.8rem;color:var(--text-3);">Choose your visual aesthetic and design language.</div>
               </div>
-              <label class="aero-toggle" title="Toggle Frutiger Aero Theme">
-                <input type="checkbox" id="set-aero" ${aeroOn ? 'checked' : ''}>
-                <span class="aero-toggle-track"></span>
-              </label>
+              <select class="form-input" id="select-theme" style="width:180px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
+                <option value="aero" ${s.theme === 'aero' || (!s.theme && s.aeroTheme !== false) ? 'selected' : ''}>Frutiger Aero</option>
+                <option value="dark" ${s.theme === 'dark' || (!s.theme && s.aeroTheme === false) ? 'selected' : ''}>Dark Glass</option>
+                <option value="neon" ${s.theme === 'neon' ? 'selected' : ''}>Neon Horizon</option>
+                <option value="light" ${s.theme === 'light' ? 'selected' : ''}>Light Mode</option>
+              </select>
             </div>
 
             <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-              <button class="btn btn-ghost" id="btn-theme-toggle">Toggle Night/Morning Mode</button>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:0.85rem;color:var(--text-2);font-family:var(--font-display);">ACCENT COLOR</span>
                 <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                  <input type="color" id="accent-color-input" value="${s.accentColor || '#7c3aed'}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;">
-                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || '#7c3aed'};position:absolute;inset:2px;z-index:1;pointer-events:none;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 6px rgba(0,0,0,0.15);width:20px;height:20px;"></div>
+                  <input type="color" id="accent-color-input" value="${s.accentColor || (s.theme === 'neon' ? '#ff4a8d' : s.theme === 'aero' ? '#0ea5e9' : '#7c3aed')}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;">
+                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || (s.theme === 'neon' ? '#ff4a8d' : s.theme === 'aero' ? '#0ea5e9' : '#7c3aed')};position:absolute;inset:2px;z-index:1;pointer-events:none;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 6px rgba(0,0,0,0.15);width:20px;height:20px;"></div>
                 </div>
               </div>
+              <button class="btn btn-ghost btn-sm" id="btn-reset-accent" style="padding:4px 8px;font-size:0.7rem;">Reset to Theme Default</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block" id="ai-settings-container">
+          <h2>Intelligence Engine</h2>
+          <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Gemini API Key</div>
+                <div style="font-size:0.8rem;color:var(--text-3);">Configure your Google AI Studio Key for Intelligence features.</div>
+              </div>
+              <input type="password" class="form-input" id="input-gemini-key" value="${s.geminiApiKey || ''}" placeholder="AIzaSy..." style="width:250px;padding:8px 12px;font-size:0.85rem;">
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">AI Model</div>
+                <div style="font-size:0.8rem;color:var(--text-3);">Choose the Gemini model version. Flash is faster; Pro is smarter.</div>
+              </div>
+              <select class="form-input" id="select-gemini-model" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
+                <option value="gemini-2.5-flash" ${s.geminiModel === 'gemini-2.5-flash' || !s.geminiModel ? 'selected' : ''}>Gemini 2.5 Flash (Fast)</option>
+                <option value="gemini-1.5-pro" ${s.geminiModel === 'gemini-1.5-pro' ? 'selected' : ''}>Gemini 1.5 Pro (Analytical)</option>
+                <option value="gemini-2.5-pro" ${s.geminiModel === 'gemini-2.5-pro' ? 'selected' : ''}>Gemini 2.5 Pro (Powerful)</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Daily Limit Cap</div>
+                <div style="font-size:0.8rem;color:var(--text-3);">Protect against excessive API calls. Set to a higher value for Pro/Paid tiers.</div>
+              </div>
+              <select class="form-input" id="select-gemini-quota" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
+                <option value="20" ${s.geminiQuotaLimit === 20 || !s.geminiQuotaLimit ? 'selected' : ''}>20 calls (Default/Free)</option>
+                <option value="100" ${s.geminiQuotaLimit === 100 ? 'selected' : ''}>100 calls</option>
+                <option value="500" ${s.geminiQuotaLimit === 500 ? 'selected' : ''}>500 calls</option>
+                <option value="99999" ${s.geminiQuotaLimit === 99999 ? 'selected' : ''}>Unlimited (Paid Tier)</option>
+              </select>
+            </div>
+
+            <div style="font-size:0.85rem;color:var(--text-2);">
+              Daily Call Quota Usage: <span id="lbl-ai-quota" style="font-family:var(--font-mono);font-weight:bold;">${window.LM.aiEngine ? window.LM.aiEngine.getQuotaCount() : 0} / ${s.geminiQuotaLimit || 20}</span> calls today (rolling 24h)
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" id="btn-trigger-review" style="padding:4px 8px;font-size:0.7rem;border-color:var(--accent);color:var(--accent);">Trigger Test Midnight Review</button>
             </div>
           </div>
         </div>
@@ -259,15 +305,29 @@ window.LM.views.settings = (function () {
     });
 
     // Theme bindings
-    const toggleBtn = document.getElementById('btn-theme-toggle');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        const current = S.getSettings().theme || 'dark';
-        const next = current === 'dark' ? 'light' : 'dark';
+    const themeSelect = document.getElementById('select-theme');
+    if (themeSelect) {
+      themeSelect.addEventListener('change', (e) => {
+        const nextTheme = e.target.value;
         const st = S.getSettings();
-        st.theme = next;
+        st.theme = nextTheme;
+        // Keep aeroTheme sync for backwards compatibility
+        st.aeroTheme = nextTheme === 'aero';
         S.saveSettings(st);
-        window.LM.components.theme.applyTheme(next);
+        window.LM.components.theme.applyTheme(nextTheme);
+        window.LM.router.render(); // Redraw settings to update accent indicator
+      });
+    }
+
+    // Reset accent button
+    const resetAccentBtn = document.getElementById('btn-reset-accent');
+    if (resetAccentBtn) {
+      resetAccentBtn.addEventListener('click', () => {
+        const st = S.getSettings();
+        delete st.accentColor;
+        S.saveSettings(st);
+        window.LM.components.theme.applyTheme(st.theme || 'aero');
+        window.LM.router.render();
       });
     }
 
@@ -285,14 +345,56 @@ window.LM.views.settings = (function () {
       });
     }
 
-    // Aero theme toggle
-    const aeroCheck = document.getElementById('set-aero');
-    if (aeroCheck) {
-      aeroCheck.addEventListener('change', (e) => {
+    // Gemini key binding
+    const geminiInput = document.getElementById('input-gemini-key');
+    if (geminiInput) {
+      geminiInput.addEventListener('change', (e) => {
         const st = S.getSettings();
-        st.aeroTheme = e.target.checked;
+        st.geminiApiKey = e.target.value.trim();
         S.saveSettings(st);
-        window.LM.views.settings.applyAeroTheme(e.target.checked);
+      });
+    }
+
+    const modelSelect = document.getElementById('select-gemini-model');
+    if (modelSelect) {
+      modelSelect.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.geminiModel = e.target.value;
+        S.saveSettings(st);
+      });
+    }
+
+    const quotaSelect = document.getElementById('select-gemini-quota');
+    if (quotaSelect) {
+      quotaSelect.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.geminiQuotaLimit = parseInt(e.target.value);
+        S.saveSettings(st);
+        window.LM.router.render(); // Redraw view to update quota label
+      });
+    }
+
+    const triggerReviewBtn = document.getElementById('btn-trigger-review');
+    if (triggerReviewBtn) {
+      triggerReviewBtn.addEventListener('click', async () => {
+        const stSettings = S.getSettings();
+        if (!stSettings.geminiApiKey) {
+          alert("Please configure your Gemini API Key in Settings first.");
+          return;
+        }
+        if (!confirm("This will simulate yesterday's review using your Gemini API key. Proceed?")) return;
+        triggerReviewBtn.disabled = true;
+        triggerReviewBtn.textContent = 'Generating review...';
+        try {
+          const yesterdayStr = new Date(Date.now() - 86400000).toDateString();
+          await S.triggerMidnightReview(yesterdayStr);
+          alert("Midnight review generated! Go to Dashboard to view the Game Master's Review.");
+        } catch (err) {
+          alert(`Failed: ${err.message}`);
+        } finally {
+          triggerReviewBtn.disabled = false;
+          triggerReviewBtn.textContent = 'Trigger Test Midnight Review';
+        }
       });
     }
 

@@ -1,15 +1,17 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v31';
+const CACHE_NAME = 'lifemaxx-v33';
 const ASSETS = [
   './',
   './index.html',
   './css/main.css',
   './css/vision.css',
   './css/dark-override.css',
+  './css/neon-horizon.css',
   './css/home.css',
   './css/aero-bg-mobile.jpg',
   './js/formulas.js',
   './js/store.js',
+  './js/ai-engine.js',
   './js/quest-progress.js',
   './js/seed.js',
   './js/components/notifications.js',

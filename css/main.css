@@ -652,3 +652,8 @@
   color: var(--accent) !important;
 }
 
+/* Low Energy Quest Hider */
+.low-energy-active .quest-card[data-energy="High"] {
+  display: none !important;
+}
+

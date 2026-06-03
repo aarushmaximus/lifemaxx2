@@ -1,4 +1,4 @@
-// LIFEMAXX — Theme (dark/light + accent color)
+// LIFEMAXX — Theme (dark/light/neon/aero + accent color)
 window.LM.components.theme = (function () {
   const S = window.LM.store;
 
@@ -11,12 +11,26 @@ window.LM.components.theme = (function () {
     if (dot) dot.style.background = color;
   }
 
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    const iconDark = document.getElementById('icon-dark');
-    const iconLight = document.getElementById('icon-light');
-    if (iconDark) iconDark.style.display = theme === 'dark' ? '' : 'none';
-    if (iconLight) iconLight.style.display = theme === 'light' ? '' : 'none';
+  function applyTheme(themeName) {
+    document.documentElement.setAttribute('data-theme', themeName);
+    
+    // Maintain backward-compatibility for CSS selectors relying on data-aero-off
+    if (themeName === 'aero') {
+      document.documentElement.removeAttribute('data-aero-off');
+    } else {
+      document.documentElement.setAttribute('data-aero-off', 'true');
+    }
+
+    // Set corresponding theme accents automatically if none is custom set
+    const settings = S.getSettings();
+    if (!settings.accentColor) {
+      let defaultAccent = '#7c3aed';
+      if (themeName === 'aero') defaultAccent = '#0ea5e9';
+      if (themeName === 'neon') defaultAccent = '#ff4a8d';
+      applyAccent(defaultAccent);
+    } else {
+      applyAccent(settings.accentColor);
+    }
   }
 
   function hexToRgba(hex, alpha) {
@@ -28,9 +42,10 @@ window.LM.components.theme = (function () {
 
   function init() {
     const settings = S.getSettings();
-    applyTheme(settings.theme || 'dark');
-    applyAccent(settings.accentColor || '#7c3aed');
-
+    // Default to 'aero' if no theme is saved yet
+    const currentTheme = settings.theme || 'aero';
+    applyTheme(currentTheme);
+    applyAccent(settings.accentColor || (currentTheme === 'aero' ? '#0ea5e9' : currentTheme === 'neon' ? '#ff4a8d' : '#7c3aed'));
   }
 
   return { init, applyAccent, applyTheme };

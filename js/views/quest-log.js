@@ -3,7 +3,7 @@ window.LM.views.questLog = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
 
-  let activeTab = 'log'; // 'log' or 'timeline'
+  let activeTab = 'log'; // 'log', 'timeline', 'stats'
   let filters = { skill: 'all', status: 'active' }; // status: 'active', 'completed', 'missed', 'deleted', 'all'
   let expanded = new Set();
 
@@ -25,9 +25,14 @@ window.LM.views.questLog = (function () {
         <div class="view-navigation-tabs" style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
           <button class="nav-tab-btn ${activeTab === 'log' ? 'active-tab' : ''}" onclick="LM.views.questLog.setActiveTab('log')">Quest Log</button>
           <button class="nav-tab-btn ${activeTab === 'timeline' ? 'active-tab' : ''}" onclick="LM.views.questLog.setActiveTab('timeline')">XP Timeline</button>
+          <button class="nav-tab-btn ${activeTab === 'stats' ? 'active-tab' : ''}" onclick="LM.views.questLog.setActiveTab('stats')">Stats & Trends</button>
         </div>
 
-        ${activeTab === 'log' ? renderLogTab(quests, macros) : renderTimelineTab(xpLog, macros)}
+        ${activeTab === 'log' 
+          ? renderLogTab(quests, macros) 
+          : activeTab === 'timeline' 
+            ? renderTimelineTab(xpLog, macros) 
+            : renderStatsTab(macros)}
       </div>`;
   }
 
@@ -268,6 +273,243 @@ window.LM.views.questLog = (function () {
       S.deleteQuest(questId, isDestructive);
       LM.router.render();
     }
+  }
+
+  let worker = null;
+  let correlationsData = null;
+  let radarData = null;
+  let isWorkerCalculating = false;
+
+  function renderStatsTab(macros) {
+    setTimeout(runWorkerCalculation, 50);
+    return `
+      <div id="analytics-container" style="background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:20px; min-height:300px;">
+        <div style="text-align:center; padding:40px; font-family:var(--font-mono); color:var(--text-3);">
+          Initializing intelligence analysis engine...
+        </div>
+      </div>
+    `;
+  }
+
+  function runWorkerCalculation() {
+    if (isWorkerCalculating) return;
+    isWorkerCalculating = true;
+
+    const container = document.getElementById('analytics-container');
+    if (container) {
+      container.innerHTML = `<div style="text-align:center; padding:40px; font-family:var(--font-mono); color:var(--text-3);">Running statistical analysis...</div>`;
+    }
+
+    try {
+      if (!worker) {
+        worker = new Worker('js/analytics-worker.js');
+        worker.onmessage = function(e) {
+          correlationsData = e.data.correlations;
+          radarData = e.data.radarData;
+          isWorkerCalculating = false;
+          renderAnalyticsResults();
+        };
+      }
+      worker.postMessage({
+        type: 'calculate',
+        xplog: S.getXPLog('all'),
+        macros: S.getMacros()
+      });
+    } catch (err) {
+      console.warn("Web Worker creation failed, falling back to synchronous calculations on main thread:", err);
+      runMainThreadAnalyticsFallback();
+    }
+  }
+
+  function runMainThreadAnalyticsFallback() {
+    const xplog = S.getXPLog('all');
+    const macros = S.getMacros();
+    
+    // Group log by date
+    const daysData = {};
+    xplog.forEach(entry => {
+      const dateStr = new Date(entry.timestamp).toDateString();
+      if (!daysData[dateStr]) {
+        daysData[dateStr] = { focusMinutes: 0, xpGains: {} };
+        macros.forEach(m => { daysData[dateStr].xpGains[m.id] = 0; });
+      }
+      const isFocus = entry.reason && (entry.reason.includes('Timer') || entry.reason.includes('Tracker'));
+      if (isFocus) daysData[dateStr].focusMinutes += 20;
+      if (daysData[dateStr].xpGains[entry.macroId] !== undefined) {
+        daysData[dateStr].xpGains[entry.macroId] += Math.abs(entry.delta);
+      }
+    });
+
+    const dayList = Object.values(daysData);
+    const correlations = {};
+    macros.forEach(m => {
+      if (dayList.length < 2) {
+        correlations[m.id] = 0;
+        return;
+      }
+      const x = dayList.map(d => d.focusMinutes);
+      const y = dayList.map(d => d.xpGains[m.id] || 0);
+      
+      const n = x.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+      for (let i = 0; i < n; i++) {
+        sumX += x[i];
+        sumY += y[i];
+        sumXY += x[i] * y[i];
+        sumX2 += x[i] * x[i];
+        sumY2 += y[i] * y[i];
+      }
+      const num = n * sumXY - sumX * sumY;
+      const den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+      correlations[m.id] = den === 0 ? 0 : num / den;
+    });
+
+    // Radar Data
+    const cx = 150, cy = 150, maxR = 100, n = macros.length;
+    const axes = [];
+    const points = [];
+    if (n >= 3) {
+      const levels = macros.map(m => m.currentLevel || 1);
+      const maxL = Math.max(...levels, 1);
+      macros.forEach((m, i) => {
+        const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+        const level = m.currentLevel || 1;
+        const pct = Math.max(0.15, level / maxL);
+        const r = pct * maxR;
+        const ax = cx + maxR * Math.cos(angle);
+        const ay = cy + maxR * Math.sin(angle);
+        const px = cx + r * Math.cos(angle);
+        const py = cy + r * Math.sin(angle);
+        axes.push({
+          id: m.id,
+          name: m.name,
+          color: m.accentColor || '#7c3aed',
+          x1: cx,
+          y1: cy,
+          x2: ax,
+          y2: ay,
+          labelX: cx + (maxR + 24) * Math.cos(angle),
+          labelY: cy + (maxR + 12) * Math.sin(angle)
+        });
+        points.push(`${px},${py}`);
+      });
+    }
+
+    correlationsData = correlations;
+    radarData = { cx, cy, maxR, axes, polygonPoints: points.join(' ') };
+    isWorkerCalculating = false;
+    
+    setTimeout(renderAnalyticsResults, 100);
+  }
+
+  function renderAnalyticsResults() {
+    const container = document.getElementById('analytics-container');
+    if (!container) return;
+
+    if (!radarData || !correlationsData) {
+      container.innerHTML = `<div class="empty-state"><p>Insufficient data to calculate stats. Gaining more XP will populate these grids.</p></div>`;
+      return;
+    }
+
+    const { cx, cy, maxR, axes, polygonPoints } = radarData;
+    
+    const ringsHtml = [0.25, 0.50, 0.75, 1.0].map(pct => {
+      const r = pct * maxR;
+      const points = [];
+      const n = axes.length;
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+        const px = cx + r * Math.cos(angle);
+        const py = cy + r * Math.sin(angle);
+        points.push(`${px},${py}`);
+      }
+      return `<polygon points="${points.join(' ')}" fill="none" stroke="var(--border)" stroke-dasharray="2,4" stroke-width="1" />`;
+    }).join('');
+
+    const axesHtml = axes.map(a => {
+      return `
+        <line x1="${a.x1}" y1="${a.y1}" x2="${a.x2}" y2="${a.y2}" stroke="var(--border)" stroke-width="1" />
+        <text x="${a.labelX}" y="${a.labelY}" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="${a.color}" font-family="var(--font-display)" font-weight="bold">${a.name.toUpperCase()}</text>
+      `;
+    }).join('');
+
+    const svgHtml = `
+      <svg width="320" height="320" viewBox="0 0 300 300" style="display:block; margin: 0 auto; max-width: 100%;">
+        ${ringsHtml}
+        ${axesHtml}
+        ${polygonPoints ? `
+          <polygon points="${polygonPoints}" fill="rgba(255, 74, 141, 0.15)" stroke="var(--accent)" stroke-width="2.5" />
+          ${polygonPoints.split(' ').map(p => {
+            const [x, y] = p.split(',');
+            return `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="1.5" />`;
+          }).join('')}
+        ` : ''}
+      </svg>
+    `;
+
+    const sortedSkills = Object.entries(correlationsData)
+      .map(([id, val]) => {
+        const macro = S.getMacro(id);
+        return {
+          id,
+          name: macro ? macro.name : 'Unknown',
+          val,
+          color: macro ? macro.accentColor : 'var(--accent)'
+        };
+      })
+      .sort((a, b) => b.val - a.val);
+
+    const insightsHtml = sortedSkills.map(s => {
+      const valFixed = s.val.toFixed(2);
+      let relationship = 'No correlation';
+      let relColor = 'var(--text-3)';
+      if (s.val > 0.6) { relationship = 'Strong Positive'; relColor = 'var(--success)'; }
+      else if (s.val > 0.2) { relationship = 'Moderate Positive'; relColor = 'var(--accent)'; }
+      else if (s.val < -0.6) { relationship = 'Strong Negative'; relColor = 'var(--danger)'; }
+      else if (s.val < -0.2) { relationship = 'Moderate Negative'; relColor = 'var(--danger)'; }
+
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.01); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:${s.color};"></div>
+            <strong style="font-size:0.9rem; font-family:var(--font-display);">${s.name}</strong>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-family:var(--font-mono); font-size:0.85rem; font-weight:bold; color:${relColor};">${valFixed}</span>
+            <div style="font-size:0.68rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.04em;">${relationship}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="display:grid; grid-template-columns: 1fr; gap:24px; align-items:center;">
+        <div class="stats-grid-wrap" style="display:flex; flex-direction:column; gap:24px;">
+          <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:inset 0 0 10px rgba(0,0,0,0.2);">
+            <div style="text-align:center; font-family:var(--font-display); font-size:0.75rem; letter-spacing:0.08em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">Relative Macro Progression</div>
+            ${svgHtml}
+          </div>
+          <div style="display:flex; flex-direction:column;">
+            <h3 style="font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.08em; color:var(--accent); text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:6px;">Focus Correlations (Pearson's r)</h3>
+            <p style="font-size:0.76rem; color:var(--text-3); line-height:1.4; margin-bottom:14px;">
+              Correlates daily focus session length with specific XP gains. A coefficient closer to 1.00 indicates focus directly contributes to skill levels.
+            </p>
+            <div style="max-height: 260px; overflow-y: auto; padding-right:4px;">
+              ${insightsHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @media (min-width: 768px) {
+          .stats-grid-wrap {
+            display: grid !important;
+            grid-template-columns: 1.2fr 1.8fr !important;
+            gap: 24px;
+          }
+        }
+      </style>
+    `;
   }
 
   function init() {
