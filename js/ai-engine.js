@@ -55,10 +55,9 @@ window.LM.aiEngine = (function () {
 
     const settings = S.getSettings();
     const apiKey = settings.geminiApiKey;
-    let model = settings.geminiModel || 'gemini-1.5-flash-latest';
-    // Fallback for older saved settings
-    if (model === 'gemini-1.5-pro') model = 'gemini-1.5-pro-latest';
-    if (model === 'gemini-1.5-flash') model = 'gemini-1.5-flash-latest';
+    let model = settings.geminiModel || 'gemini-2.5-flash';
+    // Fallback for older saved settings (1.5 models are deprecated/404ing)
+    if (model.includes('1.5')) model = 'gemini-2.5-flash';
     const limit = settings.geminiQuotaLimit || 20;
     if (!apiKey) {
       return { error: "Gemini API key is not configured in Settings." };

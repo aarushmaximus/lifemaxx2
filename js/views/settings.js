@@ -140,10 +140,8 @@ window.LM.views.settings = (function () {
                 <div style="font-size:0.8rem;color:var(--text-3);">Choose the Gemini model version. Flash is faster; Pro is smarter.</div>
               </div>
               <select class="form-input" id="select-gemini-model" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
-                <option value="gemini-1.5-flash-latest" ${s.geminiModel === 'gemini-1.5-flash-latest' || s.geminiModel === 'gemini-1.5-flash' || !s.geminiModel ? 'selected' : ''}>Gemini 1.5 Flash (Recommended/High Availability)</option>
-                <option value="gemini-2.5-flash" ${s.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (Latest/Fast)</option>
-                <option value="gemini-1.5-pro-latest" ${s.geminiModel === 'gemini-1.5-pro-latest' || s.geminiModel === 'gemini-1.5-pro' ? 'selected' : ''}>Gemini 1.5 Pro (Analytical/Stable)</option>
-                <option value="gemini-2.5-pro" ${s.geminiModel === 'gemini-2.5-pro' ? 'selected' : ''}>Gemini 2.5 Pro (Advanced Preview)</option>
+                <option value="gemini-2.5-flash" ${s.geminiModel === 'gemini-2.5-flash' || !s.geminiModel || (s.geminiModel && s.geminiModel.includes('1.5')) ? 'selected' : ''}>Gemini 2.5 Flash (Recommended/Fast)</option>
+                <option value="gemini-2.5-pro" ${s.geminiModel === 'gemini-2.5-pro' ? 'selected' : ''}>Gemini 2.5 Pro (Advanced/Smarter)</option>
               </select>
             </div>
 
