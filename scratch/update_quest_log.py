@@ -1,4 +1,9 @@
-window.LM.views.questLog = (function () {
+import re
+
+with open('js/views/quest-log.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_content = """window.LM.views.questLog = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
 
@@ -198,9 +203,9 @@ window.LM.views.questLog = (function () {
         const totalXP = (quest.targetSkills || []).reduce((sum, t) => sum + t.xpAmount, 0);
         const earnedXP = Math.round(totalXP * pct / 100);
         const ok = confirm(
-          `⚠️ Partial Progress Warning\n\n` +
-          `"${quest.name}" is only ${pct}% complete.\n\n` +
-          `You will receive ${earnedXP} XP instead of ${totalXP} XP (${pct}% of the full reward).\n\n` +
+          `⚠️ Partial Progress Warning\\n\\n` +
+          `"${quest.name}" is only ${pct}% complete.\\n\\n` +
+          `You will receive ${earnedXP} XP instead of ${totalXP} XP (${pct}% of the full reward).\\n\\n` +
           `Complete anyway?`
         );
         if (!ok) return;
@@ -235,4 +240,9 @@ window.LM.views.questLog = (function () {
   function init() { }
 
   return { render, init, setSkillFilter, setStatusFilter, completeQuest, deleteQuest };
-})();
+})();"""
+
+with open('js/views/quest-log.js', 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print("Updated quest-log.js")
