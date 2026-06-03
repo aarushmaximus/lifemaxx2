@@ -1,4 +1,9 @@
-window.LM.views.coach = (function () {
+import re
+
+with open('js/views/coach.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_content = """window.LM.views.coach = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
   const N = window.LM.components.notifications;
@@ -25,28 +30,28 @@ window.LM.views.coach = (function () {
     const skillsListStr = macros.map(m => {
       const micros = (m.microSkills || []).map(ms => `(ID: ${ms.id}, Name: ${ms.name})`).join(', ');
       return `Macro Skill ID: ${m.id}, Name: ${m.name}. Micro skills: [${micros}]`;
-    }).join('\n');
+    }).join('\\n');
 
     const prompt = 
       `Generate today's morning briefing and 2 to 3 recommended quests. ` +
       `The user's energy level is: ${energyLevel}. ` +
-      `Here is the list of available skills in their game profile:\n${skillsListStr}\n\n` +
-      `You MUST respond in JSON format matching this schema EXACTLY:\n` +
-      `{\n` +
-      `  "fletcher_message": "A harsh verbal lashing and instructions for today in character (Fletcher)",\n` +
-      `  "quests": [\n` +
-      `    {\n` +
-      `      "name": "Short Quest Title",\n` +
-      `      "description": "Direct actionable instructions",\n` +
-      `      "type": "habit" or "project",\n` +
-      `      "targetSkills": [\n` +
-      `        { "macroSkillId": "MATCHING_MACRO_ID", "microSkillId": "MATCHING_MICRO_ID_OR_NULL", "xpAmount": 50 }\n` +
-      `      ],\n` +
-      `      "scheduledDays": [0,1,2,3,4,5,6],\n` +
-      `      "status": "active"\n` +
-      `    }\n` +
-      `  ]\n` +
-      `}\n\n` +
+      `Here is the list of available skills in their game profile:\\n${skillsListStr}\\n\\n` +
+      `You MUST respond in JSON format matching this schema EXACTLY:\\n` +
+      `{\\n` +
+      `  "fletcher_message": "A harsh verbal lashing and instructions for today in character (Fletcher)",\\n` +
+      `  "quests": [\\n` +
+      `    {\\n` +
+      `      "name": "Short Quest Title",\\n` +
+      `      "description": "Direct actionable instructions",\\n` +
+      `      "type": "habit" or "project",\\n` +
+      `      "targetSkills": [\\n` +
+      `        { "macroSkillId": "MATCHING_MACRO_ID", "microSkillId": "MATCHING_MICRO_ID_OR_NULL", "xpAmount": 50 }\\n` +
+      `      ],\\n` +
+      `      "scheduledDays": [0,1,2,3,4,5,6],\\n` +
+      `      "status": "active"\\n` +
+      `    }\\n` +
+      `  ]\\n` +
+      `}\\n\\n` +
       `Ensure you pick VALID ids from the provided skills list. The xpAmount for each quest should be between 20 and 150 depending on difficulty.`;
 
     addSystemMessage("Fletcher is drafting your orders...", true);
@@ -110,9 +115,9 @@ window.LM.views.coach = (function () {
     const missedSummary = recentMissed.map(q => `${q.name} (Type: ${q.type})`).join(', ') || 'None';
 
     const prompt = 
-      `Analyze the user's progress log for the past 7 days.\n` +
-      `Completed quests: ${completedSummary}\n` +
-      `Missed/Failed quests: ${missedSummary}\n\n` +
+      `Analyze the user's progress log for the past 7 days.\\n` +
+      `Completed quests: ${completedSummary}\\n` +
+      `Missed/Failed quests: ${missedSummary}\\n\\n` +
       `Provide a brutal, harsh critique of their performance. Address them as a recruit. ` +
       `Highlight any slacking. Then, give exactly 3 concrete, high-intensity recommendations they must implement starting immediately.`;
 
@@ -146,10 +151,10 @@ window.LM.views.coach = (function () {
     renderHistory();
 
     const contextMessages = chatHistory.slice(-6).filter(m => m.sender !== 'system');
-    const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\n');
+    const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\\n');
 
     const prompt = 
-      `Here is the ongoing dialogue conversation context:\n${conversationContext}\n\n` +
+      `Here is the ongoing dialogue conversation context:\\n${conversationContext}\\n\\n` +
       `Fletcher, respond to the user's latest query brutally and in-character. Keep it under 4 sentences.`;
 
     const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
@@ -170,12 +175,12 @@ window.LM.views.coach = (function () {
 
   function cleanJSONString(str) {
     let cleaned = str.trim();
-    if (cleaned.startsWith("```json")) {
+    if (cleaned.startsWith("\`\`\`json")) {
       cleaned = cleaned.substring(7);
-    } else if (cleaned.startsWith("```")) {
+    } else if (cleaned.startsWith("\`\`\`")) {
       cleaned = cleaned.substring(3);
     }
-    if (cleaned.endsWith("```")) {
+    if (cleaned.endsWith("\`\`\`")) {
       cleaned = cleaned.substring(0, cleaned.length - 3);
     }
     return cleaned.trim();
@@ -211,7 +216,7 @@ window.LM.views.coach = (function () {
               <span class="material-symbols-outlined text-6xl">terminal</span>
             </div>
             <div class="relative z-10">
-              <p class="font-headline-md text-primary leading-tight mb-6 tracking-tight uppercase">"${m.text.replace(/\n/g, '<br>')}"</p>
+              <p class="font-headline-md text-primary leading-tight mb-6 tracking-tight uppercase">"${m.text.replace(/\\n/g, '<br>')}"</p>
               <div class="flex gap-4 flex-col sm:flex-row">
                 <button id="btn-stitch-brief" class="bg-primary text-black px-6 py-3 font-label-sm tracking-widest font-bold flex items-center gap-2 hover:bg-white transition-all active:scale-95 glitch-hover w-full justify-center shadow-[0_0_15px_rgba(0,229,255,0.4)]">
                   <span class="material-symbols-outlined text-sm text-black">wb_sunny</span>
@@ -232,7 +237,7 @@ window.LM.views.coach = (function () {
         return `
           <div class="flex justify-start mb-6">
             <div class="fletcher-panel border-l-4 border-primary bg-surface-container/70 backdrop-blur-xl px-6 py-4 max-w-[85%] py-6 shadow-[0_0_15px_rgba(0,229,255,0.05)]">
-              <p class="font-body-md text-primary tracking-wide uppercase">${m.text.replace(/\n/g, '<br>')}</p>
+              <p class="font-body-md text-primary tracking-wide uppercase">${m.text.replace(/\\n/g, '<br>')}</p>
               <span class="text-[10px] font-label-sm text-primary opacity-40 mt-2 block">${getTimeStr()}</span>
             </div>
           </div>
@@ -241,7 +246,7 @@ window.LM.views.coach = (function () {
         return `
           <div class="flex justify-end mb-6">
             <div class="user-panel border-l-4 border-secondary bg-surface-container/70 backdrop-blur-xl px-6 py-4 max-w-[85%] text-right shadow-[0_0_15px_rgba(255,45,120,0.05)]">
-              <p class="font-body-md text-secondary tracking-wide">"${m.text.replace(/\n/g, '<br>')}"</p>
+              <p class="font-body-md text-secondary tracking-wide">"${m.text.replace(/\\n/g, '<br>')}"</p>
               <span class="text-[10px] font-label-sm text-secondary opacity-40 mt-2 block">${getTimeStr()}</span>
             </div>
           </div>
@@ -357,4 +362,9 @@ window.LM.views.coach = (function () {
   }
 
   return { render, init };
-})();
+})();"""
+
+with open('js/views/coach.js', 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print("Updated coach.js")
