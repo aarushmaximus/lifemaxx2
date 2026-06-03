@@ -373,3 +373,5 @@ html[data-theme="neon"] .pi-slider::-webkit-slider-thumb {
     box-shadow: none !important;
   }
 }
+
+html[data-theme="neon"] { --bg-session: linear-gradient(135deg, rgba(32, 6, 50, 0.95), rgba(15, 5, 20, 0.98)); }

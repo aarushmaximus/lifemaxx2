@@ -270,3 +270,5 @@ body {
       url('aero-bg-mobile.jpg') center center / cover no-repeat fixed !important;
   }
 }
+
+[data-theme="light"] { --bg-session: linear-gradient(135deg, rgba(250, 250, 255, 0.95), rgba(240, 240, 245, 0.98)); }

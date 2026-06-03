@@ -175,3 +175,5 @@ html[data-aero-off="true"] ::-webkit-scrollbar-thumb:hover { background: var(--a
   box-shadow: 0 0 8px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.3);
 }
 .aero-toggle input:checked + .aero-toggle-track::after { transform: translateX(20px); }
+
+html[data-theme="dark"] { --bg-session: linear-gradient(135deg, rgba(20, 20, 25, 0.95), rgba(10, 10, 15, 0.98)); }
