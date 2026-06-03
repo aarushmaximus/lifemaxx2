@@ -1,4 +1,3 @@
-// LIFEMAXX — Dashboard View (3-column layout)
 window.LM.views.dashboard = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
@@ -6,101 +5,86 @@ window.LM.views.dashboard = (function () {
 
   let activeStatusFilter = 'all'; // 'all', 'active', 'missed'
   let activeSkillFilter = 'all';
+  let activeMacroId = null; // for the expanded macro skill widget
 
   const isWithinTimeWindow = F.isWithinTimeWindow;
 
-  function render() {
-    const macros = S.getMacros();
-    const settings = S.getSettings();
-    const wheelSkillId = settings.wheelSkillId || 'overall';
-    const currentEnergy = localStorage.getItem('lm_user_energy') || 'High';
-    const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
-    const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
-    let barData = getBarData(wheelSkillId, macros);
+  function getPlayerRank(level) {
+    const tiers = [
+      { name: 'RECRUIT', min: 0 },
+      { name: 'INITIATE', min: 10 },
+      { name: 'VANGUARD', min: 20 },
+      { name: 'OPERATOR', min: 30 },
+      { name: 'ELITE OPERATOR', min: 40 },
+      { name: 'CHAMPION', min: 50 },
+      { name: 'LEGEND', min: 70 },
+      { name: 'MYTHIC MASTER', min: 90 }
+    ];
+    let activeTier = tiers[0];
+    let nextTier = tiers[1] || tiers[0];
+    for (let i = 0; i < tiers.length; i++) {
+      if (level >= tiers[i].min) {
+        activeTier = tiers[i];
+        nextTier = tiers[i+1] || { name: 'MAXED OUT', min: 100 };
+      }
+    }
+    const offset = level - activeTier.min;
+    const sub = offset < 5 ? 'I' : 'II';
+    return {
+      title: `${activeTier.name} ${sub}`,
+      nextTitle: nextTier.name
+    };
+  }
 
-    return `
-      <div class="dashboard-grid">
-        <!-- CENTER COLUMN -->
-        <div class="dash-center">
-          ${cachedReview ? `
-            <div class="section-block" style="border: 1px solid var(--accent); background: rgba(255, 74, 141, 0.02); margin-bottom: 16px; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; color: var(--accent); font-weight: bold;">📢 GAME MASTER'S DAILY REVIEW</span>
-                <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3);">${cachedReview.date}</span>
-              </div>
-              <p style="font-size: 0.88rem; line-height: 1.5; color: var(--text-1); font-style: italic;">"${cachedReview.text}"</p>
-            </div>
-          ` : ''}
-          <!-- Skill selector + XP bar -->
-          <div class="skill-bar-panel">
-            <div class="skill-bar-header">
-              <select id="dash-skill-sel" class="skill-bar-select">
-                <option value="overall" ${wheelSkillId==='overall'?'selected':''}>Overall Level</option>
-                ${macros.map(m=>`<option value="${m.id}" ${wheelSkillId===m.id?'selected':''}>${m.name}</option>`).join('')}
-              </select>
-              <span class="skill-bar-level" id="dash-level-label">Lvl <strong>${barData.level}</strong></span>
-            </div>
-            <div class="xp-bar-wrap">
-              <div class="xp-bar-track">
-                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}"></div>
-              </div>
-              <span class="xp-bar-label" id="dash-xp-label">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP</span>
-            </div>
-            
-            <!-- Status Effects -->
-            ${activeEffects.length > 0 ? `
-              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
-                <span style="font-size:0.7rem;font-family:var(--font-mono);color:var(--text-3);text-transform:uppercase;">Status:</span>
-                ${activeEffects.map(e => {
-                  const color = e.type === 'buff' ? 'var(--success)' : 'var(--danger)';
-                  const bg = e.type === 'buff' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
-                  const hoursLeft = Math.max(0.1, (e.expiresAt - Date.now()) / 3600000).toFixed(1);
-                  return `<span class="quest-type-badge" style="background:${bg};color:${color};border:1px solid ${color}44;font-family:var(--font-mono);font-size:0.75rem;" title="${e.name} multiplier: x${e.multiplier} (${hoursLeft}h left)">${e.name.toUpperCase()} (x${e.multiplier})</span>`;
-                }).join('')}
-              </div>
-            ` : ''}
-          </div>
+  function getDailyStreak(quests, xpLog) {
+    const dates = new Set();
+    quests.forEach(q => {
+      if (q.status === 'completed' && q.completedAt) {
+        dates.add(new Date(q.completedAt).toDateString());
+      }
+    });
+    xpLog.forEach(l => {
+      if (l.timestamp) {
+        dates.add(new Date(l.timestamp).toDateString());
+      }
+    });
 
-          <!-- Quest Filters -->
-          <div class="quest-filter-bar">
-            <div class="filter-chips" id="status-filter-chips">
-              ${['all', 'active', 'missed'].map(f =>
-                `<button class="chip ${activeStatusFilter===f?'chip-active':''}" data-filter="${f}">
-                  ${f==='all'?'All Quests':f==='active'?'Active':'Missed'}
-                </button>`
-              ).join('')}
-            </div>
+    const sortedDates = Array.from(dates).map(d => new Date(d)).sort((a, b) => b - a);
+    if (sortedDates.length === 0) return 0;
 
-            <!-- Energy Selection Widget -->
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:0.7rem;font-family:var(--font-mono);color:var(--text-3);text-transform:uppercase;">Energy:</span>
-              <select id="dash-energy-sel" class="chip" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);padding:4px 8px;font-size:0.75rem;cursor:pointer;border-radius:100px;">
-                <option value="High" ${currentEnergy === 'High' ? 'selected' : ''}>High ⚡</option>
-                <option value="Medium" ${currentEnergy === 'Medium' ? 'selected' : ''}>Med 🔋</option>
-                <option value="Low" ${currentEnergy === 'Low' ? 'selected' : ''}>Low 💤</option>
-              </select>
-            </div>
+    let streak = 0;
+    let current = new Date();
+    current.setHours(0, 0, 0, 0);
 
-            <select class="chip skill-chip-sel" id="skill-filter-sel">
-              <option value="all">All Skills</option>
-              ${macros.map(m=>`<option value="${m.id}" ${activeSkillFilter===m.id?'selected':''}>${m.name}</option>`).join('')}
-            </select>
-          </div>
+    const latest = sortedDates[0];
+    latest.setHours(0, 0, 0, 0);
 
-          <!-- Quest Cards Grid -->
-          <div class="quest-grid ${currentEnergy === 'Low' ? 'low-energy-active' : ''}" id="quest-grid">
-            ${renderQuestCards(macros)}
-          </div>
-        </div>
+    const diffMs = current - latest;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-        <!-- RIGHT COLUMN — Wheel -->
-        <div class="dash-right">
-          <div class="wheel-panel">
-            <p class="wheel-hint-top">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
-            ${W.renderHTML()}
-          </div>
-        </div>
-      </div>`;
+    if (diffDays > 1) {
+      return 0; // broken
+    }
+
+    let checkDate = new Date(latest);
+    for (let i = 0; i < sortedDates.length; i++) {
+      const d = sortedDates[i];
+      d.setHours(0, 0, 0, 0);
+
+      const diff = Math.round((checkDate - d) / (1000 * 60 * 60 * 24));
+      if (diff === 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (diff === 1) {
+        streak++;
+        checkDate = new Date(d);
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 
   function getBarData(skillId, macros) {
@@ -113,26 +97,36 @@ window.LM.views.dashboard = (function () {
     return { level:m.currentLevel||0, color:m.accentColor, into:F.xpIntoCurrentLevel(m.currentXP||0,m), req:F.xpRequiredForNextLevel(m.currentXP||0,m), pct:F.progressPercent(m.currentXP||0,m) };
   }
 
-  function renderQuestCards(macros) {
-    const quests = S.getQuests().filter(q => {
+  function renderQuestCards(macros, limit = null, upcoming = false) {
+    const allQuests = S.getQuests();
+    const quests = allQuests.filter(q => {
       const tSkills = q.targetSkills || [];
       if (q.hiddenFromDashboard) return false;
       if (q.status === 'completed' && !q.isReadyToClaim) return false;
       
-      // Status Filter
-      if (activeStatusFilter === 'active' && q.status !== 'active') return false;
-      if (activeStatusFilter === 'missed' && q.status !== 'missed') return false;
-      
-      // Skill Filter
-      if (activeSkillFilter !== 'all' && !tSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
-      return true;
+      const isLocked = q.status === 'active' && !isWithinTimeWindow(q.timeWindow);
+
+      if (upcoming) {
+        // Only return locked / upcoming / missed quests
+        return isLocked || q.status === 'missed';
+      } else {
+        // Return active and unlockable quests
+        if (isLocked || q.status === 'missed') return false;
+        if (activeStatusFilter === 'active' && q.status !== 'active') return false;
+        if (activeSkillFilter !== 'all' && !tSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
+        return true;
+      }
     });
 
-    if (!quests.length) return `<div class="empty-state"><p>No active quests today. Lock in some presets!</p></div>`;
+    const displayQuests = limit ? quests.slice(0, limit) : quests;
+
+    if (!displayQuests.length) {
+      return `<div class="empty-state"><p>${upcoming ? 'No locked or missed quests.' : 'No active quests. Let\'s get to work!'}</p></div>`;
+    }
 
     const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-    return quests.map(q => {
+    return displayQuests.map(q => {
       const isMissed = q.status === 'missed';
       const withinWindow = isWithinTimeWindow(q.timeWindow);
       const isLocked = q.status === 'active' && !withinWindow;
@@ -151,11 +145,8 @@ window.LM.views.dashboard = (function () {
         } else {
           timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
         }
-      } else if (q.expiresAt && q.status === 'missed') {
-        timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
       }
 
-      // Time Window label
       let windowBadge = '';
       if (q.timeWindow) {
         windowBadge = `<span class="quest-type-badge" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--border);">${q.timeWindow.start} - ${q.timeWindow.end}</span>`;
@@ -165,9 +156,9 @@ window.LM.views.dashboard = (function () {
 
       let statusBadge = '';
       if (isMissed) {
-        statusBadge = `<span class="quest-type-badge" style="background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.3);">MISSED</span>`;
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(255,45,120,0.15);color:var(--danger);border:1px solid rgba(255,45,120,0.3);">MISSED</span>`;
       } else if (isLocked) {
-        statusBadge = `<span class="quest-type-badge" style="background:rgba(120,120,140,0.15);color:var(--text-3);border:1px solid var(--border);">LOCKED</span>`;
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(120,120,140,0.15);color:var(--text-3);border:1px solid var(--border);">LOCKED 🔒</span>`;
       }
 
       const energyCost = q.energyCost || 'Medium';
@@ -175,8 +166,8 @@ window.LM.views.dashboard = (function () {
       let energyBadge = `<span class="quest-type-badge" title="Energy: ${energyCost}" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);">${energyIcon} ${energyCost}</span>`;
 
       let cardClass = '';
-      if (isMissed) cardClass = 'quest-card-missed';
-      else if (isLocked) cardClass = 'quest-card-disabled';
+      if (isMissed) cardClass = 'quest-card-deleted-status';
+      else if (isLocked) cardClass = 'quest-card-deleted-status';
 
       return `
         <div class="quest-card ${cardClass}" draggable="${(!isLocked && !isMissed) ? 'true' : 'false'}" data-quest-id="${q.id}" data-energy="${energyCost}"
@@ -198,7 +189,7 @@ window.LM.views.dashboard = (function () {
           
           <div class="quest-card-footer">
             ${isMissed 
-              ? `<button class="btn-complete" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--text-3);cursor:not-allowed;" disabled>Missed (Click ✕ to delete)</button>`
+              ? `<button class="btn-complete" style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);color:var(--text-3);cursor:not-allowed;" disabled>Missed (Click ✕ to delete)</button>`
               : isLocked
                 ? `<button class="btn-complete" style="background:var(--bg-raised);border:1px solid var(--border);color:var(--text-3);cursor:not-allowed;" disabled>Locked (Available ${q.timeWindow.start} - ${q.timeWindow.end})</button>`
                 : (S.getSettings().dragToRegister !== false && q.isReadyToClaim)
@@ -213,25 +204,229 @@ window.LM.views.dashboard = (function () {
     }).join('');
   }
 
+  function render() {
+    const macros = S.getMacros();
+    const settings = S.getSettings();
+    const wheelSkillId = settings.wheelSkillId || 'overall';
+    const currentEnergy = localStorage.getItem('lm_user_energy') || 'High';
+    const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
+    const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
+    let barData = getBarData(wheelSkillId, macros);
+
+    // Dynamic Streak & Rank
+    const xpLog = S.getXPLog();
+    const streak = getDailyStreak(S.getQuests(), xpLog);
+    const overall = S.getOverall();
+    const rankInfo = getPlayerRank(overall.currentLevel || 0);
+
+    // Selected macro skill for detail card
+    if (!activeMacroId && macros.length > 0) {
+      activeMacroId = macros[0].id;
+    }
+    const activeMacro = macros.find(m => m.id === activeMacroId) || macros[0];
+
+    // Find next session (upcoming habit or active project)
+    const activeQuests = S.getQuests().filter(q => q.status === 'active' && isWithinTimeWindow(q.timeWindow));
+    const nextSession = activeQuests[0];
+
+    return `
+      <div class="dashboard-grid">
+        <!-- CENTER COLUMN -->
+        <div class="dash-center">
+          
+          <!-- Mid-review Notification banner if active -->
+          ${cachedReview ? `
+            <div class="section-block" style="border: 1px solid var(--accent); background: rgba(255, 45, 120, 0.02); margin-bottom: 8px; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; color: var(--accent); font-weight: bold;">📢 DAILY REVIEW</span>
+                <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3);">${cachedReview.date}</span>
+              </div>
+              <p style="font-size: 0.88rem; line-height: 1.5; color: var(--text-1); font-style: italic;">"${cachedReview.text}"</p>
+            </div>
+          ` : ''}
+
+          <!-- Operator Status Card -->
+          <div class="operator-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="operator-title">${rankInfo.title}</span>
+              <span style="font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--accent);">LEVEL ${overall.currentLevel || 0}</span>
+            </div>
+            
+            <div class="xp-bar-wrap" style="margin: 8px 0;">
+              <div class="xp-bar-track" style="height: 6px;">
+                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}"></div>
+              </div>
+            </div>
+
+            <div class="operator-stats">
+              <span>RANK: ${rankInfo.title}</span>
+              <span id="dash-xp-label">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
+            </div>
+            <div style="font-family: var(--font-display); font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; margin-top: -4px;">
+              NEXT LEVEL: ${rankInfo.nextTitle}
+            </div>
+          </div>
+
+          <!-- Streak & Active Effects -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="streak-banner">
+              <span class="streak-number">🔥 ${streak}</span>
+              <div style="display:flex; flex-direction:column;">
+                <span class="streak-label">Day Win Streak</span>
+                <span style="font-size: 0.72rem; color: var(--text-2);">Complete quests daily to grow</span>
+              </div>
+            </div>
+
+            <!-- Active Status Effects -->
+            <div class="flat-card" style="display:flex; flex-direction:column; justify-content:center; gap:6px;">
+              <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase;">Active Buffs/Debuffs</span>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${activeEffects.length > 0 ? activeEffects.map(e => {
+                  const color = e.type === 'buff' ? 'var(--success)' : 'var(--danger)';
+                  const bg = e.type === 'buff' ? 'rgba(16,185,129,0.1)' : 'rgba(255,45,120,0.1)';
+                  return `<span class="quest-type-badge" style="background:${bg};color:${color};border:1px solid ${color}33;">${e.name.toUpperCase()} (x${e.multiplier})</span>`;
+                }).join('') : `<span style="font-size:0.8rem; color:var(--text-3);">No active status modifiers.</span>`}
+              </div>
+            </div>
+          </div>
+
+          <!-- Default macro skill expanded showing its micro skills -->
+          ${activeMacro ? `
+            <div class="flat-card flat-card-cyan" style="display:flex; flex-direction:column; gap:16px;">
+              <div>
+                <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase; display:block; margin-bottom:8px;">Macro-to-Micro Skill Progression</span>
+                
+                <!-- Horizontal Tab Toggles for Macro Skills -->
+                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px;">
+                  ${macros.map(m => `
+                    <button class="chip ${m.id === activeMacroId ? 'chip-active' : ''}" style="border-color:${m.accentColor}44; white-space:nowrap;" onclick="LM.views.dashboard.selectMacro('${m.id}')">
+                      ${m.name} (Lv ${m.currentLevel || 0})
+                    </button>
+                  `).join('')}
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight:700; color:#fff;">${activeMacro.name}</h3>
+                  <span style="font-family: var(--font-display); font-size: 0.82rem; color: var(--accent); font-weight:bold;">LEVEL ${activeMacro.currentLevel || 0}</span>
+                </div>
+              </div>
+
+              <!-- Micro Skills List -->
+              <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
+                ${(activeMacro.microSkills || []).length > 0 ? (activeMacro.microSkills || []).map(ms => {
+                  const msPct = F.progressPercent(ms.currentXP || 0, ms);
+                  const msInto = F.xpIntoCurrentLevel(ms.currentXP || 0, ms);
+                  const msReq = F.xpRequiredForNextLevel(ms.currentXP || 0, ms);
+                  return `
+                    <div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:0.85rem; font-weight:600; color:var(--text-1);">${ms.name}</span>
+                        <span style="font-size:0.75rem; color:var(--text-2);">Lvl ${ms.currentLevel || 0}</span>
+                      </div>
+                      <div class="xp-bar-wrap">
+                        <div class="xp-bar-track" style="height:4px; background: rgba(255,255,255,0.04);">
+                          <div class="xp-bar-fill" style="width:${msPct}%; background:${activeMacro.accentColor}; color:${activeMacro.accentColor};"></div>
+                        </div>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-3); margin-top:3px;">
+                        <span>${F.formatXP(msInto)} / ${F.formatXP(msReq)} XP</span>
+                        <span>${Math.round(msPct)}%</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('') : `<div style="text-align:center; padding:10px; font-size:0.8rem; color:var(--text-3);">No micro skills defined for ${activeMacro.name}.</div>`}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- NEXT SESSION workout/quest card with background image -->
+          <div class="session-card">
+            <span style="font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--secondary); font-weight: bold; text-transform: uppercase;">
+              NEXT SCHEDULED SESSION
+            </span>
+            <h2 style="font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 4px 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+              ${nextSession ? nextSession.name : 'NO SESSIONS ACTIVE'}
+            </h2>
+            <p style="font-size: 0.82rem; color: var(--text-2); margin: 0; line-height: 1.4;">
+              ${nextSession ? (nextSession.description || 'Lock in and execute this objective to claim your XP.') : 'Spawn daily quests from presets or ask Fletcher to build your agenda.'}
+            </p>
+            ${nextSession ? `
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button class="btn btn-primary btn-sm" onclick="LM.views.dashboard.completeQuest('${nextSession.id}')">COMPLETE SESSION</button>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- ACTIVE QUESTS (Top 3) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; color: var(--text-1);">
+                ACTIVE OBJECTIVES (TOP 3)
+              </h2>
+              
+              <!-- Quick Energy & Skill selectors -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <select id="dash-energy-sel" class="chip" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);padding:3px 8px;font-size:0.72rem;cursor:pointer;border-radius:100px;">
+                  <option value="High" ${currentEnergy === 'High' ? 'selected' : ''}>High ⚡</option>
+                  <option value="Medium" ${currentEnergy === 'Medium' ? 'selected' : ''}>Med 🔋</option>
+                  <option value="Low" ${currentEnergy === 'Low' ? 'selected' : ''}>Low 💤</option>
+                </select>
+                <select class="chip skill-chip-sel" id="skill-filter-sel" style="padding:3px 8px; font-size:0.72rem;">
+                  <option value="all">All Skills</option>
+                  ${macros.map(m=>`<option value="${m.id}" ${activeSkillFilter===m.id?'selected':''}>${m.name}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Active Cards -->
+            <div class="quest-grid ${currentEnergy === 'Low' ? 'low-energy-active' : ''}" id="quest-grid">
+              ${renderQuestCards(macros, 3, false)}
+            </div>
+          </div>
+
+          <!-- LOCKED / UPCOMING QUESTS (At the bottom, greyed out) -->
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
+              UPCOMING / LOCKED OBJECTIVES
+            </h2>
+            <div class="quest-grid" id="upcoming-quest-grid">
+              ${renderQuestCards(macros, 3, true)}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN — Wheel (Keep circular wheel exact same) -->
+        <div class="dash-right">
+          <div class="wheel-panel">
+            <p class="wheel-hint-top">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
+            ${W.renderHTML()}
+          </div>
+        </div>
+
+        <!-- Floating Action Buttons at bottom right -->
+        <button class="coach-float-btn" onclick="window.LM.router.navigate('#coach')" title="Chat with Coach Fletcher">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </button>
+
+        <button class="coach-float-btn" id="btn-dashboard-add-quest" style="bottom: 172px; background: var(--accent); color: #0d0d1a; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);" title="Create New Quest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </div>`;
+  }
+
   function init() {
-    // Wheel
+    // Wheel Component Init
     W.init();
 
-    // Skill selector (syncs with wheel)
-    document.getElementById('dash-skill-sel')?.addEventListener('change', (e) => {
-      const skillId = e.target.value;
-      const s = S.getSettings(); s.wheelSkillId = skillId; S.saveSettings(s);
-      updateBar(skillId);
-      W.update(0);
-    });
-
-    // Status filter
-    document.getElementById('status-filter-chips')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.chip');
-      if (!btn) return;
-      activeStatusFilter = btn.dataset.filter || 'all';
-      refreshCards();
-      document.querySelectorAll('#status-filter-chips .chip').forEach(c => c.classList.toggle('chip-active', c.dataset.filter===activeStatusFilter));
+    // Macro tabs selector
+    document.querySelectorAll('.dashboard-grid .chip').forEach(el => {
+      // Inline onclick runs, but we add event listeners to ensure clean bindings
     });
 
     // Skill filter
@@ -248,7 +443,28 @@ window.LM.views.dashboard = (function () {
       if (grid) {
         grid.classList.toggle('low-energy-active', val === 'Low');
       }
+      refreshCards();
     });
+
+    // FAB Add Quest trigger
+    document.getElementById('btn-dashboard-add-quest')?.addEventListener('click', () => {
+      window.LM.components.questModal.open(null);
+    });
+  }
+
+  function selectMacro(macroId) {
+    activeMacroId = macroId;
+    // Set the settings wheelSkillId to this selected macro skill as well, to sync with progress bar updates and the wheel drop validation
+    const s = S.getSettings();
+    s.wheelSkillId = macroId;
+    S.saveSettings(s);
+    
+    // Re-render
+    const main = document.getElementById('main-content');
+    if (main) {
+      main.innerHTML = render();
+      init();
+    }
   }
 
   function updateBar(skillId) {
@@ -256,29 +472,30 @@ window.LM.views.dashboard = (function () {
     const data = getBarData(skillId, macros);
     const fill = document.getElementById('dash-xp-fill');
     const label = document.getElementById('dash-xp-label');
-    const lvl = document.getElementById('dash-level-label');
     if (fill) { fill.style.width = `${data.pct}%`; fill.style.background = data.color; }
-    if (label) label.textContent = `${F.formatXP(data.into)} / ${F.formatXP(data.req)} XP`;
-    if (lvl) lvl.innerHTML = `Lvl <strong>${data.level}</strong>`;
+    if (label) label.textContent = `${F.formatXP(data.into)} / ${F.formatXP(data.req)} XP (${Math.round(data.pct)}%)`;
   }
 
   function refreshCards() {
+    const macros = S.getMacros();
     const grid = document.getElementById('quest-grid');
-    if (grid) grid.innerHTML = renderQuestCards(S.getMacros());
+    if (grid) grid.innerHTML = renderQuestCards(macros, 3, false);
+    
+    const upcomingGrid = document.getElementById('upcoming-quest-grid');
+    if (upcomingGrid) upcomingGrid.innerHTML = renderQuestCards(macros, 3, true);
   }
 
   function onDragStart(event, questId) {
     event.dataTransfer.setData('questId', questId);
-    event.target.classList.add('card-dragging');
+    const card = event.target.closest('.quest-card');
+    if (card) card.classList.add('card-dragging');
   }
 
-  // Warns user about partial XP when progress indicator is < 100%.
-  // Returns true to proceed, false to abort.
   function confirmPartialXP(questId) {
     const quest = S.getQuest(questId);
-    if (!quest || !quest.progressIndicator) return true; // no indicator → always proceed
+    if (!quest || !quest.progressIndicator) return true;
     const pct = Math.round(quest.progressIndicator.value || 0);
-    if (pct >= 100) return true; // full progress → no warning needed
+    if (pct >= 100) return true;
     const totalXP = (quest.targetSkills || []).reduce((sum, t) => sum + t.xpAmount, 0);
     const earnedXP = Math.round(totalXP * pct / 100);
     return confirm(
@@ -314,5 +531,5 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro };
 })();

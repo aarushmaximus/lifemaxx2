@@ -6,6 +6,9 @@ window.LM.router = (function () {
     quests: window.LM.views.questLog,
     settings: window.LM.views.settings,
     skills: window.LM.views.skills,
+    stats: window.LM.views.stats,
+    me: window.LM.views.me,
+    coach: window.LM.views.coach
   };
 
   let currentView = null;
@@ -18,7 +21,7 @@ window.LM.router = (function () {
     if (hash.startsWith('#skill-widgets/')) return { view: 'skillWidgets', skillId: hash.split('/')[1] };
     if (hash.startsWith('#skill/'))         return { view: 'skillDetail',  skillId: hash.split('/')[1] };
     const v = hash.replace('#','');
-    return { view: ['dashboard','quests','settings','skills'].includes(v) ? v : 'dashboard' };
+    return { view: ['dashboard','quests','settings','skills','stats','me','coach'].includes(v) ? v : 'dashboard' };
   }
 
   function navigate(hash) {

@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="icons/icon-512.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;550;700&family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/vision.css">
@@ -58,7 +58,7 @@
             <rect x="3" y="14" width="7" height="7" rx="1" />
             <rect x="14" y="14" width="7" height="7" rx="1" />
           </svg>
-          <span>Dashboard</span>
+          <span>DASH</span>
         </a>
         <a href="#quests" class="nav-item" data-view="quests" id="nav-quests">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -66,40 +66,23 @@
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             <path d="M9 12l2 2 4-4" />
           </svg>
-          <span>Quest Log</span>
+          <span>QUESTS</span>
         </a>
-        <a href="#skills" class="nav-item" data-view="skills" id="nav-skills">
+        <a href="#stats" class="nav-item" data-view="stats" id="nav-stats">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/>
-            <circle cx="8" cy="16" r="3"/><circle cx="16" cy="16" r="3"/>
+            <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18.7 8l-5.1 5.2-2.8-2.7-4.8 4.8" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Skills</span>
+          <span>STATS</span>
         </a>
-        <a href="#settings" class="nav-item" data-view="settings" id="nav-settings">
+        <a href="#me" class="nav-item" data-view="me" id="nav-me">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
-          <span>Settings</span>
+          <span>ME</span>
         </a>
       </nav>
-
-      <div class="sidebar-skills-section">
-        <div class="sidebar-section-header">
-          <span>SKILLS</span>
-          <button id="btn-manage-skills" class="icon-btn" title="Manage Skills">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
-        <div id="sidebar-skill-list"></div>
-      </div>
-
-      <div class="sidebar-footer">
-      </div>
     </aside>
 
     <!-- MAIN -->
@@ -173,12 +156,15 @@
   <script src="js/views/skill-hub.js"></script>
   <script src="js/views/skill-widgets.js"></script>
   <script src="js/views/skill-chains.js"></script>
+  <script src="js/views/stats.js"></script>
+  <script src="js/views/me.js"></script>
+  <script src="js/views/coach.js"></script>
   <script src="js/main.js"></script>
   <script>
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '33';
+    const APP_VERSION = '34';
 
     async function clearAndReload() {
       // 1. Unregister every service worker
