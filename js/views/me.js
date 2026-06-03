@@ -2,9 +2,61 @@ window.LM.views.me = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
 
+  function getDailyStreak(quests, xpLog) {
+    const dates = new Set();
+    quests.forEach(q => {
+      if (q.status === 'completed' && q.completedAt) {
+        dates.add(new Date(q.completedAt).toDateString());
+      }
+    });
+    xpLog.forEach(l => {
+      if (l.timestamp) {
+        dates.add(new Date(l.timestamp).toDateString());
+      }
+    });
+
+    const sortedDates = Array.from(dates).map(d => new Date(d)).sort((a, b) => b - a);
+    if (sortedDates.length === 0) return 0;
+
+    let streak = 0;
+    let current = new Date();
+    current.setHours(0, 0, 0, 0);
+
+    const latest = sortedDates[0];
+    latest.setHours(0, 0, 0, 0);
+
+    const diffMs = current - latest;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      return 0; // broken
+    }
+
+    let checkDate = new Date(latest);
+    for (let i = 0; i < sortedDates.length; i++) {
+      const d = sortedDates[i];
+      d.setHours(0, 0, 0, 0);
+
+      const diff = Math.round((checkDate - d) / (1000 * 60 * 60 * 24));
+      if (diff === 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (diff === 1) {
+        streak++;
+        checkDate = new Date(d);
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }
+
   function render() {
     const macros = S.getMacros();
     const quests = S.getQuests();
+    const streak = getDailyStreak(quests, S.getXPLog());
     
     // Calculate weekly stats (completed within last 7 days)
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -70,44 +122,25 @@ window.LM.views.me = (function () {
             </div>
           </div>
 
-          <!-- System Preferences Links -->
-          <div class="flat-card" style="display: flex; flex-direction: column; gap: 4px;">
-            <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0; margin-bottom: 12px; color: var(--text-1);">
-              SYSTEM PREFERENCES
+          <!-- Operator Statistics Summary -->
+          <div class="flat-card">
+            <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0; margin-bottom: 16px; color: var(--text-1);">
+              OPERATOR STATS SUMMARY
             </h2>
-
-            <div class="pref-item" onclick="window.LM.router.navigate('#coach')">
-              <div class="pref-item-left">
-                <span class="pref-item-icon">🎓</span>
-                <span class="pref-item-label">AI COACH & BRIEFINGS</span>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">${quests.filter(q => q.status === 'completed').length}</div>
+                <div style="font-size: 0.65rem; color: var(--text-3); text-transform: uppercase; margin-top: 4px; font-weight: bold; letter-spacing: 0.05em;">Completions</div>
               </div>
-              <span class="pref-item-chevron">▶</span>
-            </div>
-
-            <div class="pref-item" onclick="window.LM.router.navigate('#settings')">
-              <div class="pref-item-left">
-                <span class="pref-item-icon">🛠️</span>
-                <span class="pref-item-label">GAME RULES & PRESETS</span>
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--secondary);">${quests.filter(q => q.status === 'active').length}</div>
+                <div style="font-size: 0.65rem; color: var(--text-3); text-transform: uppercase; margin-top: 4px; font-weight: bold; letter-spacing: 0.05em;">Active Quests</div>
               </div>
-              <span class="pref-item-chevron">▶</span>
-            </div>
-
-            <div class="pref-item" onclick="window.LM.router.navigate('#settings')">
-              <div class="pref-item-left">
-                <span class="pref-item-icon">🧠</span>
-                <span class="pref-item-label">INTELLIGENCE API SETTINGS</span>
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: #fff;">🔥 ${streak}</div>
+                <div style="font-size: 0.65rem; color: var(--text-3); text-transform: uppercase; margin-top: 4px; font-weight: bold; letter-spacing: 0.05em;">Win Streak</div>
               </div>
-              <span class="pref-item-chevron">▶</span>
             </div>
-
-            <div class="pref-item" onclick="window.LM.router.navigate('#settings')">
-              <div class="pref-item-left">
-                <span class="pref-item-icon">☁️</span>
-                <span class="pref-item-label">CLOUD SYNC & BACKUPS</span>
-              </div>
-              <span class="pref-item-chevron">▶</span>
-            </div>
-            
           </div>
 
         </div>
@@ -121,3 +154,4 @@ window.LM.views.me = (function () {
 
   return { render, init };
 })();
+
