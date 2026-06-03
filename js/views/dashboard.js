@@ -97,7 +97,6 @@ window.LM.views.dashboard = (function () {
     return { level:m.currentLevel||0, color:m.accentColor, into:F.xpIntoCurrentLevel(m.currentXP||0,m), req:F.xpRequiredForNextLevel(m.currentXP||0,m), pct:F.progressPercent(m.currentXP||0,m) };
   }
 
-
   function renderQuestCards(macros, limit = null, upcoming = false) {
     const allQuests = S.getQuests();
     const quests = allQuests.filter(q => {
@@ -108,8 +107,10 @@ window.LM.views.dashboard = (function () {
       const isLocked = q.status === 'active' && !isWithinTimeWindow(q.timeWindow);
 
       if (upcoming) {
+        // Only return locked / upcoming / missed quests
         return isLocked || q.status === 'missed';
       } else {
+        // Return active and unlockable quests
         if (isLocked || q.status === 'missed') return false;
         if (activeStatusFilter === 'active' && q.status !== 'active') return false;
         if (activeSkillFilter !== 'all' && !tSkills.some(t=>t.macroSkillId===activeSkillFilter)) return false;
@@ -120,195 +121,296 @@ window.LM.views.dashboard = (function () {
     const displayQuests = limit ? quests.slice(0, limit) : quests;
 
     if (!displayQuests.length) {
-      return `<div class="p-4 text-center text-on-surface-variant font-mono text-sm uppercase tracking-widest col-span-full border border-white/5 bg-surface-container-low/20">
-        ${upcoming ? 'NO UPCOMING OBJECTIVES' : 'NO ACTIVE OBJECTIVES DETECTED'}
-      </div>`;
+      return `<div class="empty-state"><p>${upcoming ? 'No locked or missed quests.' : 'No active quests. Let\'s get to work!'}</p></div>`;
     }
+
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
     return displayQuests.map(q => {
       const isMissed = q.status === 'missed';
-      const isLocked = q.status === 'active' && !isWithinTimeWindow(q.timeWindow);
-      
-      const primarySkill = (q.targetSkills && q.targetSkills.length > 0) ? macros.find(m => m.id === q.targetSkills[0].macroSkillId) : null;
-      const color = primarySkill ? primarySkill.accentColor : '#00e5ff';
-      const rgbMatch = color.match(/\d+,\s*\d+,\s*\d+/) || ['0, 229, 255'];
-      const rgb = rgbMatch[0]; // Not perfect but good enough for neon-border if it were rgba
-      
-      // We will use standard tailwind primary/secondary for now to match Stitch, or inject color directly
-      const borderClass = primarySkill ? '' : 'border-primary/20 border-l-primary';
-      const borderStyle = primarySkill ? `border-color: ${color}33; border-left-color: ${color}; box-shadow: 0 0 10px ${color}44, inset 0 0 5px ${color}33;` : '';
-      const textStyle = primarySkill ? `color: ${color}; text-shadow: 0 0 8px ${color};` : '';
+      const withinWindow = isWithinTimeWindow(q.timeWindow);
+      const isLocked = q.status === 'active' && !withinWindow;
+
+      const tSkills = q.targetSkills || [];
+      const skillTags = tSkills.map(t => {
+        const m = macros.find(x=>x.id===t.macroSkillId);
+        return m ? `<span class="skill-tag" style="color:${m.accentColor};border-color:${m.accentColor}33">${m.name} +${t.xpAmount}xp</span>` : '';
+      }).join('');
+
+      let timeStr = '';
+      if (q.expiresAt && q.status === 'active') {
+        const leftMs = q.expiresAt - Date.now();
+        if (leftMs > 0) {
+          timeStr = `<span class="quest-countdown-timer" data-expires-at="${q.expiresAt}" style="font-size:0.75rem;color:var(--accent);">Counting down...</span>`;
+        } else {
+          timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
+        }
+      }
+
+      let windowBadge = '';
+      if (q.timeWindow) {
+        windowBadge = `<span class="quest-type-badge" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--border);">${q.timeWindow.start} - ${q.timeWindow.end}</span>`;
+      } else {
+        windowBadge = `<span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">Anytime</span>`;
+      }
+
+      let statusBadge = '';
+      if (isMissed) {
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(255,45,120,0.15);color:var(--danger);border:1px solid rgba(255,45,120,0.3);">MISSED</span>`;
+      } else if (isLocked) {
+        statusBadge = `<span class="quest-type-badge" style="background:rgba(120,120,140,0.15);color:var(--text-3);border:1px solid var(--border);">LOCKED 🔒</span>`;
+      }
 
       const energyCost = q.energyCost || 'Medium';
-      const icon = energyCost === 'High' ? 'electric_bolt' : energyCost === 'Medium' ? 'water_drop' : 'self_improvement';
+      const energyIcon = energyCost === 'High' ? '⚡' : energyCost === 'Medium' ? '🔋' : '💤';
+      let energyBadge = `<span class="quest-type-badge" title="Energy: ${energyCost}" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);">${energyIcon} ${energyCost}</span>`;
 
-      if (isLocked || isMissed) {
-        return `
-          <div class="p-4 bg-surface-container-low/20 border border-white/5 border-l-4 border-l-on-surface-variant/20 flex items-start gap-4 opacity-40 grayscale group">
-            <div class="material-symbols-outlined text-on-surface-variant text-2xl">${isMissed ? 'cancel' : 'lock'}</div>
-            <div class="flex-1">
-              <p class="font-bold text-on-surface/50 tracking-wide ${isMissed ? 'line-through' : ''}">${q.name}</p>
-              <p class="text-[10px] text-on-surface-variant uppercase tracking-widest">${isMissed ? 'STATUS: MISSED' : 'STATUS: LOCKED'}</p>
-            </div>
-            ${isMissed ? `<span class="material-symbols-outlined text-danger text-sm cursor-pointer hover:text-white" onclick="LM.views.dashboard.deleteQuest('${q.id}')">delete</span>` : ''}
-          </div>
-        `;
-      }
-
-      // Progress bar if quest progress exists
-      let progressHTML = '';
-      if (window.LM.questProgress && q.subtasks && q.subtasks.length > 0) {
-        const completedCount = q.subtasks.filter(st => st.completed).length;
-        const pct = Math.round((completedCount / q.subtasks.length) * 100);
-        progressHTML = `
-          <p class="text-[10px] text-on-surface-variant mb-2 uppercase tracking-widest">Progress: ${completedCount} / ${q.subtasks.length}</p>
-          <div class="h-1 w-full bg-white/5 overflow-hidden">
-            <div class="h-full shadow-[0_0_8px_currentColor]" style="width: ${pct}%; background-color: ${color}; color: ${color};"></div>
-          </div>
-        `;
-      } else {
-        progressHTML = `
-          <p class="text-[10px] text-on-surface-variant mb-2 uppercase tracking-widest">Status: Ready</p>
-          <div class="h-1 w-full bg-white/5 overflow-hidden">
-            <div class="h-full shadow-[0_0_8px_currentColor]" style="width: 100%; background-color: ${color}; color: ${color}; opacity: 0.5;"></div>
-          </div>
-        `;
-      }
+      let cardClass = '';
+      if (isMissed) cardClass = 'quest-card-deleted-status';
+      else if (isLocked) cardClass = 'quest-card-deleted-status';
 
       return `
-        <div class="p-4 bg-surface-container/40 backdrop-blur-sm border-l-4 flex items-start gap-4 group hover:bg-surface-container/80 transition-all cursor-pointer ${borderClass}" style="${borderStyle}" onclick="LM.views.dashboard.completeQuest('${q.id}')">
-          <div class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform" style="${textStyle}">${icon}</div>
-          <div class="flex-1">
-            <p class="font-bold text-white tracking-wide">${q.name}</p>
-            ${progressHTML}
+        <div class="quest-card ${cardClass}" draggable="${(!isLocked && !isMissed) ? 'true' : 'false'}" data-quest-id="${q.id}" data-energy="${energyCost}"
+          ondragstart="${(!isLocked && !isMissed) ? `LM.views.dashboard.onDragStart(event,'${q.id}')` : ''}"
+          ondragend="this.classList.remove('card-dragging')">
+          <div class="quest-card-header">
+            ${windowBadge}
+            ${statusBadge}
+            ${energyBadge}
+            ${timeStr}
+            <div class="quest-card-actions">
+              <button class="btn-icon danger" onclick="LM.views.dashboard.deleteQuest('${q.id}')" title="Delete">✕</button>
+            </div>
           </div>
-          <span class="material-symbols-outlined text-on-surface-variant text-sm group-hover:text-white">chevron_right</span>
-        </div>
-      `;
+          <h3 class="quest-card-name" style="${isMissed ? 'text-decoration:line-through;opacity:0.6;' : ''}">${q.name}</h3>
+          ${q.description ? `<p class="quest-card-desc" style="${isMissed ? 'opacity:0.5;' : ''}">${q.description}</p>` : ''}
+          ${window.LM.questProgress ? window.LM.questProgress.renderIndicator(q) : ''}
+          <div class="quest-skill-tags">${skillTags}</div>
+          
+          <div class="quest-card-footer">
+            ${isMissed 
+              ? `<button class="btn-complete" style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);color:var(--text-3);cursor:not-allowed;" disabled>Missed (Click ✕ to delete)</button>`
+              : isLocked
+                ? `<button class="btn-complete" style="background:var(--bg-raised);border:1px solid var(--border);color:var(--text-3);cursor:not-allowed;" disabled>Locked (Available ${q.timeWindow.start} - ${q.timeWindow.end})</button>`
+                : (S.getSettings().dragToRegister !== false && q.isReadyToClaim)
+                  ? (isTouch 
+                      ? `<button class="btn-complete" onclick="LM.views.dashboard.claimXPMobile('${q.id}')" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);cursor:pointer;pointer-events:all;">✓ Claim XP</button>`
+                      : `<button class="btn-complete" style="background:transparent;border:1px dashed var(--border);color:var(--text-3);cursor:grab;pointer-events:none;">✓ Completed (Drag to Claim XP)</button>`
+                    )
+                  : `<button class="btn-complete" onclick="LM.views.dashboard.completeQuest('${q.id}')">✓ Complete</button>`
+            }
+          </div>
+        </div>`;
     }).join('');
   }
-
 
   function render() {
     const macros = S.getMacros();
     const settings = S.getSettings();
     const wheelSkillId = settings.wheelSkillId || 'overall';
+    const currentEnergy = localStorage.getItem('lm_user_energy') || 'High';
+    const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
+    const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
     let barData = getBarData(wheelSkillId, macros);
 
+    // Dynamic Streak & Rank
     const xpLog = S.getXPLog();
     const streak = getDailyStreak(S.getQuests(), xpLog);
     const overall = S.getOverall();
     const rankInfo = getPlayerRank(overall.currentLevel || 0);
 
+    // Selected macro skill for detail card
+    if (!activeMacroId && macros.length > 0) {
+      activeMacroId = macros[0].id;
+    }
+    const activeMacro = macros.find(m => m.id === activeMacroId) || macros[0];
+
+    // Find next session (upcoming habit or active project)
     const activeQuests = S.getQuests().filter(q => q.status === 'active' && isWithinTimeWindow(q.timeWindow));
     const nextSession = activeQuests[0];
 
-    const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
-
     return `
-      <!-- Vaporwave Sun Background Element -->
-      <div class="absolute top-0 right-0 -z-10 w-[500px] h-[500px] opacity-40 pointer-events-none">
-        <div class="w-full h-full rounded-full bg-gradient-to-t from-transparent via-[#ff2d78] to-[#ff2d78] overflow-hidden">
-          <div class="h-1 w-full bg-[#0d0d1a] mt-1"></div>
-          <div class="h-2 w-full bg-[#0d0d1a] mt-2"></div>
-          <div class="h-4 w-full bg-[#0d0d1a] mt-4"></div>
-          <div class="h-8 w-full bg-[#0d0d1a] mt-6"></div>
-          <div class="h-12 w-full bg-[#0d0d1a] mt-8"></div>
-          <div class="h-20 w-full bg-[#0d0d1a] mt-10"></div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-12 gap-6 relative z-10 pt-24 pb-32 px-6 md:px-12 max-w-7xl mx-auto">
-        <!-- Left Column: Operator Status -->
-        <div class="col-span-12 lg:col-span-4 space-y-6">
+      <div class="dashboard-grid">
+        <!-- CENTER COLUMN -->
+        <div class="dash-center">
           
+          <!-- Mid-review Notification banner if active -->
+          ${cachedReview ? `
+            <div class="section-block" style="border: 1px solid var(--accent); background: rgba(255, 45, 120, 0.02); margin-bottom: 8px; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; color: var(--accent); font-weight: bold;">📢 DAILY REVIEW</span>
+                <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3);">${cachedReview.date}</span>
+              </div>
+              <p style="font-size: 0.88rem; line-height: 1.5; color: var(--text-1); font-style: italic;">"${cachedReview.text}"</p>
+            </div>
+          ` : ''}
+
           <!-- Operator Status Card -->
-          <div class="bg-surface-container/60 backdrop-blur-md border border-primary/30 border-l-[6px] border-l-primary p-6 relative overflow-hidden group neon-border-cyan" id="operator-status">
-            <div class="scanline"></div>
-            <p class="font-label-sm text-label-sm text-primary mb-1 tracking-[0.2em] uppercase">OPERATOR_ID: ${settings.username || 'V-02'}</p>
-            <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg leading-none mb-2 text-white uppercase">${rankInfo.title}</h2>
-            <div class="flex items-end justify-between mb-4">
-              <span class="text-on-surface-variant font-mono text-xs uppercase">CLASS: ${rankInfo.nextTitle}</span>
-              <span class="text-primary font-mono text-lg neon-text-cyan">LVL ${overall.currentLevel || 0}</span>
-            </div>
-            <!-- Progression Bar -->
-            <div class="h-1.5 w-full bg-white/5 relative">
-              <div class="h-full bg-primary shadow-[0_0_15px_#00e5ff]" id="dash-xp-fill" style="width: ${barData.pct}%;"></div>
-              <div class="absolute -top-1 right-[5%] w-2 h-4 bg-primary animate-pulse"></div>
-            </div>
-            <p class="text-[10px] text-on-surface-variant mt-2 text-right uppercase tracking-widest" id="dash-xp-label">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP — Phase: ${Math.round(barData.pct)}%</p>
-          </div>
-          
-          <!-- Streak & Buff -->
-          <div class="bg-surface-container/60 backdrop-blur-md border border-secondary/30 border-l-[6px] border-l-secondary p-6 neon-border-pink">
-            <div class="flex items-center justify-between mb-4">
-              <span class="material-symbols-outlined text-secondary text-4xl neon-text-pink">electric_bolt</span>
-              <span class="bg-secondary text-white px-2 py-1 font-bold text-xs uppercase tracking-tighter shadow-[0_0_10px_rgba(255,45,120,0.5)]">Multi: 1.0X</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span class="font-display-xl text-display-xl text-secondary neon-text-pink">${streak}</span>
-              <span class="font-headline-md text-on-surface-variant">DAY STREAK</span>
-            </div>
-            <p class="text-body-md text-on-surface-variant mt-2 font-body-md">Active Buffs: <span class="text-primary">${activeEffects.length > 0 ? activeEffects.map(e => e.name).join(', ') : 'None'}</span></p>
-          </div>
-
-          <!-- Macro Pills -->
-          <div class="flex flex-wrap gap-2">
-            ${macros.slice(0, 5).map(m => `
-              <div class="px-4 py-2 border bg-white/5 font-bold text-xs uppercase tracking-[0.15em] flex items-center gap-2 group cursor-pointer hover:bg-white/10 transition-all" style="border-color:${m.accentColor}66; color:${m.accentColor}" onclick="LM.router.navigate('skill-detail?id=${m.id}')">
-                <span class="w-1.5 h-1.5" style="background:${m.accentColor}; box-shadow:0 0 5px ${m.accentColor}"></span>
-                ${m.name}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Right Column: Banner & Quests -->
-        <div class="col-span-12 lg:col-span-8 space-y-6">
-          <!-- Next Session Banner -->
-          <div class="relative min-h-[280px] flex flex-col justify-end bg-surface-container-high overflow-hidden border border-primary/20 p-8 group">
-            <div class="scanline"></div>
-            <img class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-color-dodge transition-transform duration-700 group-hover:scale-105" src="aero-bg-mobile.jpg" />
-            <div class="absolute inset-0 bg-gradient-to-t from-[#0d0d1a] via-[#0d0d1a]/40 to-transparent"></div>
-            <div class="relative z-10">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="px-2 py-0.5 bg-primary text-black font-bold text-[10px] tracking-widest neon-border-cyan uppercase">Phase // Active</span>
-                <span class="text-primary font-mono text-xs uppercase tracking-widest">${nextSession ? nextSession.energyCost || 'Medium' : ''} Energy Protocol</span>
-              </div>
-              <h3 class="font-display-xl text-headline-lg-mobile md:text-headline-lg text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
-                ${nextSession ? nextSession.name.toUpperCase() : 'NO SESSIONS ACTIVE'}
-              </h3>
-              <p class="text-on-surface-variant mb-6 text-sm uppercase tracking-widest max-w-lg">
-                ${nextSession ? (nextSession.description || 'Lock in and execute this objective to claim your XP.') : 'Spawn daily quests from presets or ask Fletcher to build your agenda.'}
-              </p>
-              ${nextSession ? `
-                <div class="flex gap-4 mt-6">
-                  <button class="bg-primary text-black px-8 py-3 font-bold uppercase tracking-[0.2em] glitch-hover shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:bg-white transition-colors" onclick="LM.views.dashboard.completeQuest('${nextSession.id}')">INITIALIZE</button>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-
-          <!-- Objectives Grid -->
-          <div id="quest-list">
-            <div class="flex items-center justify-between mb-4 px-2">
-              <h4 class="font-headline-md text-primary neon-text-cyan tracking-wider uppercase text-lg">Active Objectives</h4>
-              <span class="text-secondary font-mono text-xs tracking-widest">SLOTS: ${activeQuests.length} ACTIVE</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="quest-grid">
-              ${renderQuestCards(macros, null, false)}
+          <div class="operator-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="operator-title">${rankInfo.title}</span>
+              <span style="font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--accent);">LEVEL ${overall.currentLevel || 0}</span>
             </div>
             
-            <div class="flex items-center justify-between mt-8 mb-4 px-2">
-              <h4 class="font-headline-md text-on-surface-variant tracking-wider uppercase text-sm">Upcoming / Locked</h4>
+            <div class="xp-bar-wrap" style="margin: 8px 0;">
+              <div class="xp-bar-track" style="height: 6px;">
+                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}"></div>
+              </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upcoming-quest-grid">
-              ${renderQuestCards(macros, null, true)}
+
+            <div class="operator-stats">
+              <span>RANK: ${rankInfo.title}</span>
+              <span id="dash-xp-label">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
+            </div>
+            <div style="font-family: var(--font-display); font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; margin-top: -4px;">
+              NEXT LEVEL: ${rankInfo.nextTitle}
             </div>
           </div>
+
+          <!-- Streak & Active Effects -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="streak-banner">
+              <span class="streak-number">🔥 ${streak}</span>
+              <div style="display:flex; flex-direction:column;">
+                <span class="streak-label">Day Win Streak</span>
+                <span style="font-size: 0.72rem; color: var(--text-2);">Complete quests daily to grow</span>
+              </div>
+            </div>
+
+            <!-- Active Status Effects -->
+            <div class="flat-card" style="display:flex; flex-direction:column; justify-content:center; gap:6px;">
+              <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase;">Active Buffs/Debuffs</span>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${activeEffects.length > 0 ? activeEffects.map(e => {
+                  const color = e.type === 'buff' ? 'var(--success)' : 'var(--danger)';
+                  const bg = e.type === 'buff' ? 'rgba(16,185,129,0.1)' : 'rgba(255,45,120,0.1)';
+                  return `<span class="quest-type-badge" style="background:${bg};color:${color};border:1px solid ${color}33;">${e.name.toUpperCase()} (x${e.multiplier})</span>`;
+                }).join('') : `<span style="font-size:0.8rem; color:var(--text-3);">No active status modifiers.</span>`}
+              </div>
+            </div>
+          </div>
+
+          <!-- Default macro skill expanded showing its micro skills -->
+          ${activeMacro ? `
+            <div class="flat-card flat-card-cyan" style="display:flex; flex-direction:column; gap:16px;">
+              <div>
+                <span style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase; display:block; margin-bottom:8px;">Macro-to-Micro Skill Progression</span>
+                
+                <!-- Horizontal Tab Toggles for Macro Skills -->
+                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px;">
+                  ${macros.map(m => `
+                    <button class="chip ${m.id === activeMacroId ? 'chip-active' : ''}" style="border-color:${m.accentColor}44; white-space:nowrap;" onclick="LM.views.dashboard.selectMacro('${m.id}')">
+                      ${m.name} (Lv ${m.currentLevel || 0})
+                    </button>
+                  `).join('')}
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight:700; color:#fff;">${activeMacro.name}</h3>
+                  <span style="font-family: var(--font-display); font-size: 0.82rem; color: var(--accent); font-weight:bold;">LEVEL ${activeMacro.currentLevel || 0}</span>
+                </div>
+              </div>
+
+              <!-- Micro Skills List -->
+              <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
+                ${(activeMacro.microSkills || []).length > 0 ? (activeMacro.microSkills || []).map(ms => {
+                  const msPct = F.progressPercent(ms.currentXP || 0, ms);
+                  const msInto = F.xpIntoCurrentLevel(ms.currentXP || 0, ms);
+                  const msReq = F.xpRequiredForNextLevel(ms.currentXP || 0, ms);
+                  return `
+                    <div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:0.85rem; font-weight:600; color:var(--text-1);">${ms.name}</span>
+                        <span style="font-size:0.75rem; color:var(--text-2);">Lvl ${ms.currentLevel || 0}</span>
+                      </div>
+                      <div class="xp-bar-wrap">
+                        <div class="xp-bar-track" style="height:4px; background: rgba(255,255,255,0.04);">
+                          <div class="xp-bar-fill" style="width:${msPct}%; background:${activeMacro.accentColor}; color:${activeMacro.accentColor};"></div>
+                        </div>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-3); margin-top:3px;">
+                        <span>${F.formatXP(msInto)} / ${F.formatXP(msReq)} XP</span>
+                        <span>${Math.round(msPct)}%</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('') : `<div style="text-align:center; padding:10px; font-size:0.8rem; color:var(--text-3);">No micro skills defined for ${activeMacro.name}.</div>`}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- NEXT SESSION workout/quest card with background image -->
+          <div class="session-card">
+            <span style="font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--secondary); font-weight: bold; text-transform: uppercase;">
+              NEXT SCHEDULED SESSION
+            </span>
+            <h2 style="font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 4px 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+              ${nextSession ? nextSession.name : 'NO SESSIONS ACTIVE'}
+            </h2>
+            <p style="font-size: 0.82rem; color: var(--text-2); margin: 0; line-height: 1.4;">
+              ${nextSession ? (nextSession.description || 'Lock in and execute this objective to claim your XP.') : 'Spawn daily quests from presets or ask Fletcher to build your agenda.'}
+            </p>
+            ${nextSession ? `
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button class="btn btn-primary btn-sm" onclick="LM.views.dashboard.completeQuest('${nextSession.id}')">COMPLETE SESSION</button>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- ACTIVE QUESTS (Top 3) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; color: var(--text-1);">
+                ACTIVE OBJECTIVES (TOP 3)
+              </h2>
+              
+              <!-- Quick Energy & Skill selectors -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <select id="dash-energy-sel" class="chip" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);padding:3px 8px;font-size:0.72rem;cursor:pointer;border-radius:100px;">
+                  <option value="High" ${currentEnergy === 'High' ? 'selected' : ''}>High ⚡</option>
+                  <option value="Medium" ${currentEnergy === 'Medium' ? 'selected' : ''}>Med 🔋</option>
+                  <option value="Low" ${currentEnergy === 'Low' ? 'selected' : ''}>Low 💤</option>
+                </select>
+                <select class="chip skill-chip-sel" id="skill-filter-sel" style="padding:3px 8px; font-size:0.72rem;">
+                  <option value="all">All Skills</option>
+                  ${macros.map(m=>`<option value="${m.id}" ${activeSkillFilter===m.id?'selected':''}>${m.name}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Active Cards -->
+            <div class="quest-grid ${currentEnergy === 'Low' ? 'low-energy-active' : ''}" id="quest-grid">
+              ${renderQuestCards(macros, 3, false)}
+            </div>
+          </div>
+
+          <!-- LOCKED / UPCOMING QUESTS (At the bottom, greyed out) -->
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
+              UPCOMING / LOCKED OBJECTIVES
+            </h2>
+            <div class="quest-grid" id="upcoming-quest-grid">
+              ${renderQuestCards(macros, 3, true)}
+            </div>
+          </div>
+
         </div>
-      </div>
-    `;
+
+        <!-- RIGHT COLUMN — Wheel (Keep circular wheel exact same) -->
+        <div class="dash-right">
+          <div class="wheel-panel">
+            <p class="wheel-hint-top">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
+            ${W.renderHTML()}
+          </div>
+        </div>
+
+        <!-- Floating Action Buttons at bottom right -->
+        <button class="coach-float-btn" onclick="window.LM.router.navigate('#coach')" title="Chat with Coach Fletcher">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </button>
+      </div>`;
   }
 
   function init() {

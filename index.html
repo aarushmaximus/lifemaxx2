@@ -70,10 +70,12 @@
         </div>
         <div class="flex items-center gap-6">
           <div class="hidden md:flex gap-4 font-headline-md text-sm">
-            <span class="text-secondary neon-text-pink cursor-pointer" onclick="LM.router.navigate('dashboard')">DASH</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('quests')">QUESTS</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('skills')">SKILLS</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('stats')">STATS</span>
+            <span class="text-secondary neon-text-pink cursor-pointer" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">DASH</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="quests" onclick="LM.router.navigate('quests')">QUESTS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="skills" onclick="LM.router.navigate('skills')">SKILLS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="stats" onclick="LM.router.navigate('stats')">STATS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="coach" onclick="LM.router.navigate('coach')">COACH</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="settings" onclick="LM.router.navigate('settings')">SETTINGS</span>
           </div>
           <div class="px-3 py-1 bg-secondary/10 border border-secondary text-secondary font-bold text-xs neon-border-pink">
             95% XP
@@ -85,25 +87,29 @@
     <!-- BottomNavBar -->
     <nav class="fixed bottom-0 w-full z-50 bg-[#0d0d1a]/95 backdrop-blur-3xl border-t border-primary/30 shadow-[0_-5px_25px_rgba(0,229,255,0.15)]">
       <div class="flex justify-around items-center px-4 pb-8 pt-4 w-full max-w-lg mx-auto">
-        <div class="flex flex-col items-center justify-center text-primary neon-text-cyan scale-110 cursor-pointer active:scale-95 transition-all" onclick="LM.router.navigate('dashboard')">
+        <div class="flex flex-col items-center justify-center text-primary neon-text-cyan scale-110 cursor-pointer active:scale-95 transition-all" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">
           <span class="material-symbols-outlined text-3xl">dashboard</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">DASH</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('quests')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="quests" onclick="LM.router.navigate('quests')">
           <span class="material-symbols-outlined text-3xl">military_tech</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">QUESTS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('stats')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="stats" onclick="LM.router.navigate('stats')">
           <span class="material-symbols-outlined text-3xl">query_stats</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">STATS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('skills')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="skills" onclick="LM.router.navigate('skills')">
           <span class="material-symbols-outlined text-3xl">widgets</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">SKILLS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('coach')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="coach" onclick="LM.router.navigate('coach')">
           <span class="material-symbols-outlined text-3xl">psychology</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">COACH</span>
+        </div>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="settings" onclick="LM.router.navigate('settings')">
+          <span class="material-symbols-outlined text-3xl">settings</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">SETTINGS</span>
         </div>
       </div>
     </nav>
@@ -187,7 +193,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '47';
+    const APP_VERSION = '48';
 
     async function clearAndReload() {
       // 1. Unregister every service worker

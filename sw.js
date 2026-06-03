@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v47';
+const CACHE_NAME = 'lifemaxx-v48';
 const ASSETS = [
   './',
   './index.html',
@@ -34,7 +34,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets v47');
+      console.log('[SW] Caching assets v48');
       return cache.addAll(ASSETS);
     })
   );
