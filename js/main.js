@@ -59,10 +59,10 @@ window.LM.router = (function () {
         view.init();
       }
 
-      // Update sidebar active state
+      // Update bottom nav active state
       const activeView = route.view.startsWith('skill') ? 'skills' : route.view;
-      document.querySelectorAll('.nav-item').forEach(el => {
-        el.classList.toggle('nav-active', el.dataset.view === activeView);
+      document.querySelectorAll('[data-nav-view]').forEach(el => {
+        el.classList.toggle('nav-active', el.dataset.navView === activeView);
       });
 
       // Animate in via CSS class

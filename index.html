@@ -72,6 +72,7 @@
           <div class="hidden md:flex gap-4 font-headline-md text-sm">
             <span class="text-secondary neon-text-pink cursor-pointer" onclick="LM.router.navigate('dashboard')">DASH</span>
             <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('quests')">QUESTS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('skills')">SKILLS</span>
             <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" onclick="LM.router.navigate('stats')">STATS</span>
           </div>
           <div class="px-3 py-1 bg-secondary/10 border border-secondary text-secondary font-bold text-xs neon-border-pink">
@@ -96,9 +97,9 @@
           <span class="material-symbols-outlined text-3xl">query_stats</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">STATS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('me')">
-          <span class="material-symbols-outlined text-3xl">person</span>
-          <span class="font-label-sm text-[9px] tracking-widest mt-1">ME</span>
+        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('skills')">
+          <span class="material-symbols-outlined text-3xl">widgets</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">SKILLS</span>
         </div>
         <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" onclick="LM.router.navigate('coach')">
           <span class="material-symbols-outlined text-3xl">psychology</span>
@@ -186,7 +187,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '45';
+    const APP_VERSION = '46';
 
     async function clearAndReload() {
       // 1. Unregister every service worker

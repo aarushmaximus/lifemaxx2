@@ -1,4 +1,6 @@
-window.LM.views.stats = (function () {
+### SCRIPT: merge_me_into_stats.py
+
+stats_content = r'''window.LM.views.stats = (function () {
   const S = window.LM.store;
   const F = window.LM.formulas;
 
@@ -282,3 +284,9 @@ window.LM.views.stats = (function () {
 
   return { render, init };
 })();
+'''
+
+with open('js/views/stats.js', 'w', encoding='utf-8') as f:
+    f.write(stats_content)
+
+print("Done: stats.js now includes the Me profile section")
