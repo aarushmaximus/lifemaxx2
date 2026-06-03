@@ -125,7 +125,40 @@
   .quest-card { cursor: default; }
   /* Quest card actions always visible on mobile (no hover) */
   .quest-card-actions { opacity: 1; }
+
+  /* Mobile UI Overhaul Fixes */
+  #sidebar {
+    background: #0d0d1a !important;
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.8) !important;
+    border-top: 1px solid var(--border) !important;
+  }
+  .nav-item {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.01em !important;
+  }
+  .nav-item svg {
+    width: 16px !important;
+    height: 16px !important;
+    margin-bottom: 2px !important;
+  }
+  .coach-float-btn {
+    bottom: 160px !important;
+    right: 20px !important;
+  }
+  .coach-chat-container {
+    height: calc(100vh - 200px) !important;
+  }
+  .quest-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .radar-svg {
+    width: 100% !important;
+    max-width: 280px !important;
+    height: auto !important;
+  }
 }
+
 
 /* Custom Quest System Overhaul Styles */
 .quest-card-disabled {

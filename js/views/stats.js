@@ -82,7 +82,7 @@ window.LM.views.stats = (function () {
     const playerPolygon = `<polygon points="${playerPoints.join(' ')}" fill="rgba(255, 45, 120, 0.15)" stroke="var(--secondary)" stroke-width="2" style="filter: drop-shadow(0 0 6px rgba(255, 45, 120, 0.4))" />`;
 
     return `
-      <svg width="320" height="300" viewBox="0 0 300 300" style="margin: 0 auto; display: block;">
+      <svg class="radar-svg" viewBox="0 0 300 300">
         ${gridPolygons}
         ${axisLines.join('\n')}
         ${playerPolygon}
@@ -145,7 +145,7 @@ window.LM.views.stats = (function () {
           </div>
 
           <!-- Grid: Radar Chart + Skills Progression -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px;">
             
             <!-- Attribute Spread Radar Chart -->
             <div class="flat-card">
