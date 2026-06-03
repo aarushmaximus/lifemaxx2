@@ -48,6 +48,19 @@ export default {
     }
 
     // ── Everything else → serve static assets ──
-    return env.ASSETS.fetch(request);
+    const response = await env.ASSETS.fetch(request);
+
+    // Force no-cache headers for sw.js and index.html so CDN Edge and browsers grab updates immediately
+    if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/sw.js') {
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
+    }
+
+    return response;
   }
 };
