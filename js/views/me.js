@@ -117,52 +117,43 @@ window.LM.views.me = (function () {
     };
 
     return `
-      <!-- Background Layer -->
-      <div class="fixed inset-0 wireframe-grid z-0 opacity-10 pointer-events-none"></div>
-      <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] z-0 opacity-40 pointer-events-none">
-        <div class="w-full h-full synth-sun-gradient"></div>
-      </div>
-      <!-- Perspective Floor -->
-      <div class="fixed bottom-0 left-0 w-full h-[400px] z-0 pointer-events-none wireframe-floor overflow-hidden opacity-50">
-        <div class="absolute bottom-0 left-[-50%] w-[200%] h-[800px] wireframe-floor-inner origin-bottom"></div>
-      </div>
-      <!-- Scanline Effect -->
-      <div class="scanline"></div>
+      <!-- Background Layer (Minimal Chrome) -->
+      <div class="fixed inset-0 bg-background z-0 pointer-events-none"></div>
       
       <div class="relative z-10 pt-24 pb-32 px-6 max-w-7xl mx-auto page-enter">
         
         <!-- Profile Hero Section -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 pb-10">
           <!-- Avatar & Basic Info -->
-          <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-8 bg-surface-container/60 backdrop-blur-lg border-l-4 border-primary relative overflow-hidden shadow-[10px_10px_0px_rgba(0,229,255,0.1)]">
+          <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-8 bg-surface-container/60 backdrop-blur-lg border-l-4 border-primary relative overflow-hidden shadow-sm">
             <div class="relative w-48 h-48 mb-6 group">
               <div class="absolute inset-0 border-2 border-primary animate-pulse opacity-50"></div>
-              <div class="absolute -inset-2 border border-secondary/50 rotate-45"></div>
+              <div class="absolute -inset-2 border border-surface-container-highest rotate-45"></div>
               <img alt="Operator Profile" class="w-full h-full object-cover grayscale brightness-110 contrast-125 saturate-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRG8upTgdEsgDsMMgTB7EdIw5OCPFDDBa-EiyV5b9dX8SRRKWuCqPIyINiyyScRIFIaMPmtfuVD2EfGqaRUVWHsY2C8gN_tV3j3ai8N1AmANfqXC7W3ZVDc1-QYSrDRfCbxkoclqPncYZIi4sBXKToWXCOwmUSU7Re-FFyc4mFqp_ViHvHY0wz3Kytbb7bItxhRjoS1Phfs3oFn8q-_SOL0dLlzNx57BmTZLKhPIZ0p_3FmJ-1hkijiSvVp8H0esq0wyI8TB9CLxLE"/>
               <div class="absolute bottom-0 left-0 bg-primary text-surface font-bold px-2 py-1 text-xs">CONNECTED</div>
             </div>
             <div class="text-center lg:text-left">
-              <h2 class="font-headline-lg text-primary mb-2 tracking-tighter vapor-glow-cyan uppercase">${settings.username || 'OPERATOR_X'}</h2>
+              <h2 class="font-headline-lg text-primary mb-2 tracking-tighter uppercase">${settings.username || 'OPERATOR_X'}</h2>
               <div class="flex flex-wrap gap-2 justify-center lg:justify-start">
-                <span class="bg-secondary text-white font-label-sm px-3 py-1 uppercase italic tracking-tighter vapor-glow-pink">PEAK</span>
-                <span class="bg-primary text-surface font-label-sm px-3 py-1 uppercase italic tracking-tighter vapor-glow-cyan">NEURAL MAPPED</span>
+                <span class="bg-surface-container-highest text-on-surface font-label-sm px-3 py-1 uppercase tracking-tighter">PEAK</span>
+                <span class="bg-primary text-surface font-label-sm px-3 py-1 uppercase tracking-tighter">NEURAL MAPPED</span>
               </div>
             </div>
           </div>
           
           <!-- Sync Status & Meta -->
           <div class="lg:col-span-8 flex flex-col justify-between gap-6">
-            <div class="p-6 bg-surface-container/60 backdrop-blur-lg border-l-4 border-secondary flex flex-col md:flex-row justify-between items-center shadow-[10px_10px_0px_rgba(255,45,120,0.1)]">
+            <div class="p-6 bg-surface-container/60 backdrop-blur-lg border-l-4 border-surface-container-highest flex flex-col md:flex-row justify-between items-center shadow-sm">
               <div class="flex items-center gap-4 mb-4 md:mb-0">
-                <span class="material-symbols-outlined text-primary text-4xl vapor-glow-cyan" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
+                <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
                 <div>
                   <p class="font-label-sm text-on-surface-variant uppercase">SYNC STATUS</p>
-                  <h3 class="font-headline-md text-primary vapor-glow-cyan">ENCRYPTED UPLINK ACTIVE</h3>
+                  <h3 class="font-headline-md text-primary">ENCRYPTED UPLINK ACTIVE</h3>
                 </div>
               </div>
               <div class="text-center md:text-right">
                 <p class="font-label-sm text-on-surface-variant uppercase">LAST BACKUP</p>
-                <p class="text-secondary font-mono vapor-glow-pink">${new Date().toISOString().slice(0,10)} // ONLINE</p>
+                <p class="text-on-surface font-mono">${new Date().toISOString().slice(0,10)} // ONLINE</p>
               </div>
             </div>
             
@@ -187,18 +178,17 @@ window.LM.views.me = (function () {
         <!-- Weekly Quotas Bento -->
         <section>
           <div class="flex items-center gap-4 mb-8">
-            <h2 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tighter vapor-glow-cyan">WEEKLY QUOTAS</h2>
-            <div class="h-[1px] flex-grow bg-primary/20"></div>
-            <span class="text-secondary font-mono text-xs">7-DAY ROLLING</span>
+            <h2 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tighter">WEEKLY QUOTAS</h2>
+            <div class="h-[1px] flex-grow bg-surface-container-highest"></div>
+            <span class="text-on-surface-variant font-mono text-xs">7-DAY ROLLING</span>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             ${macros.slice(0, 4).map((m, index) => {
               const isPrimary = index % 2 === 0;
-              const glowClass = isPrimary ? 'vapor-glow-cyan' : 'vapor-glow-pink';
-              const borderClass = isPrimary ? 'border-primary' : 'border-secondary';
-              const textClass = isPrimary ? 'text-primary' : 'text-secondary';
-              const shadowClass = isPrimary ? 'shadow-[5px_5px_0px_rgba(0,229,255,0.1)]' : 'shadow-[5px_5px_0px_rgba(255,45,120,0.1)]';
+              const borderClass = isPrimary ? 'border-primary' : 'border-surface-container-highest';
+              const textClass = isPrimary ? 'text-primary' : 'text-on-surface-variant';
+              const shadowClass = isPrimary ? 'shadow-sm' : 'shadow-none border border-surface-container-highest';
               
               const completedCount = weeklyCompletedQuests.filter(q => q.targetSkills && q.targetSkills.some(ts => ts.macroSkillId === m.id)).length;
               const rawPct = (completedCount / quotaTarget) * 100;
@@ -209,7 +199,7 @@ window.LM.views.me = (function () {
               
               let barsHTML = '';
               for (let i = 0; i < quotaTarget; i++) {
-                if (i < completedCount) barsHTML += `<div class="h-1 w-full bg-${isPrimary ? 'primary' : 'secondary'} ${glowClass}"></div>`;
+                if (i < completedCount) barsHTML += `<div class="h-1 w-full bg-${isPrimary ? 'primary' : 'surface-container-highest'}"></div>`;
                 else barsHTML += `<div class="h-1 w-full bg-white/5"></div>`;
               }
               
@@ -219,11 +209,11 @@ window.LM.views.me = (function () {
                     <span class="material-symbols-outlined text-8xl ${textClass}">${iconName}</span>
                   </div>
                   <div class="flex justify-between items-start mb-8">
-                    <span class="material-symbols-outlined ${textClass} text-3xl ${glowClass}">${iconName}</span>
+                    <span class="material-symbols-outlined ${textClass} text-3xl">${iconName}</span>
                     <div class="w-12 h-12 flex items-center justify-center relative">
                       <svg class="w-full h-full -rotate-90">
                         <circle class="text-white/5" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
-                        <circle class="${textClass} drop-shadow-[0_0_8px_currentColor]" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="${dashOffset}" stroke-width="3"></circle>
+                        <circle class="${textClass} drop-shadow-sm" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="${dashOffset}" stroke-width="3"></circle>
                       </svg>
                       <span class="absolute text-[10px] font-bold ${textClass}">${Math.round(pct)}%</span>
                     </div>
@@ -241,8 +231,8 @@ window.LM.views.me = (function () {
         
         <!-- Recent History / Action Buttons -->
         <section class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-surface-container/40 backdrop-blur-xl p-8 border-l-4 border-primary shadow-[10px_10px_0px_rgba(0,229,255,0.05)]">
-            <h3 class="font-headline-md text-primary mb-6 flex items-center gap-2 vapor-glow-cyan">
+          <div class="bg-surface-container/40 backdrop-blur-xl p-8 border-l-4 border-primary shadow-lg">
+            <h3 class="font-headline-md text-primary mb-6 flex items-center gap-2">
               <span class="material-symbols-outlined">history</span> RECENT ACTIVITY
             </h3>
             <ul class="space-y-4">
@@ -264,14 +254,14 @@ window.LM.views.me = (function () {
           </div>
           
           <div class="flex flex-col gap-4">
-            <button class="h-full group relative flex items-center justify-between px-8 py-6 border border-primary/30 bg-primary/10 text-primary font-headline-md tracking-tighter uppercase transition-all overflow-hidden active:scale-95 shadow-[0_0_20px_rgba(0,229,255,0.2)] hover:bg-primary hover:text-black" onclick="LM.router.navigate('settings')">
+            <button class="h-full group relative flex items-center justify-between px-8 py-6 border border-primary/30 bg-primary/10 text-primary font-headline-md tracking-tighter uppercase transition-all overflow-hidden active:scale-95 shadow-sm hover:bg-primary hover:text-black" onclick="LM.router.navigate('settings')">
               <span class="relative z-10">SYSTEM SETTINGS</span>
               <span class="material-symbols-outlined text-4xl relative z-10">settings</span>
             </button>
-            <button class="h-full group relative flex items-center justify-between px-8 py-6 border border-secondary text-secondary font-headline-md tracking-tighter uppercase transition-all overflow-hidden active:scale-95 glitch-hover shadow-[0_0_20px_rgba(255,45,120,0.2)]" onclick="LM.router.navigate('quests')">
+            <button class="h-full group relative flex items-center justify-between px-8 py-6 border border-surface-container-highest text-on-surface font-headline-md tracking-tighter uppercase transition-all overflow-hidden active:scale-95 shadow-sm" onclick="LM.router.navigate('quests')">
               <span class="relative z-10">ACQUIRE NEW OBJECTIVES</span>
               <span class="material-symbols-outlined text-4xl relative z-10">terminal</span>
-              <div class="absolute inset-0 bg-secondary/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+              <div class="absolute inset-0 bg-surface-container-highest/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
             </button>
           </div>
         </section>

@@ -438,7 +438,7 @@ window.LM.views.questLog = (function () {
         ${ringsHtml}
         ${axesHtml}
         ${polygonPoints ? `
-          <polygon points="${polygonPoints}" fill="rgba(255, 74, 141, 0.15)" stroke="var(--accent)" stroke-width="2.5" />
+          <polygon points="${polygonPoints}" fill="rgba(74,124,255,0.15)" stroke="var(--accent)" stroke-width="2.5" />
           ${polygonPoints.split(' ').map(p => {
             const [x, y] = p.split(',');
             return `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="1.5" />`;

@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="icons/icon-512.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sora:wght@100;300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
   <link rel="stylesheet" href="css/main.css">
@@ -24,20 +24,18 @@
       theme: {
         extend: {
           "colors": {
-            "tertiary": "#eceaff", "inverse-primary": "#006875", "inverse-surface": "#e3e0f4",
-            "on-background": "#e3e0f4", "surface-container-lowest": "#0d0d1a", "tertiary-fixed": "#e1e0ff",
-            "surface-container-highest": "#343342", "on-error-container": "#ffdad6", "surface-tint": "#00e5ff",
-            "secondary": "#ff2d78", "on-tertiary": "#2d2e49", "on-secondary": "#ffffff",
-            "error": "#ffb4ab", "surface": "#12121f", "surface-dim": "#12121f",
-            "outline-variant": "#3b494c", "surface-variant": "#343342", "on-error": "#690005",
-            "primary": "#00e5ff", "background": "#0d0d1a", "surface-container": "#1e1e2c",
-            "on-surface": "#e3e0f4", "on-surface-variant": "#bac9cc"
+            "primary": "#4a7cff", "background": "#08080c", "surface": "#08080c",
+            "surface-dim": "#08080c", "surface-container-lowest": "#08080c",
+            "surface-container": "#111116", "surface-container-highest": "#1c1c22",
+            "on-surface": "#e8e8f0", "on-surface-variant": "#6b6b78",
+            "secondary": "#e0e0e8", "on-secondary": "#08080c",
+            "error": "#ef4444", "on-error": "#ffffff"
           },
           "fontFamily": {
-            "headline-md": ["Space Grotesk"], "label-sm": ["Space Grotesk"],
-            "display-xl": ["Space Grotesk"], "headline-lg": ["Space Grotesk"],
-            "body-md": ["Sora"], "headline-lg-mobile": ["Space Grotesk"],
-            "body-lg": ["Sora"]
+            "headline-md": ["Inter"], "label-sm": ["Inter"],
+            "display-xl": ["Inter"], "headline-lg": ["Inter"],
+            "body-md": ["Inter"], "headline-lg-mobile": ["Inter"],
+            "body-lg": ["Inter"]
           }
         }
       }
@@ -48,36 +46,27 @@
 <body>
 
   <div id="app">
-    <div class="ambient-orbs">
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
-      <div class="orb orb-3"></div>
-      <div class="orb orb-4"></div>
-      <div class="orb orb-5"></div>
-      <div class="vapor-sun"></div>
-    </div>
-    <div class="wireframe-grid"></div>
-    <div class="wireframe-floor"></div>
+    <!-- Removed ambient orbs and wireframe grids for minimal chrome look -->
 
     <!-- TopAppBar -->
-    <nav class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-primary/30 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+    <nav class="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-surface-container-highest">
       <div class="flex justify-between items-center px-6 py-4 md:px-12 w-full">
         <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-primary/10 border border-primary flex items-center justify-center text-primary font-bold neon-border-cyan">
+          <div class="w-10 h-10 bg-surface-container border border-surface-container-highest flex items-center justify-center text-primary font-bold rounded-lg shadow-sm">
             L42
           </div>
-          <h1 class="font-headline-md text-headline-lg-mobile md:text-headline-md tracking-tighter text-primary neon-text-cyan">Lifemaxx</h1>
+          <h1 class="font-headline-md text-headline-lg-mobile md:text-headline-md tracking-tighter text-on-surface">Lifemaxx</h1>
         </div>
         <div class="flex items-center gap-6">
           <div class="hidden md:flex gap-4 font-headline-md text-sm">
-            <span class="text-secondary neon-text-pink cursor-pointer" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">DASH</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="quests" onclick="LM.router.navigate('quests')">QUESTS</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="skills" onclick="LM.router.navigate('skills')">SKILLS</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="stats" onclick="LM.router.navigate('stats')">STATS</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="coach" onclick="LM.router.navigate('coach')">COACH</span>
-            <span class="text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer" data-nav-view="settings" onclick="LM.router.navigate('settings')">SETTINGS</span>
+            <span class="text-primary font-medium cursor-pointer" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">DASH</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" data-nav-view="quests" onclick="LM.router.navigate('quests')">QUESTS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" data-nav-view="skills" onclick="LM.router.navigate('skills')">SKILLS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" data-nav-view="stats" onclick="LM.router.navigate('stats')">STATS</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" data-nav-view="coach" onclick="LM.router.navigate('coach')">COACH</span>
+            <span class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" data-nav-view="settings" onclick="LM.router.navigate('settings')">SETTINGS</span>
           </div>
-          <div class="px-3 py-1 bg-secondary/10 border border-secondary text-secondary font-bold text-xs neon-border-pink">
+          <div class="px-3 py-1 bg-surface-container border border-surface-container-highest text-on-surface font-medium text-xs rounded-md">
             95% XP
           </div>
         </div>
@@ -85,29 +74,29 @@
     </nav>
 
     <!-- BottomNavBar -->
-    <nav class="fixed bottom-0 w-full z-50 bg-[#0d0d1a]/95 backdrop-blur-3xl border-t border-primary/30 shadow-[0_-5px_25px_rgba(0,229,255,0.15)]">
+    <nav class="fixed bottom-0 w-full z-50 bg-background/95 backdrop-blur-3xl border-t border-surface-container-highest">
       <div class="flex justify-around items-center px-4 pb-8 pt-4 w-full max-w-lg mx-auto">
-        <div class="flex flex-col items-center justify-center text-primary neon-text-cyan scale-110 cursor-pointer active:scale-95 transition-all" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">
+        <div class="flex flex-col items-center justify-center text-primary scale-110 cursor-pointer active:scale-95 transition-all" data-nav-view="dashboard" onclick="LM.router.navigate('dashboard')">
           <span class="material-symbols-outlined text-3xl">dashboard</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">DASH</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="quests" onclick="LM.router.navigate('quests')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="quests" onclick="LM.router.navigate('quests')">
           <span class="material-symbols-outlined text-3xl">military_tech</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">QUESTS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="stats" onclick="LM.router.navigate('stats')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="stats" onclick="LM.router.navigate('stats')">
           <span class="material-symbols-outlined text-3xl">query_stats</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">STATS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="skills" onclick="LM.router.navigate('skills')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="skills" onclick="LM.router.navigate('skills')">
           <span class="material-symbols-outlined text-3xl">widgets</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">SKILLS</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="coach" onclick="LM.router.navigate('coach')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="coach" onclick="LM.router.navigate('coach')">
           <span class="material-symbols-outlined text-3xl">psychology</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">COACH</span>
         </div>
-        <div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-secondary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="settings" onclick="LM.router.navigate('settings')">
+        <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="settings" onclick="LM.router.navigate('settings')">
           <span class="material-symbols-outlined text-3xl">settings</span>
           <span class="font-label-sm text-[9px] tracking-widest mt-1">SETTINGS</span>
         </div>

@@ -97,25 +97,13 @@ window.LM.views.settings = (function () {
         <div class="section-block" id="theme-settings-container">
           <h2>Appearance</h2>
           <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-              <div style="flex:1;min-width:200px;">
-                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Application Theme</div>
-                <div style="font-size:0.8rem;color:var(--text-3);">Choose your visual aesthetic and design language.</div>
-              </div>
-              <select class="form-input" id="select-theme" style="width:180px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
-                <option value="aero" ${s.theme === 'aero' || (!s.theme && s.aeroTheme !== false) ? 'selected' : ''}>Frutiger Aero</option>
-                <option value="dark" ${s.theme === 'dark' || (!s.theme && s.aeroTheme === false) ? 'selected' : ''}>Dark Glass</option>
-                <option value="neon" ${s.theme === 'neon' ? 'selected' : ''}>Neon Horizon</option>
-                <option value="light" ${s.theme === 'light' ? 'selected' : ''}>Light Mode</option>
-              </select>
-            </div>
-
+            <!-- Theme selector removed. The app uses a unified Chrome design system now. -->
             <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:0.85rem;color:var(--text-2);font-family:var(--font-display);">ACCENT COLOR</span>
                 <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                  <input type="color" id="accent-color-input" value="${s.accentColor || (s.theme === 'neon' ? '#ff4a8d' : s.theme === 'aero' ? '#0ea5e9' : '#7c3aed')}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;">
-                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || (s.theme === 'neon' ? '#ff4a8d' : s.theme === 'aero' ? '#0ea5e9' : '#7c3aed')};position:absolute;inset:2px;z-index:1;pointer-events:none;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 6px rgba(0,0,0,0.15);width:20px;height:20px;"></div>
+                  <input type="color" id="accent-color-input" value="${s.accentColor || '#4a7cff'}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;">
+                  <div class="accent-dot" id="accent-dot" style="background:${s.accentColor || '#4a7cff'};position:absolute;inset:2px;z-index:1;pointer-events:none;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 6px rgba(0,0,0,0.15);width:20px;height:20px;"></div>
                 </div>
               </div>
               <button class="btn btn-ghost btn-sm" id="btn-reset-accent" style="padding:4px 8px;font-size:0.7rem;">Reset to Theme Default</button>
@@ -263,18 +251,7 @@ window.LM.views.settings = (function () {
     `;
   }
 
-  function applyAeroTheme(on) {
-    if (on) {
-      document.documentElement.removeAttribute('data-aero-off');
-    } else {
-      document.documentElement.setAttribute('data-aero-off', 'true');
-    }
-  }
-
   function init() {
-    // Restore aero preference on load
-    const s = S.getSettings();
-    applyAeroTheme(s.aeroTheme !== false);
 
     // Create preset click handler
     const createPresetBtn = document.getElementById('btn-create-preset-settings');
@@ -303,20 +280,7 @@ window.LM.views.settings = (function () {
       });
     });
 
-    // Theme bindings
-    const themeSelect = document.getElementById('select-theme');
-    if (themeSelect) {
-      themeSelect.addEventListener('change', (e) => {
-        const nextTheme = e.target.value;
-        const st = S.getSettings();
-        st.theme = nextTheme;
-        // Keep aeroTheme sync for backwards compatibility
-        st.aeroTheme = nextTheme === 'aero';
-        S.saveSettings(st);
-        window.LM.components.theme.applyTheme(nextTheme);
-        window.LM.router.render(); // Redraw settings to update accent indicator
-      });
-    }
+    // Theme bindings removed
 
     // Reset accent button
     const resetAccentBtn = document.getElementById('btn-reset-accent');
@@ -325,7 +289,7 @@ window.LM.views.settings = (function () {
         const st = S.getSettings();
         delete st.accentColor;
         S.saveSettings(st);
-        window.LM.components.theme.applyTheme(st.theme || 'aero');
+        window.LM.components.theme.applyTheme('chrome');
         window.LM.router.render();
       });
     }

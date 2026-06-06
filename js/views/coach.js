@@ -207,7 +207,7 @@ window.LM.views.coach = (function () {
       if (m.sender === 'fletcher') {
         return `
           <div class="flex justify-start mb-6">
-            <div class="border-l-4 border-primary bg-surface-container/70 backdrop-blur-xl px-6 py-5 max-w-[88%] shadow-[0_0_20px_rgba(0,229,255,0.08)]">
+            <div class="border-l-4 border-primary bg-surface-container/70 backdrop-blur-xl px-6 py-5 max-w-[88%] shadow-sm">
               <p class="font-body-md text-primary/90 tracking-wide leading-relaxed">${m.text.replace(/\n/g, '<br>')}</p>
               <span class="text-[10px] font-label-sm text-primary/30 mt-2 block">${getTimeStr()}</span>
             </div>
@@ -215,9 +215,9 @@ window.LM.views.coach = (function () {
       }
       return `
         <div class="flex justify-end mb-6">
-          <div class="border-r-4 border-secondary bg-surface-container/70 backdrop-blur-xl px-6 py-5 max-w-[88%] text-right shadow-[0_0_20px_rgba(255,45,120,0.06)]">
-            <p class="font-body-md text-secondary/90 tracking-wide leading-relaxed">"${m.text.replace(/\n/g, '<br>')}"</p>
-            <span class="text-[10px] font-label-sm text-secondary/30 mt-2 block">${getTimeStr()}</span>
+          <div class="border-r-4 border-surface-container-highest bg-surface-container/70 backdrop-blur-xl px-6 py-5 max-w-[88%] text-right shadow-sm">
+            <p class="font-body-md text-on-surface-variant tracking-wide leading-relaxed">"${m.text.replace(/\n/g, '<br>')}"</p>
+            <span class="text-[10px] font-label-sm text-on-surface-variant/50 mt-2 block">${getTimeStr()}</span>
           </div>
         </div>`;
     }).join('');
@@ -233,24 +233,24 @@ window.LM.views.coach = (function () {
         <!-- Coach Header -->
         <div class="flex items-center gap-5 mb-8 flex-shrink-0">
           <div class="relative">
-            <div class="w-20 h-20 border-2 border-primary overflow-hidden shadow-[0_0_20px_rgba(0,229,255,0.3)] bg-surface-container">
+            <div class="w-20 h-20 border-2 border-primary overflow-hidden shadow-sm bg-surface-container">
               <img class="w-full h-full object-cover grayscale contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUV6W_pv9qR1zinvyk6cv4w6ulR_hV9_1qbNnfiPkuNCDRDaqzrf5qVUmiAYAZEME84Dqq9LREzB-VPw19CdkRNvVvxUUSrKeCPc8cMozcqpho5qBV7p9Ai5884kMe_7A7yvkhUaFfeRTI3OZqNFVukNWVk5WZogGJfp-wABtxK4vV3n-6fKc9tjeBzNCi0z3rpJApw3RKH28NuIioeVLAICOxmSMluL9s-_3_Kjr17f8HBlIpTuXyzKSzzDMoe5Y4wdphI91jLRYm" alt="Coach Fletcher" />
             </div>
             <div class="absolute -bottom-2 -right-2 bg-primary text-black px-2 py-0.5 font-label-sm text-[10px] tracking-widest font-bold">ACTIVE</div>
           </div>
           <div>
-            <h2 class="font-headline-md text-primary tracking-tight uppercase drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]">Coach Fletcher</h2>
+            <h2 class="font-headline-md text-primary tracking-tight uppercase">Coach Fletcher</h2>
             <p class="text-on-surface-variant text-xs uppercase tracking-widest mt-1">Status: No Excuses Tolerated</p>
           </div>
         </div>
 
         <!-- Action Chips (quick commands) -->
         <div class="flex gap-3 flex-wrap mb-6 flex-shrink-0">
-          <button id="btn-morning-brief" class="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary text-primary font-label-sm uppercase tracking-widest hover:bg-primary hover:text-black transition-all active:scale-95 shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+          <button id="btn-morning-brief" class="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary text-primary font-label-sm uppercase tracking-widest hover:bg-primary hover:text-black transition-all active:scale-95 shadow-sm">
             <span class="material-symbols-outlined text-sm">wb_sunny</span>
             Morning Brief
           </button>
-          <button id="btn-perf-review" class="flex items-center gap-2 px-5 py-2.5 bg-secondary/10 border border-secondary text-secondary font-label-sm uppercase tracking-widest hover:bg-secondary hover:text-white transition-all active:scale-95 shadow-[0_0_10px_rgba(255,45,120,0.2)]">
+          <button id="btn-perf-review" class="flex items-center gap-2 px-5 py-2.5 bg-surface-container border border-surface-container-highest text-on-surface font-label-sm uppercase tracking-widest hover:bg-surface-container-highest transition-all active:scale-95 shadow-sm">
             <span class="material-symbols-outlined text-sm">analytics</span>
             Performance Review
           </button>
@@ -270,7 +270,7 @@ window.LM.views.coach = (function () {
 
         <!-- Fixed Input Bar -->
         <div class="fixed left-0 w-full px-4 md:px-8 flex justify-center z-40 bottom-24">
-          <div class="w-full max-w-3xl bg-surface-container/95 backdrop-blur-xl border-b-2 border-primary flex items-center shadow-[0_0_20px_rgba(0,229,255,0.15)] transition-all" id="coach-input-wrapper">
+          <div class="w-full max-w-3xl bg-surface-container/95 backdrop-blur-xl border-b-2 border-primary flex items-center shadow-lg transition-all" id="coach-input-wrapper">
             <input type="text" id="coach-input-text"
               class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-headline-md text-primary placeholder:text-primary/30 py-4 px-5 uppercase tracking-tighter text-sm"
               placeholder="RESPOND TO FLETCHER..." />

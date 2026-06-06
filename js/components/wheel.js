@@ -31,7 +31,7 @@ window.LM.components.wheel = (function () {
       <div id="wheel-container">
         <select id="wheel-skill-select" class="wheel-select">${options}</select>
         <div id="wheel-drop-zone" class="wheel-drop-zone">
-          <svg id="wheel-svg" viewBox="0 0 260 260" width="100%" height="auto" style="max-width:260px;display:block;margin:0 auto;">
+          <svg id="wheel-svg" viewBox="0 0 260 260" width="100%" style="max-width:240px;display:block;margin:0 auto;">
             <defs>
               <filter id="glow-filter">
                 <feGaussianBlur stdDeviation="3" result="blur"/>

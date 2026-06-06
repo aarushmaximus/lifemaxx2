@@ -247,6 +247,12 @@ window.LM.views.dashboard = (function () {
             </div>
           </div>
 
+          <!-- XP WHEEL -->
+          <div style="display:flex; flex-direction:column; align-items:center; padding:16px 0;">
+            <p style="font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.18em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
+            ${W.renderHTML()}
+          </div>
+
           <!-- ACTIVE QUESTS -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -271,21 +277,6 @@ window.LM.views.dashboard = (function () {
             </div>
           </div>
         </div> <!-- End dash-center -->
-
-        <!-- RIGHT COLUMN — Wheel -->
-        <div class="dash-right">
-          <div class="wheel-panel">
-            <p class="wheel-hint-top">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
-            ${W.renderHTML()}
-          </div>
-        </div>
-        
-        <!-- Floating Action Buttons at bottom right -->
-        <button class="coach-float-btn" onclick="window.LM.router.navigate('#coach')" title="Chat with Coach Fletcher">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
-        </button>
       </div>`;
 
   }

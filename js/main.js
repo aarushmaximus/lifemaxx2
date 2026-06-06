@@ -111,10 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Theme
   LM.components.theme.init();
 
-  // Apply persisted Frutiger Aero preference immediately
-  const _aeroOn = LM.store.getSettings().aeroTheme !== false;
-  LM.views.settings.applyAeroTheme(_aeroOn);
-
   // Logo click → navigate to dashboard
   document.getElementById('logo-home-btn')?.addEventListener('click', () => LM.router.navigate('#dashboard'));
   // Sidebar skills
