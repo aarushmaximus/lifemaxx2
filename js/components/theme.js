@@ -19,7 +19,7 @@ window.LM.components.theme = (function () {
     // Set corresponding theme accents automatically if none is custom set
     const settings = S.getSettings();
     if (!settings.accentColor) {
-      applyAccent('#4a7cff'); // Default Chrome Metallic Blue
+      applyAccent('#E8E8E8'); // Default Chrome Metallic
     } else {
       applyAccent(settings.accentColor);
     }
@@ -27,7 +27,7 @@ window.LM.components.theme = (function () {
 
   function hexToRgba(hex, alpha) {
     // fallback if invalid hex
-    if (!hex || hex.length < 7) return `rgba(74,124,255,${alpha})`;
+    if (!hex || hex.length < 7) return `rgba(232,232,232,${alpha})`;
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
@@ -37,7 +37,7 @@ window.LM.components.theme = (function () {
   function init() {
     const settings = S.getSettings();
     applyTheme('chrome');
-    applyAccent(settings.accentColor || '#4a7cff');
+    applyAccent(settings.accentColor || '#E8E8E8');
   }
 
   return { init, applyAccent, applyTheme };

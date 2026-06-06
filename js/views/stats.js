@@ -101,62 +101,6 @@ window.LM.views.stats = (function () {
 
       <div class="relative z-20 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto page-enter">
 
-        <!-- ─────────────────────────────────── OPERATOR PROFILE SECTION ────────── -->
-        <section class="mb-16">
-          <p class="font-label-sm text-primary uppercase tracking-[0.3em] mb-2">OPERATOR FILE</p>
-          <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg uppercase tracking-tighter text-on-surface mb-2">Profile & Stats</h2>
-          <div class="h-1 w-24 bg-gradient-to-r from-primary to-surface-container-highest mb-8 shadow-sm"></div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
-            <!-- Operator Card -->
-            <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-6 bg-surface-container/60 backdrop-blur-lg border-l-4 border-primary relative overflow-hidden shadow-sm">
-              <div class="relative w-36 h-36 mb-4 group">
-                <div class="absolute inset-0 border-2 border-primary animate-pulse opacity-40"></div>
-                <div class="absolute -inset-2 border border-surface-container-highest rotate-45"></div>
-                <img alt="Operator Profile" class="w-full h-full object-cover grayscale brightness-110 contrast-125 saturate-150"
-                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRG8upTgdEsgDsMMgTB7EdIw5OCPFDDBa-EiyV5b9dX8SRRKWuCqPIyINiyyScRIFIaMPmtfuVD2EfGqaRUVWHsY2C8gN_tV3j3ai8N1AmANfqXC7W3ZVDc1-QYSrDRfCbxkoclqPncYZIi4sBXKToWXCOwmUSU7Re-FFyc4mFqp_ViHvHY0wz3Kytbb7bItxhRjoS1Phfs3oFn8q-_SOL0dLlzNx57BmTZLKhPIZ0p_3FmJ-1hkijiSvVp8H0esq0wyI8TB9CLxLE"/>
-                <div class="absolute bottom-0 left-0 bg-primary text-black font-bold px-2 py-0.5 text-[10px]">CONNECTED</div>
-              </div>
-              <h2 class="font-headline-md text-primary tracking-tighter uppercase">${settings.username || 'OPERATOR_X'}</h2>
-              <p class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">${rankInfo.title}</p>
-              <div class="flex gap-2 mt-3 flex-wrap">
-                <span class="bg-surface-container-highest text-on-surface font-label-sm px-2 py-0.5 uppercase tracking-tighter text-[10px]">PEAK</span>
-                <span class="bg-primary text-black font-label-sm px-2 py-0.5 uppercase italic text-[10px]">NEURAL MAPPED</span>
-              </div>
-            </div>
-
-            <!-- Quick Stats Grid -->
-            <div class="lg:col-span-8 flex flex-col gap-4">
-              <div class="p-5 bg-surface-container/60 backdrop-blur-lg border-l-4 border-surface-container-highest flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-                <div class="flex items-center gap-4">
-                  <span class="material-symbols-outlined text-primary text-3xl" style="filter:drop-shadow(0 0 6px rgba(0,229,255,0.7))">cloud_sync</span>
-                  <div>
-                    <p class="font-label-sm text-on-surface-variant uppercase text-[10px]">SYNC STATUS</p>
-                    <h3 class="font-headline-md text-primary">ENCRYPTED UPLINK ACTIVE</h3>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="font-label-sm text-on-surface-variant uppercase text-[10px]">SESSION</p>
-                  <p class="text-on-surface-variant font-mono text-sm">${new Date().toISOString().slice(0,10)} // ONLINE</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-3 gap-4">
-                <div class="p-4 bg-surface-container/60 border-l-4 border-primary/40 hover:border-primary transition-all">
-                  <p class="font-label-sm text-on-surface-variant text-[10px] mb-2">STREAK</p>
-                  <p class="font-headline-md text-white text-lg">🔥 ${streak}</p>
-                </div>
-                <div class="p-4 bg-surface-container/60 border-l-4 border-primary/40 hover:border-primary transition-all">
-                  <p class="font-label-sm text-on-surface-variant text-[10px] mb-2">RANK</p>
-                  <p class="font-headline-md text-white text-sm">${rankInfo.title}</p>
-                </div>
-                <div class="p-4 bg-surface-container/60 border-l-4 border-primary/40 hover:border-primary transition-all">
-                  <p class="font-label-sm text-on-surface-variant text-[10px] mb-2">LEVEL</p>
-                  <p class="font-headline-md text-primary text-2xl">${overall.currentLevel || 0}</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- Weekly Quotas -->
           <h3 class="font-label-sm text-primary uppercase tracking-[0.3em] mb-4">WEEKLY QUOTAS — 7-DAY ROLLING</h3>

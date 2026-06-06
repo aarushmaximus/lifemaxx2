@@ -312,8 +312,7 @@ window.LM.store = (function () {
             isReadyToClaim: false,
             timeLimitHours: p.timeLimitHours || 24,
             expiresAt: p.hasTimeLimit ? (Date.now() + (p.timeLimitHours || 24) * 60 * 60 * 1000) : null,
-            timeWindow: p.timeWindow || null,
-            energyCost: p.energyCost || 'Medium'
+            timeWindow: p.timeWindow || null
           });
           changed = true;
         }
@@ -374,8 +373,7 @@ Please analyze my performance and output a JSON response matching the following 
   "recommendedQuest": {
     "title": "Double Down on Mind", 
     "macroCategory": "Mind", 
-    "timeLimitHours": 24,
-    "energyCost": "Medium"
+    "timeLimitHours": 24
   }
 }`;
 
@@ -426,7 +424,6 @@ Please analyze my performance and output a JSON response matching the following 
           createdAt: Date.now(),
           timeLimitHours: parsed.recommendedQuest.timeLimitHours || 24,
           expiresAt: parsed.recommendedQuest.timeLimitHours ? (Date.now() + parsed.recommendedQuest.timeLimitHours * 3600000) : null,
-          energyCost: parsed.recommendedQuest.energyCost || 'Medium',
           targetSkills: [{ macroSkillId: macroId, microSkillId: null, xpAmount: 30 }]
         });
         save(KEYS.quests, currentQuests);
@@ -506,7 +503,6 @@ Please analyze my performance and output a JSON response matching the following 
         createdAt: Date.now(),
         timeLimitHours: q.timeLimitHours || 24,
         expiresAt: q.timeLimitHours ? (Date.now() + q.timeLimitHours * 3600000) : null,
-        energyCost: q.energyCost || 'Medium',
         targetSkills: [{ macroSkillId: macroId, microSkillId: null, xpAmount: 20 }]
       });
     });

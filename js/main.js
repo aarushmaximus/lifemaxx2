@@ -62,7 +62,11 @@ window.LM.router = (function () {
       // Update bottom nav active state
       const activeView = route.view.startsWith('skill') ? 'skills' : route.view;
       document.querySelectorAll('[data-nav-view]').forEach(el => {
-        el.classList.toggle('nav-active', el.dataset.navView === activeView);
+        const isActive = el.dataset.navView === activeView;
+        el.classList.toggle('nav-active', isActive);
+        el.classList.toggle('text-primary', isActive);
+        el.classList.toggle('scale-110', isActive);
+        el.classList.toggle('text-on-surface-variant', !isActive);
       });
 
       // Animate in via CSS class

@@ -126,17 +126,14 @@ window.LM.views.me = (function () {
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 pb-10">
           <!-- Avatar & Basic Info -->
           <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-8 bg-surface-container/60 backdrop-blur-lg border-l-4 border-primary relative overflow-hidden shadow-sm">
-            <div class="relative w-48 h-48 mb-6 group">
-              <div class="absolute inset-0 border-2 border-primary animate-pulse opacity-50"></div>
-              <div class="absolute -inset-2 border border-surface-container-highest rotate-45"></div>
-              <img alt="Operator Profile" class="w-full h-full object-cover grayscale brightness-110 contrast-125 saturate-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRG8upTgdEsgDsMMgTB7EdIw5OCPFDDBa-EiyV5b9dX8SRRKWuCqPIyINiyyScRIFIaMPmtfuVD2EfGqaRUVWHsY2C8gN_tV3j3ai8N1AmANfqXC7W3ZVDc1-QYSrDRfCbxkoclqPncYZIi4sBXKToWXCOwmUSU7Re-FFyc4mFqp_ViHvHY0wz3Kytbb7bItxhRjoS1Phfs3oFn8q-_SOL0dLlzNx57BmTZLKhPIZ0p_3FmJ-1hkijiSvVp8H0esq0wyI8TB9CLxLE"/>
-              <div class="absolute bottom-0 left-0 bg-primary text-surface font-bold px-2 py-1 text-xs">CONNECTED</div>
+            <div class="relative w-32 h-32 mb-6 group">
+              <div class="absolute inset-0 border-2 border-primary opacity-50"></div>
+              <img alt="User Profile" class="w-full h-full object-cover grayscale brightness-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRG8upTgdEsgDsMMgTB7EdIw5OCPFDDBa-EiyV5b9dX8SRRKWuCqPIyINiyyScRIFIaMPmtfuVD2EfGqaRUVWHsY2C8gN_tV3j3ai8N1AmANfqXC7W3ZVDc1-QYSrDRfCbxkoclqPncYZIi4sBXKToWXCOwmUSU7Re-FFyc4mFqp_ViHvHY0wz3Kytbb7bItxhRjoS1Phfs3oFn8q-_SOL0dLlzNx57BmTZLKhPIZ0p_3FmJ-1hkijiSvVp8H0esq0wyI8TB9CLxLE"/>
             </div>
             <div class="text-center lg:text-left">
-              <h2 class="font-headline-lg text-primary mb-2 tracking-tighter uppercase">${settings.username || 'OPERATOR_X'}</h2>
+              <h2 class="font-headline-lg text-primary mb-2 tracking-tighter">${settings.username || 'User'}</h2>
               <div class="flex flex-wrap gap-2 justify-center lg:justify-start">
-                <span class="bg-surface-container-highest text-on-surface font-label-sm px-3 py-1 uppercase tracking-tighter">PEAK</span>
-                <span class="bg-primary text-surface font-label-sm px-3 py-1 uppercase tracking-tighter">NEURAL MAPPED</span>
+                <span class="bg-surface-container-highest text-on-surface font-label-sm px-3 py-1 uppercase tracking-tighter">Level ${overall.currentLevel || 0}</span>
               </div>
             </div>
           </div>
@@ -148,7 +145,7 @@ window.LM.views.me = (function () {
                 <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
                 <div>
                   <p class="font-label-sm text-on-surface-variant uppercase">SYNC STATUS</p>
-                  <h3 class="font-headline-md text-primary">ENCRYPTED UPLINK ACTIVE</h3>
+                  <h3 class="font-headline-md text-primary">CONNECTED</h3>
                 </div>
               </div>
               <div class="text-center md:text-right">
@@ -211,7 +208,7 @@ window.LM.views.me = (function () {
                   <div class="flex justify-between items-start mb-8">
                     <span class="material-symbols-outlined ${textClass} text-3xl">${iconName}</span>
                     <div class="w-12 h-12 flex items-center justify-center relative">
-                      <svg class="w-full h-full -rotate-90">
+                      <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
                         <circle class="text-white/5" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
                         <circle class="${textClass} drop-shadow-sm" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="${dashOffset}" stroke-width="3"></circle>
                       </svg>

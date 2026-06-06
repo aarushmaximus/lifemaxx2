@@ -161,22 +161,17 @@ window.LM.views.dashboard = (function () {
         statusBadge = `<span class="quest-type-badge" style="background:rgba(120,120,140,0.15);color:var(--text-3);border:1px solid var(--border);">LOCKED 🔒</span>`;
       }
 
-      const energyCost = q.energyCost || 'Medium';
-      const energyIcon = energyCost === 'High' ? '⚡' : energyCost === 'Medium' ? '🔋' : '💤';
-      let energyBadge = `<span class="quest-type-badge" title="Energy: ${energyCost}" style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border);">${energyIcon} ${energyCost}</span>`;
-
       let cardClass = '';
       if (isMissed) cardClass = 'quest-card-deleted-status';
       else if (isLocked) cardClass = 'quest-card-deleted-status';
 
       return `
-        <div class="quest-card ${cardClass}" draggable="${(!isLocked && !isMissed) ? 'true' : 'false'}" data-quest-id="${q.id}" data-energy="${energyCost}"
+        <div class="quest-card ${cardClass}" draggable="${(!isLocked && !isMissed) ? 'true' : 'false'}" data-quest-id="${q.id}"
           ondragstart="${(!isLocked && !isMissed) ? `LM.views.dashboard.onDragStart(event,'${q.id}')` : ''}"
           ondragend="this.classList.remove('card-dragging')">
           <div class="quest-card-header">
             ${windowBadge}
             ${statusBadge}
-            ${energyBadge}
             ${timeStr}
             <div class="quest-card-actions">
               <button class="btn-icon danger" onclick="LM.views.dashboard.deleteQuest('${q.id}')" title="Delete">✕</button>
@@ -208,7 +203,6 @@ window.LM.views.dashboard = (function () {
     const macros = S.getMacros();
     const settings = S.getSettings();
     const wheelSkillId = settings.wheelSkillId || 'overall';
-    const currentEnergy = localStorage.getItem('lm_user_energy') || 'High';
     const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
     const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
     let barData = getBarData(wheelSkillId, macros);
@@ -235,7 +229,7 @@ window.LM.views.dashboard = (function () {
         <div class="dash-center">
           
           <!-- XP Bar -->
-          <div style="background:var(--bg-raised); padding:16px; border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
+          <div class="dash-xp-bar-container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <span style="font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-1); text-transform:uppercase;">CURRENT XP PROGRESS</span>
               <span id="dash-xp-label" style="font-size:0.8rem; color:var(--text-2);">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
@@ -296,16 +290,6 @@ window.LM.views.dashboard = (function () {
       refreshCards();
     });
 
-    // Energy filter
-    document.getElementById('dash-energy-sel')?.addEventListener('change', (e) => {
-      const val = e.target.value;
-      localStorage.setItem('lm_user_energy', val);
-      const grid = document.getElementById('quest-grid');
-      if (grid) {
-        grid.classList.toggle('low-energy-active', val === 'Low');
-      }
-      refreshCards();
-    });
   }
 
   function selectMacro(macroId) {

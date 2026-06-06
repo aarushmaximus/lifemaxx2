@@ -21,7 +21,6 @@ window.LM.views.coach = (function () {
   async function generateMorningBrief() {
     if (isBriefLoading) return;
     isBriefLoading = true;
-    const energy = localStorage.getItem('lm_user_energy') || 'High';
     const macros = S.getMacros();
     if (!macros.length) {
       chatHistory.push({ sender: 'fletcher', text: "You have no skill modules configured. Set up your profile first." });
@@ -34,7 +33,7 @@ window.LM.views.coach = (function () {
 
     const prompt =
       `Generate today's morning briefing and 2 to 3 recommended quests. ` +
-      `The user's energy level is: ${energy}. ` +
+      `Here is the list of available skills:\n${skillsListStr}\n\n` +
       `Here is the list of available skills:\n${skillsListStr}\n\n` +
       `You MUST respond in JSON format matching this schema EXACTLY:\n` +
       `{"fletcher_message":"A harsh verbal lashing (Fletcher voice)","quests":[{"name":"Short Quest Title","description":"Actionable instructions","type":"habit","targetSkills":[{"macroSkillId":"MATCHING_MACRO_ID","microSkillId":null,"xpAmount":50}],"status":"active"}]}\n\n` +
@@ -232,15 +231,15 @@ window.LM.views.coach = (function () {
 
         <!-- Coach Header -->
         <div class="flex items-center gap-5 mb-8 flex-shrink-0">
-          <div class="relative">
-            <div class="w-20 h-20 border-2 border-primary overflow-hidden shadow-sm bg-surface-container">
-              <img class="w-full h-full object-cover grayscale contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUV6W_pv9qR1zinvyk6cv4w6ulR_hV9_1qbNnfiPkuNCDRDaqzrf5qVUmiAYAZEME84Dqq9LREzB-VPw19CdkRNvVvxUUSrKeCPc8cMozcqpho5qBV7p9Ai5884kMe_7A7yvkhUaFfeRTI3OZqNFVukNWVk5WZogGJfp-wABtxK4vV3n-6fKc9tjeBzNCi0z3rpJApw3RKH28NuIioeVLAICOxmSMluL9s-_3_Kjr17f8HBlIpTuXyzKSzzDMoe5Y4wdphI91jLRYm" alt="Coach Fletcher" />
+          <div class="relative cursor-pointer group" id="coach-avatar-container" title="Click to change profile picture">
+            <div class="w-20 h-20 border-2 border-primary overflow-hidden shadow-sm bg-surface-container group-hover:border-white transition-colors">
+              <img class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-110 transition-transform duration-300" src="${S.getSettings().coachAvatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDUV6W_pv9qR1zinvyk6cv4w6ulR_hV9_1qbNnfiPkuNCDRDaqzrf5qVUmiAYAZEME84Dqq9LREzB-VPw19CdkRNvVvxUUSrKeCPc8cMozcqpho5qBV7p9Ai5884kMe_7A7yvkhUaFfeRTI3OZqNFVukNWVk5WZogGJfp-wABtxK4vV3n-6fKc9tjeBzNCi0z3rpJApw3RKH28NuIioeVLAICOxmSMluL9s-_3_Kjr17f8HBlIpTuXyzKSzzDMoe5Y4wdphI91jLRYm'}" alt="Coach Fletcher" />
             </div>
             <div class="absolute -bottom-2 -right-2 bg-primary text-black px-2 py-0.5 font-label-sm text-[10px] tracking-widest font-bold">ACTIVE</div>
           </div>
           <div>
             <h2 class="font-headline-md text-primary tracking-tight uppercase">Coach Fletcher</h2>
-            <p class="text-on-surface-variant text-xs uppercase tracking-widest mt-1">Status: No Excuses Tolerated</p>
+            <p class="text-on-surface-variant text-xs uppercase tracking-widest mt-1">Status: No Excuses Tolerated (Click image to change)</p>
           </div>
         </div>
 
@@ -254,15 +253,6 @@ window.LM.views.coach = (function () {
             <span class="material-symbols-outlined text-sm">analytics</span>
             Performance Review
           </button>
-          <div class="flex items-center gap-2 px-4 py-2.5 bg-surface-container/50 border border-white/10 font-label-sm text-on-surface-variant text-xs uppercase tracking-widest">
-            <span class="material-symbols-outlined text-sm">bolt</span>
-            Energy:
-            <select id="coach-energy-sel" class="bg-transparent border-none text-primary font-label-sm focus:ring-0 text-xs uppercase tracking-widest cursor-pointer outline-none">
-              <option value="High" ${(localStorage.getItem('lm_user_energy')||'High')==='High'?'selected':''}>High</option>
-              <option value="Medium" ${(localStorage.getItem('lm_user_energy')||'High')==='Medium'?'selected':''}>Medium</option>
-              <option value="Low" ${(localStorage.getItem('lm_user_energy')||'High')==='Low'?'selected':''}>Low</option>
-            </select>
-          </div>
         </div>
 
         <!-- Chat History -->
@@ -290,13 +280,6 @@ window.LM.views.coach = (function () {
     const input = document.getElementById('coach-input-text');
     const send = document.getElementById('btn-coach-send');
     const wrapper = document.getElementById('coach-input-wrapper');
-    const energySel = document.getElementById('coach-energy-sel');
-
-    if (energySel) {
-      energySel.addEventListener('change', () => {
-        localStorage.setItem('lm_user_energy', energySel.value);
-      });
-    }
 
     if (input && wrapper) {
       input.addEventListener('focus', () => { wrapper.style.boxShadow = '0 0 25px rgba(0,229,255,0.4)'; });
@@ -314,6 +297,16 @@ window.LM.views.coach = (function () {
 
     document.getElementById('btn-morning-brief')?.addEventListener('click', generateMorningBrief);
     document.getElementById('btn-perf-review')?.addEventListener('click', generatePerformanceReview);
+
+    document.getElementById('coach-avatar-container')?.addEventListener('click', () => {
+      const url = prompt("Enter new Coach profile picture URL:", S.getSettings().coachAvatarUrl || '');
+      if (url !== null) {
+        const s = S.getSettings();
+        s.coachAvatarUrl = url.trim();
+        S.saveSettings(s);
+        window.LM.router.render();
+      }
+    });
   }
 
   return { render, init };

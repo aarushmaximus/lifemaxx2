@@ -113,15 +113,6 @@ window.LM.components.questModal = (function () {
             <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this preset cover?">${description}</textarea>
           </div>
 
-          <div class="form-group">
-            <label>Energy Cost</label>
-            <select id="qm-energy" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);">
-              <option value="Low" ${it.energyCost === 'Low' ? 'selected' : ''}>Low 💤</option>
-              <option value="Medium" ${it.energyCost === 'Medium' || !it.energyCost ? 'selected' : ''}>Medium 🔋</option>
-              <option value="High" ${it.energyCost === 'High' ? 'selected' : ''}>High ⚡</option>
-            </select>
-          </div>
-
           <div class="form-group" style="margin-top: 5px;">
             <label>Target Skills & XP Rewards</label>
             <div id="qm-skills-list">
@@ -215,15 +206,6 @@ window.LM.components.questModal = (function () {
         <div class="form-group">
           <label>Description</label>
           <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this quest involve?" ${dis}>${description}</textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Energy Cost</label>
-          <select id="qm-energy" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);" ${dis}>
-            <option value="Low" ${it.energyCost === 'Low' ? 'selected' : ''}>Low 💤</option>
-            <option value="Medium" ${it.energyCost === 'Medium' || !it.energyCost ? 'selected' : ''}>Medium 🔋</option>
-            <option value="High" ${it.energyCost === 'High' ? 'selected' : ''}>High ⚡</option>
-          </select>
         </div>
 
         <!-- Preset Selection -->
@@ -540,7 +522,6 @@ For each quest, return:
 - title: concise, actionable task name.
 - macroCategory: the high-level category representing the main skill targeted. Choose EXACTLY one of: "Mind", "Body", "Soul", "Work" (or "Creative" if it fits work/learning).
 - timeLimitHours: numeric duration in hours representing expiration (e.g. 1.5, 3, 24).
-- energyCost: enum value representing the energy drain. Choose EXACTLY one of: "Low", "Medium", "High".
 
 You MUST return a JSON object with this exact structure:
 {
@@ -548,8 +529,7 @@ You MUST return a JSON object with this exact structure:
     {
       "title": "Quest Name",
       "macroCategory": "Mind",
-      "timeLimitHours": 2,
-      "energyCost": "Medium"
+      "timeLimitHours": 2
     }
   ]
 }`;
@@ -670,7 +650,6 @@ You MUST return a JSON object with this exact structure:
       };
     }
 
-    const energyCost = document.getElementById('qm-energy')?.value || 'Medium';
 
     // ── SAVE PRESET MODE ──
     if (isPresetMode) {
@@ -685,8 +664,7 @@ You MUST return a JSON object with this exact structure:
         timeLimitHours,
         isNegativeOnMiss,
         isNegativeOnComplete,
-        progressIndicator,
-        energyCost
+        progressIndicator
       };
       
       S.upsertPreset(preset);
@@ -715,8 +693,7 @@ You MUST return a JSON object with this exact structure:
       isNegativeOnMiss,
       isNegativeOnComplete,
       targetSkills,
-      progressIndicator,
-      energyCost
+      progressIndicator
     };
 
     S.upsertQuest(quest);

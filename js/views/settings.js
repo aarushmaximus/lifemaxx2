@@ -146,6 +146,14 @@ window.LM.views.settings = (function () {
               </select>
             </div>
 
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:4px;">Coach Profile Picture (URL)</div>
+                <div style="font-size:0.8rem;color:var(--text-3);">Customize Fletcher's avatar with any image URL.</div>
+              </div>
+              <input type="text" class="form-input" id="input-coach-avatar" value="${s.coachAvatarUrl || ''}" placeholder="https://..." style="width:250px;padding:8px 12px;font-size:0.85rem;">
+            </div>
+
             <div style="font-size:0.85rem;color:var(--text-2);">
               Daily Call Quota Usage: <span id="lbl-ai-quota" style="font-family:var(--font-mono);font-weight:bold;">${window.LM.aiEngine ? window.LM.aiEngine.getQuotaCount() : 0} / ${s.geminiQuotaLimit || 20}</span> calls today (rolling 24h)
             </div>
@@ -314,6 +322,15 @@ window.LM.views.settings = (function () {
       geminiInput.addEventListener('change', (e) => {
         const st = S.getSettings();
         st.geminiApiKey = e.target.value.trim();
+        S.saveSettings(st);
+      });
+    }
+
+    const coachAvatarInput = document.getElementById('input-coach-avatar');
+    if (coachAvatarInput) {
+      coachAvatarInput.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.coachAvatarUrl = e.target.value.trim();
         S.saveSettings(st);
       });
     }
@@ -616,5 +633,5 @@ window.LM.views.settings = (function () {
     }
   }
 
-  return { render, init, applyAeroTheme };
+  return { render, init };
 })();
