@@ -1610,3 +1610,53 @@ body::before {
   80% { opacity: 1; }
   100% { left: 200%; opacity: 0; }
 }
+
+/* Fix Tailwind Forms Checkbox Color globally */
+[type='checkbox']:checked, [type='radio']:checked {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--bg-surface) !important;
+}
+
+[type='text']:focus, [type='email']:focus, [type='url']:focus, [type='password']:focus, [type='number']:focus, [type='date']:focus, [type='datetime-local']:focus, [type='month']:focus, [type='search']:focus, [type='tel']:focus, [type='time']:focus, [type='week']:focus, [multiple]:focus, textarea:focus, select:focus {
+  border-color: var(--accent) !important;
+  --tw-ring-color: var(--accent) !important;
+  box-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color) !important;
+}
+
+/* Chrome metallic checkbox and focus rings */
+[data-chrome-accents="true"] [type='checkbox']:checked,
+[data-chrome-accents="true"] [type='radio']:checked {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  color: #000 !important;
+  animation: chromePan 4s linear infinite !important;
+}
+
+[data-chrome-accents="true"] [type='text']:focus,
+[data-chrome-accents="true"] textarea:focus,
+[data-chrome-accents="true"] select:focus {
+  border-color: #ffffff !important;
+  --tw-ring-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Fix blue transparency for chrome mode */
+[data-chrome-accents="true"] .bg-primary\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-chrome-accents="true"] .text-primary\/90,
+[data-chrome-accents="true"] .text-primary\/50,
+[data-chrome-accents="true"] .text-primary\/30 {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: chromePan 6s linear infinite !important;
+}
+
+[data-chrome-accents="true"] .text-primary\/90 { opacity: 0.9 !important; }
+[data-chrome-accents="true"] .text-primary\/50 { opacity: 0.5 !important; }
+[data-chrome-accents="true"] .text-primary\/30 { opacity: 0.3 !important; }
