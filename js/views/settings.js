@@ -240,7 +240,7 @@ window.LM.views.settings = (function () {
           <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
             <label style="font-size:0.75rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em;">Your Secret Sync Key</label>
             <div style="display:flex; gap:8px; align-items:center;">
-              <input type="text" readonly value="${settings.syncKey}" style="flex:1; background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-family:monospace; font-size:0.9rem; color:var(--accent); text-align:center;" id="qm-sync-key-input">
+              <input type="text" readonly value="${settings.syncKey}" style="flex:1; background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-family:var(--font-mono); font-size:0.9rem; color:var(--accent); text-align:center;" id="qm-sync-key-input">
               <button class="btn btn-ghost" id="btn-sync-copy" style="padding:8px 12px; font-size:0.85rem;">📋 Copy</button>
             </div>
             <p style="font-size:0.7rem; color:var(--text-3); margin-top:2px;">

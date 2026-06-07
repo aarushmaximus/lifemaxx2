@@ -37,6 +37,14 @@ window.LM.components.wheel = (function () {
                 <feGaussianBlur stdDeviation="3" result="blur"/>
                 <feComposite in="SourceGraphic" in2="blur" operator="over"/>
               </filter>
+              <linearGradient id="wheel-chrome-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#404040" />
+                <stop offset="20%" stop-color="#b8b8b8" />
+                <stop offset="40%" stop-color="#ffffff" />
+                <stop offset="60%" stop-color="#707070" />
+                <stop offset="80%" stop-color="#e0e0e0" />
+                <stop offset="100%" stop-color="#ffffff" />
+              </linearGradient>
             </defs>
             <!-- Track ring -->
             <circle cx="130" cy="130" r="110" fill="none" stroke="var(--bg-raised)" stroke-width="14"/>
@@ -71,13 +79,13 @@ window.LM.components.wheel = (function () {
               style="transition: stroke-dashoffset 1.2s var(--spring-soft), stroke 0.4s ease;"/>
             <!-- Center elements -->
             <text id="wheel-level-text" x="130" y="118" text-anchor="middle"
-              font-family="'Space Grotesk', sans-serif" font-size="44" font-weight="300"
+              font-family="var(--font-display)" font-size="44" font-weight="300"
               fill="var(--text-1)">0</text>
             <text id="wheel-skill-name" x="130" y="148" text-anchor="middle"
-              font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="400"
+              font-family="var(--font-display)" font-size="10" font-weight="400"
               fill="var(--text-2)" letter-spacing="2">OVERALL</text>
             <text id="wheel-xp-text" x="130" y="168" text-anchor="middle"
-              font-family="'Space Grotesk', sans-serif" font-size="9"
+              font-family="var(--font-display)" font-size="9"
               fill="var(--text-3)"></text>
           </svg>
           <div class="wheel-drop-hint">
