@@ -1660,3 +1660,20 @@ body::before {
 [data-chrome-accents="true"] .text-primary\/90 { opacity: 0.9 !important; }
 [data-chrome-accents="true"] .text-primary\/50 { opacity: 0.5 !important; }
 [data-chrome-accents="true"] .text-primary\/30 { opacity: 0.3 !important; }
+
+/* Fix Tailwind Forms Inputs for Dark Theme */
+[type='text'], [type='email'], [type='url'], [type='password'], [type='number'], [type='date'], [type='datetime-local'], [type='month'], [type='search'], [type='tel'], [type='time'], [type='week'], [multiple], textarea, select, .form-input {
+  background-color: transparent !important;
+  border-color: var(--border) !important;
+  color: var(--text-1) !important;
+}
+
+[type='text']::placeholder, textarea::placeholder {
+  color: var(--text-3) !important;
+  opacity: 1;
+}
+
+select option {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-1) !important;
+}
