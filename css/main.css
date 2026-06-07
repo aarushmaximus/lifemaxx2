@@ -1677,3 +1677,30 @@ select option {
   background-color: var(--bg-surface) !important;
   color: var(--text-1) !important;
 }
+
+/* Dashboard Extra Flair */
+[data-chrome-accents="true"] .xp-bar-fill {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  animation: chromePan 4s linear infinite !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+[data-chrome-accents="true"] .quest-card .btn-complete {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  animation: chromePan 6s linear infinite !important;
+  color: #000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+[data-chrome-accents="true"] .quest-card .btn-complete:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
+
+[data-chrome-accents="true"] .quest-card {
+  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
