@@ -125,48 +125,50 @@ window.LM.views.me = (function () {
         <!-- Profile Hero Section -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 pb-10">
           <!-- Avatar & Basic Info -->
-          <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-8 bg-surface-container/60 backdrop-blur-lg border-l-4 border-primary relative overflow-hidden shadow-sm">
+          <div class="lg:col-span-4 flex flex-col items-center lg:items-start p-8 bg-surface-container border border-surface-container-highest relative overflow-hidden">
             <div class="relative w-32 h-32 mb-6 group">
-              <div class="absolute inset-0 border-2 border-primary opacity-50"></div>
-              <img alt="User Profile" class="w-full h-full object-cover grayscale brightness-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRG8upTgdEsgDsMMgTB7EdIw5OCPFDDBa-EiyV5b9dX8SRRKWuCqPIyINiyyScRIFIaMPmtfuVD2EfGqaRUVWHsY2C8gN_tV3j3ai8N1AmANfqXC7W3ZVDc1-QYSrDRfCbxkoclqPncYZIi4sBXKToWXCOwmUSU7Re-FFyc4mFqp_ViHvHY0wz3Kytbb7bItxhRjoS1Phfs3oFn8q-_SOL0dLlzNx57BmTZLKhPIZ0p_3FmJ-1hkijiSvVp8H0esq0wyI8TB9CLxLE"/>
+              <div class="absolute inset-0 border border-surface-container-highest opacity-50 rounded-full"></div>
+              <div class="w-full h-full rounded-full chrome-metallic flex items-center justify-center font-display text-5xl text-black shadow-lg">
+                ${settings.username ? settings.username.charAt(0).toUpperCase() : 'O'}
+              </div>
             </div>
             <div class="text-center lg:text-left">
-              <h2 class="font-headline-lg text-primary mb-2 tracking-tighter">${settings.username || 'User'}</h2>
+              <h2 class="font-display text-primary mb-2 text-3xl tracking-widest uppercase">${settings.username || 'User'}</h2>
               <div class="flex flex-wrap gap-2 justify-center lg:justify-start">
-                <span class="bg-surface-container-highest text-on-surface font-label-sm px-3 py-1 uppercase tracking-tighter">Level ${overall.currentLevel || 0}</span>
+                <span class="text-on-surface font-mono text-sm px-3 py-1 uppercase tracking-widest border border-surface-container-highest">Level ${overall.currentLevel || 0}</span>
               </div>
             </div>
           </div>
           
           <!-- Sync Status & Meta -->
           <div class="lg:col-span-8 flex flex-col justify-between gap-6">
-            <div class="p-6 bg-surface-container/60 backdrop-blur-lg border-l-4 border-surface-container-highest flex flex-col md:flex-row justify-between items-center shadow-sm">
+            <div class="p-6 bg-surface-container border border-surface-container-highest flex flex-col md:flex-row justify-between items-center">
               <div class="flex items-center gap-4 mb-4 md:mb-0">
                 <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
                 <div>
-                  <p class="font-label-sm text-on-surface-variant uppercase">SYNC STATUS</p>
-                  <h3 class="font-headline-md text-primary">CONNECTED</h3>
+                  <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">SYNC STATUS</p>
+                  <h3 class="font-display text-primary text-xl tracking-widest uppercase">CONNECTED</h3>
                 </div>
               </div>
               <div class="text-center md:text-right">
-                <p class="font-label-sm text-on-surface-variant uppercase">LAST BACKUP</p>
-                <p class="text-on-surface font-mono">${new Date().toISOString().slice(0,10)} // ONLINE</p>
+                <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">LAST BACKUP</p>
+                <p class="text-on-surface font-mono text-sm tracking-widest">${new Date().toISOString().slice(0,10)} // ONLINE</p>
               </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
               <!-- Quick Stat Cards -->
-              <div class="p-4 bg-surface-container/60 backdrop-blur-md border-l-4 border-primary/40 hover:border-primary transition-all group cursor-default">
-                <p class="font-label-sm text-on-surface-variant mb-2">STREAK</p>
-                <p class="font-headline-md text-on-surface group-hover:text-primary transition-colors">🔥 ${streak} DAYS</p>
+              <div class="p-4 bg-surface-container border border-surface-container-highest transition-all group cursor-default">
+                <p class="font-label-sm text-on-surface-variant mb-2 tracking-widest uppercase">STREAK</p>
+                <p class="font-display text-on-surface group-hover:text-primary transition-colors text-xl tracking-widest">🔥 ${streak} DAYS</p>
               </div>
-              <div class="p-4 bg-surface-container/60 backdrop-blur-md border-l-4 border-primary/40 hover:border-primary transition-all group cursor-default">
-                <p class="font-label-sm text-on-surface-variant mb-2">RANK</p>
-                <p class="font-headline-md text-on-surface group-hover:text-primary transition-colors text-lg md:text-xl xl:text-2xl">${rankInfo.title}</p>
+              <div class="p-4 bg-surface-container border border-surface-container-highest transition-all group cursor-default">
+                <p class="font-label-sm text-on-surface-variant mb-2 tracking-widest uppercase">RANK</p>
+                <p class="font-display text-on-surface group-hover:text-primary transition-colors text-lg md:text-xl xl:text-2xl tracking-widest">${rankInfo.title}</p>
               </div>
-              <div class="p-4 bg-surface-container/60 backdrop-blur-md border-l-4 border-primary/40 hover:border-primary transition-all group cursor-default">
-                <p class="font-label-sm text-on-surface-variant mb-2">SYSTEM LOAD</p>
-                <p class="font-headline-md text-on-surface group-hover:text-primary transition-colors">${loadPct}%</p>
+              <div class="p-4 bg-surface-container border border-surface-container-highest transition-all group cursor-default">
+                <p class="font-label-sm text-on-surface-variant mb-2 tracking-widest uppercase">SYSTEM LOAD</p>
+                <p class="font-display text-on-surface group-hover:text-primary transition-colors text-xl tracking-widest">${loadPct}%</p>
               </div>
             </div>
           </div>
@@ -175,9 +177,9 @@ window.LM.views.me = (function () {
         <!-- Weekly Quotas Bento -->
         <section>
           <div class="flex items-center gap-4 mb-8">
-            <h2 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tighter">WEEKLY QUOTAS</h2>
+            <h2 class="font-display text-on-surface uppercase tracking-widest text-2xl">WEEKLY QUOTAS</h2>
             <div class="h-[1px] flex-grow bg-surface-container-highest"></div>
-            <span class="text-on-surface-variant font-mono text-xs">7-DAY ROLLING</span>
+            <span class="text-on-surface-variant font-mono text-xs tracking-widest">7-DAY ROLLING</span>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -185,7 +187,6 @@ window.LM.views.me = (function () {
               const isPrimary = index % 2 === 0;
               const borderClass = isPrimary ? 'border-primary' : 'border-surface-container-highest';
               const textClass = isPrimary ? 'text-primary' : 'text-on-surface-variant';
-              const shadowClass = isPrimary ? 'shadow-sm' : 'shadow-none border border-surface-container-highest';
               
               const completedCount = weeklyCompletedQuests.filter(q => q.targetSkills && q.targetSkills.some(ts => ts.macroSkillId === m.id)).length;
               const rawPct = (completedCount / quotaTarget) * 100;
@@ -201,7 +202,7 @@ window.LM.views.me = (function () {
               }
               
               return `
-                <div class="bg-surface-container/50 backdrop-blur-xl p-6 border-l-4 ${borderClass} relative group cursor-pointer overflow-hidden ${shadowClass}" onclick="LM.router.navigate('skill-detail?id=${m.id}')">
+                <div class="bg-surface-container p-6 border ${borderClass} relative group cursor-pointer overflow-hidden" onclick="LM.router.navigate('skill-detail?id=${m.id}')">
                   <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-30 transition-opacity">
                     <span class="material-symbols-outlined text-8xl ${textClass}">${iconName}</span>
                   </div>
@@ -215,8 +216,8 @@ window.LM.views.me = (function () {
                       <span class="absolute text-[10px] font-bold ${textClass}">${Math.round(pct)}%</span>
                     </div>
                   </div>
-                  <h3 class="font-headline-md text-on-surface mb-1">${m.name.toUpperCase()}</h3>
-                  <p class="font-label-sm text-on-surface-variant">${completedCount}/${quotaTarget} TARGETS MET</p>
+                  <h3 class="font-display text-on-surface mb-1 text-xl tracking-widest uppercase">${m.name}</h3>
+                  <p class="font-label-sm text-on-surface-variant tracking-widest">${completedCount}/${quotaTarget} TARGETS MET</p>
                   <div class="mt-4 flex space-x-1">
                     ${barsHTML}
                   </div>
@@ -228,8 +229,8 @@ window.LM.views.me = (function () {
         
         <!-- Recent History / Action Buttons -->
         <section class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-surface-container/40 backdrop-blur-xl p-8 border-l-4 border-primary shadow-lg">
-            <h3 class="font-headline-md text-primary mb-6 flex items-center gap-2">
+          <div class="bg-surface-container p-8 border border-surface-container-highest shadow-lg">
+            <h3 class="font-headline-md text-primary mb-6 flex items-center gap-2 tracking-widest uppercase">
               <span class="material-symbols-outlined">history</span> RECENT ACTIVITY
             </h3>
             <ul class="space-y-4">
@@ -238,12 +239,12 @@ window.LM.views.me = (function () {
                 const skillName = m ? m.name : 'Unknown';
                 const sign = l.delta >= 0 ? '+' : '';
                 return `
-                  <li class="flex justify-between items-center py-2 border-b border-primary/10 hover:bg-primary/5 transition-all px-2 cursor-default">
+                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-default">
                     <div>
-                      <p class="text-on-surface font-bold text-sm truncate max-w-[200px]">${l.reason || 'Data Registered'}</p>
-                      <p class="text-[10px] text-primary font-mono uppercase">${skillName} ${sign}${l.delta}</p>
+                      <p class="text-on-surface font-bold text-sm truncate max-w-[200px] tracking-wider uppercase">${l.reason || 'Data Registered'}</p>
+                      <p class="text-[10px] text-primary font-mono tracking-widest uppercase">${skillName} ${sign}${l.delta}</p>
                     </div>
-                    <span class="text-[10px] font-mono text-on-surface-variant">${getTimeAgo(l.timestamp)}</span>
+                    <span class="text-[10px] font-mono text-on-surface-variant tracking-widest">${getTimeAgo(l.timestamp)}</span>
                   </li>
                 `;
               }).join('') : `<li class="text-on-surface-variant font-mono text-xs py-4 text-center">NO RECENT ACTIVITY DETECTED.</li>`}

@@ -135,7 +135,7 @@ window.LM.store = (function () {
 
   // ── Settings ──
   function getSettings() {
-    return load(KEYS.settings) || { theme: 'dark', accentColor: '#7c3aed', wheelSkillId: 'overall', dragToRegister: true, deleteAfterDragged: false };
+    return load(KEYS.settings) || { theme: 'dark', accentColor: '#7c3aed', wheelSkillId: 'overall', dragToRegister: true, deleteAfterDragged: false, chromeAccentsEnabled: true };
   }
   function saveSettings(s) { save(KEYS.settings, s); }
 

@@ -97,6 +97,15 @@ window.LM.views.settings = (function () {
         <div class="section-block" id="theme-settings-container">
           <h2>Appearance</h2>
           <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                <input type="checkbox" id="set-chrome-accents" ${s.chromeAccentsEnabled !== false ? 'checked' : ''}>
+                Enable Chrome Accents
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                When enabled, primary UI elements will use a high-fidelity reflective chrome gradient. Disable to use your flat accent color.
+              </p>
+            </div>
             <!-- Theme selector removed. The app uses a unified Chrome design system now. -->
             <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -416,6 +425,16 @@ window.LM.views.settings = (function () {
         const st = S.getSettings();
         st.deleteAfterDragged = e.target.checked;
         S.saveSettings(st);
+      });
+    }
+
+    const chromeAccentsCheck = document.getElementById('set-chrome-accents');
+    if (chromeAccentsCheck) {
+      chromeAccentsCheck.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.chromeAccentsEnabled = e.target.checked;
+        S.saveSettings(st);
+        window.LM.components.theme.applyTheme('chrome');
       });
     }
 

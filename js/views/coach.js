@@ -233,7 +233,9 @@ window.LM.views.coach = (function () {
         <div class="flex items-center gap-5 mb-8 flex-shrink-0">
           <div class="relative cursor-pointer group" id="coach-avatar-container" title="Click to change profile picture">
             <div class="w-20 h-20 border-2 border-primary overflow-hidden shadow-sm bg-surface-container group-hover:border-white transition-colors">
-              <img class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-110 transition-transform duration-300" src="${S.getSettings().coachAvatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDUV6W_pv9qR1zinvyk6cv4w6ulR_hV9_1qbNnfiPkuNCDRDaqzrf5qVUmiAYAZEME84Dqq9LREzB-VPw19CdkRNvVvxUUSrKeCPc8cMozcqpho5qBV7p9Ai5884kMe_7A7yvkhUaFfeRTI3OZqNFVukNWVk5WZogGJfp-wABtxK4vV3n-6fKc9tjeBzNCi0z3rpJApw3RKH28NuIioeVLAICOxmSMluL9s-_3_Kjr17f8HBlIpTuXyzKSzzDMoe5Y4wdphI91jLRYm'}" alt="Coach Fletcher" />
+              <div class="w-full h-full chrome-metallic flex items-center justify-center font-display text-3xl text-black shadow-lg">
+                F
+              </div>
             </div>
             <div class="absolute -bottom-2 -right-2 bg-primary text-black px-2 py-0.5 font-label-sm text-[10px] tracking-widest font-bold">ACTIVE</div>
           </div>

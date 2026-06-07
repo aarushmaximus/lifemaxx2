@@ -18,6 +18,13 @@ window.LM.components.theme = (function () {
     
     // Set corresponding theme accents automatically if none is custom set
     const settings = S.getSettings();
+    
+    if (settings.chromeAccentsEnabled !== false) {
+      document.documentElement.setAttribute('data-chrome-accents', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-chrome-accents');
+    }
+    
     if (!settings.accentColor) {
       applyAccent('#E8E8E8'); // Default Chrome Metallic
     } else {
