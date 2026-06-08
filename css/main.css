@@ -1704,3 +1704,63 @@ select option {
 [data-chrome-accents="true"] .quest-card {
   border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
+
+/* Quest Log Extra Flair */
+[data-chrome-accents="true"] .quest-log-row {
+  background: var(--surface-gradient) !important;
+  border: 1px solid var(--border) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 8px !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+[data-chrome-accents="true"] .quest-log-row:hover {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  animation: chromePan 8s linear infinite !important;
+  transform: translateX(4px) scale(1.01);
+  border-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-chrome-accents="true"] .quest-log-row:hover * {
+  color: #000 !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-chrome-accents="true"] .timeline-row {
+  background: var(--surface-gradient) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+[data-chrome-accents="true"] .nav-tab-btn {
+  background: transparent;
+  color: var(--text-2);
+  border: none;
+  padding: 12px 20px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+[data-chrome-accents="true"] .nav-tab-btn:hover {
+  color: var(--text-1);
+}
+
+[data-chrome-accents="true"] .nav-tab-btn.active-tab {
+  background: var(--chrome-gradient) !important;
+  background-size: 200% 200% !important;
+  animation: chromePan 4s linear infinite !important;
+  color: #000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-bottom: none !important;
+  font-weight: 800;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -4px 15px rgba(255, 255, 255, 0.1);
+}
