@@ -11,7 +11,8 @@ window.LM.store = (function () {
     woTemplates: 'lm_workout_templates',
     lastUpdated: 'lm_last_updated',
     lastReviewDate: 'lm_last_review_date',
-    cachedReview: 'lm_cached_review'
+    cachedReview: 'lm_cached_review',
+    coachChats: 'lm_coach_chats'
   };
   const listeners = [];
   const F = window.LM.formulas;
@@ -541,6 +542,22 @@ Please analyze my performance and output a JSON response matching the following 
     return chain.steps[stepIdx];
   }
 
+  // ── Coach Chats ──
+  function getCoachChats() { return load(KEYS.coachChats) || []; }
+  function saveCoachChats(list) { save(KEYS.coachChats, list); emit('change'); }
+  function getCoachChat(id) { return getCoachChats().find(c => c.id === id) || null; }
+  
+  function upsertCoachChat(chat) {
+    const list = getCoachChats();
+    const idx = list.findIndex(c => c.id === chat.id);
+    if (idx >= 0) list[idx] = chat; else list.push(chat);
+    saveCoachChats(list);
+  }
+  
+  function deleteCoachChat(id) {
+    saveCoachChats(getCoachChats().filter(c => c.id !== id));
+  }
+
   function exportBackup() {
     return {
       macros: getMacros(),
@@ -550,6 +567,7 @@ Please analyze my performance and output a JSON response matching the following 
       presets: getPresets(),
       chains: getAllChains(),
       xplog: load(KEYS.xplog) || [],
+      coachChats: getCoachChats(),
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
@@ -563,6 +581,7 @@ Please analyze my performance and output a JSON response matching the following 
     if (data.presets) save(KEYS.presets, data.presets);
     if (data.chains) save(KEYS.chains, data.chains);
     if (data.xplog) save(KEYS.xplog, data.xplog);
+    if (data.coachChats) save(KEYS.coachChats, data.coachChats);
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
     emit('change');
@@ -702,6 +721,7 @@ Please analyze my performance and output a JSON response matching the following 
     getSettings, saveSettings,
     getXPLog, saveXPLog,
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
+    getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, triggerMidnightReview, getCachedReview, checkMidnightReview,
     uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
