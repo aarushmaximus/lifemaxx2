@@ -68,6 +68,12 @@ window.LM.router = (function () {
         el.classList.toggle('text-on-surface-variant', !isActive);
       });
 
+      // Hide FAB on coach view to avoid overlapping the input bar
+      const fab = document.getElementById('fab');
+      if (fab) {
+        fab.style.display = route.view === 'coach' ? 'none' : 'flex';
+      }
+
       // Animate in via CSS class
       const child = main.firstElementChild;
       if (child) {

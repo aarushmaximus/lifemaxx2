@@ -413,7 +413,7 @@ window.LM.views.coach = (function () {
                 <textarea id="coach-input-text" rows="1"
                   class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-body-md text-on-surface placeholder:text-on-surface-variant/50 py-3 px-5 resize-none max-h-32"
                   placeholder="Message Fletcher..."></textarea>
-                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-primary text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
+                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#d0d0d0] to-[#ffffff] border border-[#ffffff] shadow-[0_2px_10px_rgba(0,0,0,0.5),inset_0_-2px_0_#ffffff] text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
                   <span class="material-symbols-outlined text-lg">arrow_upward</span>
                 </button>
               </div>

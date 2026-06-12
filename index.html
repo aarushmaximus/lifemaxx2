@@ -47,7 +47,7 @@
     <!-- Removed ambient orbs and wireframe grids for minimal chrome look -->
 
     <!-- TopAppBar -->
-    <nav class="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-surface-container-highest">
+    <nav class="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-surface-container-highest" style="padding-top: max(env(safe-area-inset-top), 0px);">
       <div class="flex justify-between items-center px-6 py-4 md:px-12 w-full">
         <div class="flex items-center gap-4">
           <h1 class="font-headline-md text-headline-lg-mobile md:text-headline-md tracking-tighter text-on-surface">Lifemaxx</h1>
@@ -172,7 +172,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '54';
+    const APP_VERSION = '55';
 
     async function clearAndReload() {
       // 1. Unregister every service worker
