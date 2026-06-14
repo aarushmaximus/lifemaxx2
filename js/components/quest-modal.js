@@ -33,6 +33,7 @@ window.LM.components.questModal = (function () {
     overlay.classList.remove('overlay-open');
     editingId = null;
     isPresetMode = false;
+    _submitting = false;
   }
 
   function buildHTML(item, presets, macros) {
@@ -581,10 +582,15 @@ You MUST return a JSON object with this exact structure:
     });
   }
 
+  let _submitting = false;
   function submit(e) {
     if (e) e.preventDefault();
+    if (_submitting) return;
     const name = document.getElementById('qm-name')?.value?.trim();
     if (!name) { N.show('Name is required', 'warning'); return; }
+    _submitting = true;
+    const submitBtn = document.getElementById('qm-submit');
+    if (submitBtn) submitBtn.disabled = true;
 
     const desc = document.getElementById('qm-desc')?.value?.trim() || '';
 
@@ -622,6 +628,8 @@ You MUST return a JSON object with this exact structure:
 
     if (targetSkills.length === 0) {
       N.show('Add at least one skill reward', 'warning');
+      _submitting = false;
+      if (submitBtn) submitBtn.disabled = false;
       return;
     }
 

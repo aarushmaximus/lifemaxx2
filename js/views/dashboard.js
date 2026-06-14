@@ -199,6 +199,51 @@ window.LM.views.dashboard = (function () {
     }).join('');
   }
 
+  function renderHistoryBar() {
+    const history = S.getHistory();
+    const entries = history.slice().reverse(); // newest first
+
+    if (entries.length === 0) {
+      return `<div class="history-empty">
+        <span class="material-symbols-outlined" style="font-size:28px;color:var(--text-3);opacity:0.4;">history</span>
+        <p>No activity yet. Create and complete quests to see your history here.</p>
+      </div>`;
+    }
+
+    return entries.map(entry => {
+      const date = new Date(entry.timestamp);
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+      let icon = '📋';
+      let accentClass = '';
+      switch (entry.type) {
+        case 'quest_created':  icon = '✦'; accentClass = 'history-accent'; break;
+        case 'quest_completed': icon = '✓'; accentClass = 'history-success'; break;
+        case 'quest_missed':   icon = '✕'; accentClass = 'history-danger'; break;
+        case 'quest_deleted':  icon = '🗑'; accentClass = 'history-muted'; break;
+        case 'xp_gain':        icon = '⬡'; accentClass = 'history-accent'; break;
+        case 'level_up':       icon = '⬆'; accentClass = 'history-success'; break;
+        default:               icon = 'ℹ'; accentClass = 'history-muted'; break;
+      }
+
+      const detailStr = entry.details?.skills ? `<span class="history-detail">${entry.details.skills}</span>` : 
+                         entry.details?.xp ? `<span class="history-detail">+${entry.details.xp} XP</span>` : '';
+
+      return `<div class="history-entry ${accentClass}">
+        <span class="history-icon">${icon}</span>
+        <div class="history-body">
+          <span class="history-msg">${entry.message}</span>
+          ${detailStr}
+        </div>
+        <div class="history-time">
+          <span>${timeStr}</span>
+          <span>${dateStr}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   function render() {
     const macros = S.getMacros();
     const settings = S.getSettings();
@@ -206,6 +251,7 @@ window.LM.views.dashboard = (function () {
     const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
     const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
     let barData = getBarData(wheelSkillId, macros);
+    const historyBarEnabled = settings.historyBarEnabled === true;
 
     // Dynamic Streak & Rank
     const xpLog = S.getXPLog();
@@ -222,6 +268,48 @@ window.LM.views.dashboard = (function () {
     // Find next session (upcoming habit or active project)
     const activeQuests = S.getQuests().filter(q => q.status === 'active' && isWithinTimeWindow(q.timeWindow));
     const nextSession = activeQuests[0];
+
+    // Build the wheel section based on layout mode
+    let wheelSectionHTML;
+    if (historyBarEnabled) {
+      // ── SPLIT LAYOUT: Dual Wheels + History Bar ──
+      const selectedMacroId = wheelSkillId !== 'overall' ? wheelSkillId : (macros[0]?.id || 'overall');
+      const macroOptions = macros.map(m => 
+        `<option value="${m.id}" ${selectedMacroId === m.id ? 'selected' : ''}>${m.name}</option>`
+      ).join('');
+
+      wheelSectionHTML = `
+        <div class="dash-split-layout">
+          <div class="dash-split-wheels">
+            <div class="mini-wheel-container">
+              <p class="mini-wheel-label">OVERALL</p>
+              ${W.renderMiniHTML('overall', 0)}
+            </div>
+            <div class="mini-wheel-container">
+              <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px;">
+                <select id="mini-wheel-skill-select" class="mini-wheel-select">${macroOptions}</select>
+              </div>
+              ${W.renderMiniHTML(selectedMacroId, 1)}
+            </div>
+          </div>
+          <div class="history-bar" id="history-bar">
+            <div class="history-bar-header">
+              <span class="material-symbols-outlined" style="font-size:16px;opacity:0.6;">history</span>
+              <span>ACTIVITY FEED</span>
+            </div>
+            <div class="history-bar-entries" id="history-bar-entries">
+              ${renderHistoryBar()}
+            </div>
+          </div>
+        </div>`;
+    } else {
+      // ── DEFAULT LAYOUT: Single Large Wheel ──
+      wheelSectionHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; padding:16px 0;">
+          <p style="font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.18em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
+          ${W.renderHTML()}
+        </div>`;
+    }
 
     return `
       <div class="dashboard-grid">
@@ -241,11 +329,8 @@ window.LM.views.dashboard = (function () {
             </div>
           </div>
 
-          <!-- XP WHEEL -->
-          <div style="display:flex; flex-direction:column; align-items:center; padding:16px 0;">
-            <p style="font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.18em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
-            ${W.renderHTML()}
-          </div>
+          <!-- XP WHEEL / SPLIT LAYOUT -->
+          ${wheelSectionHTML}
 
           <!-- ACTIVE QUESTS -->
           <div>
@@ -276,8 +361,39 @@ window.LM.views.dashboard = (function () {
   }
 
   function init() {
-    // Wheel Component Init
-    W.init();
+    const settings = S.getSettings();
+    const historyBarEnabled = settings.historyBarEnabled === true;
+
+    if (historyBarEnabled) {
+      // ── SPLIT LAYOUT INIT ──
+      // Update mini wheels after initial render
+      setTimeout(() => {
+        W.updateMini('overall', 0);
+        const selectedMacroId = settings.wheelSkillId !== 'overall' ? settings.wheelSkillId : (S.getMacros()[0]?.id || 'overall');
+        W.updateMini(selectedMacroId, 1);
+      }, 50);
+
+      // Mini wheel skill selector
+      const miniSel = document.getElementById('mini-wheel-skill-select');
+      if (miniSel) {
+        miniSel.addEventListener('change', (e) => {
+          const newId = e.target.value;
+          const s = S.getSettings();
+          s.wheelSkillId = newId;
+          S.saveSettings(s);
+          // Re-render the second mini wheel
+          const container = document.getElementById('mini-wheel-1');
+          if (container) {
+            container.outerHTML = W.renderMiniHTML(newId, 1);
+            setTimeout(() => W.updateMini(newId, 1), 50);
+          }
+          updateBar(newId);
+        });
+      }
+    } else {
+      // ── DEFAULT LAYOUT INIT ──
+      W.init();
+    }
 
     // Macro tabs selector
     document.querySelectorAll('.dashboard-grid .chip').forEach(el => {

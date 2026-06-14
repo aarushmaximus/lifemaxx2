@@ -96,6 +96,109 @@ window.LM.components.wheel = (function () {
       </div>`;
   }
 
+  /**
+   * Renders a smaller, inline wheel for the dual-layout mode.
+   * @param {string} skillId — 'overall' or a macro skill id
+   * @param {number} wheelIndex — 0 or 1 (for unique DOM IDs)
+   */
+  function renderMiniHTML(skillId, wheelIndex) {
+    const data = getSkillData(skillId);
+    if (!data) return '<div class="mini-wheel-placeholder">No Data</div>';
+    const pct = F.progressPercent(data.xp, data.skill);
+    const offset = CIRC - (CIRC * pct / 100);
+    const into = F.xpIntoCurrentLevel(data.xp, data.skill);
+    const req = F.xpRequiredForNextLevel(data.xp, data.skill);
+
+    return `
+      <div class="mini-wheel-wrap" id="mini-wheel-${wheelIndex}">
+        <svg viewBox="0 0 260 260" width="100%" style="max-width:160px;display:block;margin:0 auto;">
+          <defs>
+            <filter id="mini-glow-${wheelIndex}">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          <!-- Track -->
+          <circle cx="130" cy="130" r="110" fill="none" stroke="var(--bg-raised)" stroke-width="12"/>
+          <!-- Tick marks -->
+          ${Array.from({length: 16}, (_, i) => {
+            const angle = (i / 16) * 2 * Math.PI - Math.PI/2;
+            const x1 = 130 + 117 * Math.cos(angle), y1 = 130 + 117 * Math.sin(angle);
+            const x2 = 130 + 121 * Math.cos(angle), y2 = 130 + 121 * Math.sin(angle);
+            return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+          }).join('')}
+          <!-- Liquid fill -->
+          <clipPath id="mini-clip-${wheelIndex}">
+            <circle cx="130" cy="130" r="110"/>
+          </clipPath>
+          <g clip-path="url(#mini-clip-${wheelIndex})">
+            <g id="mini-liquid-${wheelIndex}" style="transform: translateY(${130 - (pct / 100) * 260}px); transition: transform 1.2s var(--spring-soft);">
+              <path class="liquid-wave-2" d="M -520 130 Q -455 145 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
+              <path class="liquid-wave" d="M -520 130 Q -455 110 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
+            </g>
+          </g>
+          <!-- Progress ring -->
+          <circle cx="130" cy="130" r="110" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="12" />
+          <circle id="mini-ring-${wheelIndex}" cx="130" cy="130" r="110"
+            fill="none" stroke="${data.color}" stroke-width="12"
+            stroke-linecap="round"
+            stroke-dasharray="${CIRC.toFixed(2)}"
+            stroke-dashoffset="${offset.toFixed(2)}"
+            transform="rotate(-90 130 130)"
+            filter="url(#mini-glow-${wheelIndex})"
+            style="transition: stroke-dashoffset 1.2s var(--spring-soft), stroke 0.4s ease;"/>
+          <!-- Center text -->
+          <text id="mini-level-${wheelIndex}" x="130" y="118" text-anchor="middle"
+            font-family="var(--font-display)" font-size="38" font-weight="300"
+            fill="var(--text-1)">${data.level}</text>
+          <text id="mini-name-${wheelIndex}" x="130" y="148" text-anchor="middle"
+            font-family="var(--font-display)" font-size="9" font-weight="400"
+            fill="var(--text-2)" letter-spacing="2">${data.name.toUpperCase()}</text>
+          <text id="mini-xp-${wheelIndex}" x="130" y="166" text-anchor="middle"
+            font-family="var(--font-display)" font-size="8"
+            fill="var(--text-3)">${F.formatXP(into)} / ${F.formatXP(req)} XP</text>
+        </svg>
+      </div>`;
+  }
+
+  /**
+   * Updates a specific mini wheel by index.
+   */
+  function updateMini(skillId, wheelIndex) {
+    const data = getSkillData(skillId);
+    if (!data) return;
+
+    const ring = document.getElementById(`mini-ring-${wheelIndex}`);
+    const levelText = document.getElementById(`mini-level-${wheelIndex}`);
+    const nameText = document.getElementById(`mini-name-${wheelIndex}`);
+    const xpText = document.getElementById(`mini-xp-${wheelIndex}`);
+    if (!ring) return;
+
+    const pct = F.progressPercent(data.xp, data.skill);
+    const offset = CIRC - (CIRC * pct / 100);
+
+    ring.style.stroke = data.color;
+    ring.style.strokeDashoffset = offset.toFixed(2);
+
+    const liquid = document.getElementById(`mini-liquid-${wheelIndex}`);
+    if (liquid) {
+      const yOffset = 130 - (pct / 100) * 260;
+      liquid.style.transform = `translateY(${yOffset}px)`;
+      const wrap = document.getElementById(`mini-wheel-${wheelIndex}`);
+      if (wrap) {
+        wrap.querySelectorAll('.liquid-wave, .liquid-wave-2').forEach(el => el.style.fill = data.color);
+      }
+    }
+
+    if (levelText) levelText.textContent = data.level;
+    if (nameText) nameText.textContent = data.name.toUpperCase();
+    if (xpText) {
+      const into = F.xpIntoCurrentLevel(data.xp, data.skill);
+      const req = F.xpRequiredForNextLevel(data.xp, data.skill);
+      xpText.textContent = `${F.formatXP(into)} / ${F.formatXP(req)} XP`;
+    }
+  }
+
   function update(xpDelta) {
     const data = getSkillData(currentSkillId);
     if (!data) return;
@@ -302,5 +405,5 @@ window.LM.components.wheel = (function () {
     update(targets.reduce((s, t) => s + t.xpAmount, 0));
   }
 
-  return { renderHTML, init, update, handleDrop, currentSkillId: () => currentSkillId };
+  return { renderHTML, renderMiniHTML, init, update, updateMini, handleDrop, currentSkillId: () => currentSkillId };
 })();

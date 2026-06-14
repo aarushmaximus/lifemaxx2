@@ -12,8 +12,10 @@ window.LM.store = (function () {
     lastUpdated: 'lm_last_updated',
     lastReviewDate: 'lm_last_review_date',
     cachedReview: 'lm_cached_review',
-    coachChats: 'lm_coach_chats'
+    coachChats: 'lm_coach_chats',
+    history: 'lm_history'
   };
+  const HISTORY_MAX = 200;
   const listeners = [];
   const F = window.LM.formulas;
 
@@ -107,14 +109,20 @@ window.LM.store = (function () {
   function upsertQuest(quest) {
     const list = getQuests();
     const idx = list.findIndex(q => q.id === quest.id);
+    const isNew = idx < 0;
     if (idx >= 0) list[idx] = quest; else list.push(quest);
     saveQuests(list);
+    if (isNew) {
+      addHistoryEntry('quest_created', `Created quest: ${quest.name}`, { questId: quest.id });
+    }
   }
 
   function deleteQuest(id, forcePermanent = false) {
     const quests = getQuests();
     const quest = quests.find(q => q.id === id);
     if (!quest) return;
+    
+    addHistoryEntry('quest_deleted', `Deleted quest: ${quest.name}`, { questId: quest.id });
     
     if (forcePermanent || quest.status === 'completed' || quest.status === 'deleted') {
       saveQuests(quests.filter(q => q.id !== id));
@@ -280,6 +288,14 @@ window.LM.store = (function () {
     quest.status = 'completed';
     quest.isReadyToClaim = false;
     quest.completedAt = Date.now();
+    
+    // Log completion + XP gains to history
+    const totalXP = adjustedTargets.reduce((s, t) => s + t.xpAmount, 0);
+    const skillNames = adjustedTargets.map(t => {
+      const m = getMacro(t.macroSkillId);
+      return m ? `${m.name} +${t.xpAmount}xp` : `+${t.xpAmount}xp`;
+    }).join(', ');
+    addHistoryEntry('quest_completed', `Completed: ${quest.name}`, { questId: quest.id, xp: totalXP, skills: skillNames });
     
     save(KEYS.quests, quests);
     emit('change');
@@ -469,6 +485,7 @@ Please analyze my performance and output a JSON response matching the following 
           q.status = 'missed';
           changed = true;
           registerMissedQuest();
+          addHistoryEntry('quest_missed', `Missed: ${q.name}`, { questId: q.id });
         }
       }
     });
@@ -568,6 +585,7 @@ Please analyze my performance and output a JSON response matching the following 
       chains: getAllChains(),
       xplog: load(KEYS.xplog) || [],
       coachChats: getCoachChats(),
+      history: getHistory(),
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
@@ -582,6 +600,7 @@ Please analyze my performance and output a JSON response matching the following 
     if (data.chains) save(KEYS.chains, data.chains);
     if (data.xplog) save(KEYS.xplog, data.xplog);
     if (data.coachChats) save(KEYS.coachChats, data.coachChats);
+    if (data.history) save(KEYS.history, data.history);
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
     emit('change');
@@ -710,6 +729,23 @@ Please analyze my performance and output a JSON response matching the following 
   }
 
 
+  // ── History / Activity Log ──
+  function getHistory() { return load(KEYS.history) || []; }
+  function addHistoryEntry(type, message, details = {}) {
+    const history = getHistory();
+    history.push({
+      id: uid(),
+      timestamp: Date.now(),
+      type: type,
+      message: message,
+      details: details
+    });
+    // Auto-prune to keep only the most recent entries
+    while (history.length > HISTORY_MAX) history.shift();
+    save(KEYS.history, history);
+  }
+  function clearHistory() { save(KEYS.history, []); }
+
   return {
     on, emit,
     getMacros, getMacro, upsertMacro, deleteMacro,
@@ -724,6 +760,7 @@ Please analyze my performance and output a JSON response matching the following 
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, triggerMidnightReview, getCachedReview, checkMidnightReview,
+    getHistory, addHistoryEntry, clearHistory,
     uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
   };
 })();

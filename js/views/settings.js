@@ -24,6 +24,7 @@ window.LM.views.settings = (function () {
     const s = S.getSettings();
     const dragOn = s.dragToRegister !== false; // default true
     const deleteOn = s.deleteAfterDragged === true; // default false
+    const historyBarOn = s.historyBarEnabled === true; // default false
 
     return `
       <div class="view-container">
@@ -89,6 +90,16 @@ window.LM.views.settings = (function () {
               </label>
               <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
                 If enabled, dragged quests are removed from the dashboard and only appear in the Quest Log.
+              </p>
+            </div>
+            
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                <input type="checkbox" id="set-history-bar" ${historyBarOn ? 'checked' : ''}>
+                History Bar Layout
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                Show a dual-wheel layout with a live activity feed on the Dashboard. Splits the XP wheel into Overall + Skill wheels with a scrollable history panel.
               </p>
             </div>
           </div>
@@ -435,6 +446,15 @@ window.LM.views.settings = (function () {
         st.chromeAccentsEnabled = e.target.checked;
         S.saveSettings(st);
         window.LM.components.theme.applyTheme('chrome');
+      });
+    }
+
+    const historyBarCheck = document.getElementById('set-history-bar');
+    if (historyBarCheck) {
+      historyBarCheck.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.historyBarEnabled = e.target.checked;
+        S.saveSettings(st);
       });
     }
 

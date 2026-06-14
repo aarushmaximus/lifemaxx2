@@ -22,10 +22,18 @@ window.LM.components.notifications = (function () {
 
   function xpGain(skillName, amount, color) {
     show(`+${Math.round(amount)} XP → ${skillName}`, 'xp', 3000);
+    // Log to history
+    if (window.LM.store?.addHistoryEntry) {
+      window.LM.store.addHistoryEntry('xp_gain', `+${Math.round(amount)} XP → ${skillName}`, { xp: Math.round(amount), skill: skillName });
+    }
   }
 
   function levelUp(skillName, level, color) {
     show(`⬆ LEVEL UP — ${skillName} reached Level ${level}!`, 'success', 4500);
+    // Log to history
+    if (window.LM.store?.addHistoryEntry) {
+      window.LM.store.addHistoryEntry('level_up', `Level Up! ${skillName} → Level ${level}`, { skill: skillName, level });
+    }
     
     // Trigger visual pop animation on level displays
     const els = document.querySelectorAll('.level-big, #wheel-level-text, .sidebar-skill-level');

@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-v56';
+const CACHE_NAME = 'lifemaxx-v57';
 const ASSETS = [
   './',
   './index.html',
