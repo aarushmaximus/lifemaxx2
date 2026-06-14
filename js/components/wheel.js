@@ -27,6 +27,8 @@ window.LM.components.wheel = (function () {
       ...macros.map(m => `<option value="${m.id}" ${currentSkillId === m.id ? 'selected' : ''}>${m.name}</option>`)
     ].join('');
 
+    const fillDisplay = settings.fillingIndicatorEnabled !== false ? '' : 'display:none;';
+
     return `
       <div id="wheel-container">
         <select id="wheel-skill-select" class="wheel-select">${options}</select>
@@ -59,7 +61,7 @@ window.LM.components.wheel = (function () {
             <clipPath id="circle-clip">
               <circle cx="130" cy="130" r="110"/>
             </clipPath>
-            <g clip-path="url(#circle-clip)">
+            <g clip-path="url(#circle-clip)" style="${fillDisplay}">
               <g id="wheel-liquid-fill" style="transform: translateY(130px); transition: transform 1.2s var(--spring-soft);">
                 <!-- Reverse wave (back) -->
                 <path class="liquid-wave-2" d="M -520 130 Q -455 145 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
@@ -108,15 +110,31 @@ window.LM.components.wheel = (function () {
     const offset = CIRC - (CIRC * pct / 100);
     const into = F.xpIntoCurrentLevel(data.xp, data.skill);
     const req = F.xpRequiredForNextLevel(data.xp, data.skill);
+    const isOverall = skillId === 'overall';
+    const maxWidth = isOverall ? '185px' : '150px';
+
+    const settings = S.getSettings();
+    const chromeOn = settings.chromeAccentsEnabled !== false;
+    const ringColor = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
+    const fillColor = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
+    const fillDisplay = settings.fillingIndicatorEnabled !== false ? '' : 'display:none;';
 
     return `
-      <div class="mini-wheel-wrap" id="mini-wheel-${wheelIndex}">
-        <svg viewBox="0 0 260 260" width="100%" style="max-width:160px;display:block;margin:0 auto;">
+      <div class="mini-wheel-wrap ${isOverall ? 'mini-wheel-overall' : ''}" id="mini-wheel-${wheelIndex}">
+        <svg viewBox="0 0 260 260" width="100%" style="max-width:${maxWidth};display:block;margin:0 auto;">
           <defs>
             <filter id="mini-glow-${wheelIndex}">
               <feGaussianBlur stdDeviation="2" result="blur"/>
               <feComposite in="SourceGraphic" in2="blur" operator="over"/>
             </filter>
+            <linearGradient id="wheel-chrome-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#404040" />
+              <stop offset="20%" stop-color="#b8b8b8" />
+              <stop offset="40%" stop-color="#ffffff" />
+              <stop offset="60%" stop-color="#707070" />
+              <stop offset="80%" stop-color="#e0e0e0" />
+              <stop offset="100%" stop-color="#ffffff" />
+            </linearGradient>
           </defs>
           <!-- Track -->
           <circle cx="130" cy="130" r="110" fill="none" stroke="var(--bg-raised)" stroke-width="12"/>
@@ -131,16 +149,16 @@ window.LM.components.wheel = (function () {
           <clipPath id="mini-clip-${wheelIndex}">
             <circle cx="130" cy="130" r="110"/>
           </clipPath>
-          <g clip-path="url(#mini-clip-${wheelIndex})">
+          <g clip-path="url(#mini-clip-${wheelIndex})" style="${fillDisplay}">
             <g id="mini-liquid-${wheelIndex}" style="transform: translateY(${130 - (pct / 100) * 260}px); transition: transform 1.2s var(--spring-soft);">
-              <path class="liquid-wave-2" d="M -520 130 Q -455 145 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
-              <path class="liquid-wave" d="M -520 130 Q -455 110 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
+              <path class="liquid-wave-2" fill="${fillColor}" d="M -520 130 Q -455 145 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
+              <path class="liquid-wave" fill="${fillColor}" d="M -520 130 Q -455 110 -390 130 T -260 130 T -130 130 T 0 130 T 130 130 T 260 130 T 390 130 T 520 130 L 520 390 L -520 390 Z" />
             </g>
           </g>
           <!-- Progress ring -->
           <circle cx="130" cy="130" r="110" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="12" />
           <circle id="mini-ring-${wheelIndex}" cx="130" cy="130" r="110"
-            fill="none" stroke="${data.color}" stroke-width="12"
+            fill="none" stroke="${ringColor}" stroke-width="12"
             stroke-linecap="round"
             stroke-dasharray="${CIRC.toFixed(2)}"
             stroke-dashoffset="${offset.toFixed(2)}"
@@ -154,6 +172,8 @@ window.LM.components.wheel = (function () {
           <text id="mini-name-${wheelIndex}" x="130" y="148" text-anchor="middle"
             font-family="var(--font-display)" font-size="9" font-weight="400"
             fill="var(--text-2)" letter-spacing="2">${data.name.toUpperCase()}</text>
+          <!-- A small colored rect to the left of the name -->
+          <rect id="mini-name-box-${wheelIndex}" width="8" height="8" rx="1.5" fill="${data.color}" style="display: ${!isOverall ? 'block' : 'none'};"/>
           <text id="mini-xp-${wheelIndex}" x="130" y="166" text-anchor="middle"
             font-family="var(--font-display)" font-size="8"
             fill="var(--text-3)">${F.formatXP(into)} / ${F.formatXP(req)} XP</text>
@@ -172,12 +192,15 @@ window.LM.components.wheel = (function () {
     const levelText = document.getElementById(`mini-level-${wheelIndex}`);
     const nameText = document.getElementById(`mini-name-${wheelIndex}`);
     const xpText = document.getElementById(`mini-xp-${wheelIndex}`);
+    const nameBox = document.getElementById(`mini-name-box-${wheelIndex}`);
     if (!ring) return;
 
+    const settings = S.getSettings();
+    const chromeOn = settings.chromeAccentsEnabled !== false;
     const pct = F.progressPercent(data.xp, data.skill);
     const offset = CIRC - (CIRC * pct / 100);
 
-    ring.style.stroke = data.color;
+    ring.style.stroke = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
     ring.style.strokeDashoffset = offset.toFixed(2);
 
     const liquid = document.getElementById(`mini-liquid-${wheelIndex}`);
@@ -186,8 +209,11 @@ window.LM.components.wheel = (function () {
       liquid.style.transform = `translateY(${yOffset}px)`;
       const wrap = document.getElementById(`mini-wheel-${wheelIndex}`);
       if (wrap) {
-        wrap.querySelectorAll('.liquid-wave, .liquid-wave-2').forEach(el => el.style.fill = data.color);
+        wrap.querySelectorAll('.liquid-wave, .liquid-wave-2').forEach(el => {
+          el.style.fill = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
+        });
       }
+      liquid.parentElement.style.display = settings.fillingIndicatorEnabled !== false ? '' : 'none';
     }
 
     if (levelText) levelText.textContent = data.level;
@@ -197,11 +223,56 @@ window.LM.components.wheel = (function () {
       const req = F.xpRequiredForNextLevel(data.xp, data.skill);
       xpText.textContent = `${F.formatXP(into)} / ${F.formatXP(req)} XP`;
     }
+
+    // Position the colored name box next to the macro skill label
+    if (nameBox) {
+      if (skillId !== 'overall') {
+        nameBox.style.display = 'block';
+        nameBox.style.fill = data.color;
+        if (nameText) {
+          setTimeout(() => {
+            try {
+              const bbox = nameText.getBBox();
+              nameBox.setAttribute('x', (bbox.x - 12).toFixed(1));
+              nameBox.setAttribute('y', (bbox.y + (bbox.height - 8) / 2).toFixed(1));
+            } catch (e) {
+              nameBox.setAttribute('x', '75');
+              nameBox.setAttribute('y', '141');
+            }
+          }, 0);
+        }
+      } else {
+        nameBox.style.display = 'none';
+      }
+    }
   }
 
   function update(xpDelta) {
     const data = getSkillData(currentSkillId);
     if (!data) return;
+
+    // Redirect to mini wheels if split layout is enabled
+    const settings = S.getSettings();
+    if (settings.historyBarEnabled === true) {
+      const selectedMacroId = settings.wheelSkillId !== 'overall' ? settings.wheelSkillId : (S.getMacros()[0]?.id || 'overall');
+      updateMini('overall', 0);
+      updateMini(selectedMacroId, 1);
+      
+      // Floating XP label for mini overall wheel
+      if (xpDelta > 0) {
+        const overallDropZone = document.getElementById('mini-wheel-0');
+        if (overallDropZone) {
+          const floater = document.createElement('div');
+          floater.className = 'floating-xp';
+          floater.textContent = `+${Math.round(xpDelta)} XP`;
+          floater.style.color = 'var(--accent)';
+          floater.style.top = '10%';
+          overallDropZone.appendChild(floater);
+          setTimeout(() => floater.remove(), 1500);
+        }
+      }
+      return;
+    }
 
     const ring = document.getElementById('wheel-ring');
     const levelText = document.getElementById('wheel-level-text');
@@ -209,17 +280,21 @@ window.LM.components.wheel = (function () {
     const xpText = document.getElementById('wheel-xp-text');
     if (!ring) return;
 
+    const chromeOn = settings.chromeAccentsEnabled !== false;
     const pct = F.progressPercent(data.xp, data.skill);
     const offset = CIRC - (CIRC * pct / 100);
 
-    ring.style.stroke = data.color;
+    ring.style.stroke = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
     ring.style.strokeDashoffset = offset.toFixed(2);
     
     const liquid = document.getElementById('wheel-liquid-fill');
     if (liquid) {
       const yOffset = 130 - (pct / 100) * 260;
       liquid.style.transform = `translateY(${yOffset}px)`;
-      document.querySelectorAll('.liquid-wave, .liquid-wave-2').forEach(el => el.style.fill = data.color);
+      document.querySelectorAll('.liquid-wave, .liquid-wave-2').forEach(el => {
+        el.style.fill = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
+      });
+      liquid.parentElement.style.display = settings.fillingIndicatorEnabled !== false ? '' : 'none';
     }
 
     if (levelText) levelText.textContent = data.level;

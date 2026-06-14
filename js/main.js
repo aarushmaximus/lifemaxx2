@@ -145,6 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.hash === '#dashboard' || !window.location.hash) {
       LM.views.dashboard.updateBar(LM.store.getSettings().wheelSkillId || 'overall');
       LM.views.dashboard.refreshCards?.();
+      const entriesContainer = document.getElementById('history-bar-entries');
+      if (entriesContainer && LM.views.dashboard.renderHistoryBar) {
+        entriesContainer.innerHTML = LM.views.dashboard.renderHistoryBar();
+      }
     } else if (window.location.hash === '#quests') {
       window.LM.views.questLog.init?.();
     }

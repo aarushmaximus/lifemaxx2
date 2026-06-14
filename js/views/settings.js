@@ -101,6 +101,15 @@ window.LM.views.settings = (function () {
               <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
                 Show a dual-wheel layout with a live activity feed on the Dashboard. Splits the XP wheel into Overall + Skill wheels with a scrollable history panel.
               </p>
+              <div id="set-filling-indicator-wrap" style="margin-left:24px; margin-top:12px; display: ${historyBarOn ? 'block' : 'none'}; transition: opacity 0.2s;">
+                <label class="form-check" style="font-size:0.88rem;font-weight:500;">
+                  <input type="checkbox" id="set-filling-indicator" ${s.fillingIndicatorEnabled !== false ? 'checked' : ''}>
+                  Filling Indicator
+                </label>
+                <p style="font-size:0.78rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                  When turned on, the wheels display the animated liquid wave filling. When turned off, they only show the rings.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -450,10 +459,24 @@ window.LM.views.settings = (function () {
     }
 
     const historyBarCheck = document.getElementById('set-history-bar');
+    const fillingIndicatorCheck = document.getElementById('set-filling-indicator');
+    const fillingIndicatorWrap = document.getElementById('set-filling-indicator-wrap');
+
     if (historyBarCheck) {
       historyBarCheck.addEventListener('change', (e) => {
         const st = S.getSettings();
         st.historyBarEnabled = e.target.checked;
+        S.saveSettings(st);
+        if (fillingIndicatorWrap) {
+          fillingIndicatorWrap.style.display = e.target.checked ? 'block' : 'none';
+        }
+      });
+    }
+
+    if (fillingIndicatorCheck) {
+      fillingIndicatorCheck.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.fillingIndicatorEnabled = e.target.checked;
         S.saveSettings(st);
       });
     }
