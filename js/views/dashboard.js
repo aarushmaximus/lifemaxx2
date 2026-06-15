@@ -119,8 +119,8 @@ window.LM.views.dashboard = (function () {
     // The options dropdown that mirrors the mini-wheel skill select
     const selectOptions = QUEST_TYPES.map(t => `<option value="${t.id}" ${t.id === activeQuestType ? 'selected' : ''}>${t.label}</option>`).join('');
 
-    // Dropdown view (formerly arrows)
-    if (settings.questSelectorStyle === 'arrows') {
+    // Dropdown view (formerly arrows) or Swipe view
+    if (settings.questSelectorStyle === 'arrows' || settings.questSelectorStyle === 'swipe') {
       return `
         <div class="quest-type-label" style="position:relative;cursor:pointer;">
           <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
@@ -727,6 +727,39 @@ window.LM.views.dashboard = (function () {
 
   // ── Quest Type Wheel Interaction ─────────────────────────────────────────
   function initWheelInteraction() {
+    const settings = S.getSettings();
+    if (settings.questSelectorStyle === 'swipe') {
+      const wrap = document.querySelector('.quest-area-wrap');
+      if (!wrap) return;
+      let startX = 0;
+      let isSwiping = false;
+
+      wrap.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        isSwiping = true;
+      }, {passive: true});
+
+      wrap.addEventListener('touchend', e => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        const endX = e.changedTouches[0].clientX;
+        const deltaX = endX - startX;
+        
+        if (Math.abs(deltaX) > 40) {
+          const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
+          const idx = QUEST_TYPES.indexOf(activeType);
+          let nextIdx = idx;
+          if (deltaX > 0) { // Swipe right (back)
+            nextIdx = (idx - 1 + QUEST_TYPES.length) % QUEST_TYPES.length;
+          } else { // Swipe left (forward)
+            nextIdx = (idx + 1) % QUEST_TYPES.length;
+          }
+          LM.views.dashboard.setQuestType(QUEST_TYPES[nextIdx].id);
+        }
+      });
+      return;
+    }
+
     const svg  = document.getElementById('quest-type-svg');
     const disc = document.getElementById('quest-wheel-disc');
     if (!svg || !disc) return;
