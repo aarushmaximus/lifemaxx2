@@ -675,28 +675,43 @@ window.LM.views.dashboard = (function () {
           <!-- XP WHEEL / SPLIT LAYOUT -->
           ${wheelSectionHTML}
 
-          <!-- ACTIVE QUESTS -->
-          <div class="quest-area-wrap">
-            <div class="quest-area-header">
+          <!-- ACTIVE QUESTS (Fluid Swipe Carousel) -->
+          <div class="quest-area-wrap" style="overflow:hidden;">
+            <div class="quest-area-header" id="quest-area-header-container">
               ${renderQuestTypeWheel()}
             </div>
-            <div class="quest-grid" id="quest-grid">
-              ${activeQuestType === 'quests'    ? renderQuestCards(macros, null, false) :
-                activeQuestType === 'habituals' ? renderHabitualCards(macros) :
-                activeQuestType === 'chains'    ? renderChainDashCards(macros) : ''}
+            
+            <div class="dash-carousel-viewport" id="quest-list-carousel" onscroll="LM.views.dashboard.updateQuestCarouselNav()">
+              <!-- 0: Quests -->
+              <div class="dash-carousel-panel" style="min-width:100%; padding-right:8px;">
+                <div class="quest-grid">
+                  ${renderQuestCards(macros, null, false)}
+                </div>
+                <div style="margin-top:24px;">
+                  <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
+                    UPCOMING / LOCKED OBJECTIVES
+                  </h2>
+                  <div class="quest-grid">
+                    ${renderQuestCards(macros, null, true)}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 1: Habituals -->
+              <div class="dash-carousel-panel" style="min-width:100%; padding-right:8px;">
+                <div class="quest-grid">
+                  ${renderHabitualCards(macros)}
+                </div>
+              </div>
+
+              <!-- 2: Chains -->
+              <div class="dash-carousel-panel" style="min-width:100%; padding-right:8px;">
+                <div class="quest-grid">
+                  ${renderChainDashCards(macros)}
+                </div>
+              </div>
             </div>
           </div>
-
-          <!-- UPCOMING / LOCKED (only for regular quests) -->
-          ${activeQuestType === 'quests' ? `
-          <div style="margin-top:24px;">
-            <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
-              UPCOMING / LOCKED OBJECTIVES
-            </h2>
-            <div class="quest-grid" id="upcoming-quest-grid">
-              ${renderQuestCards(macros, null, true)}
-            </div>
-          </div>` : ''}
         </div> <!-- End dash-center -->
       </div>`;
 
@@ -704,7 +719,33 @@ window.LM.views.dashboard = (function () {
 
   function setQuestType(type) {
     activeQuestType = type;
-    LM.router.render();
+    const qv = document.getElementById('quest-list-carousel');
+    if (qv) {
+      const idx = QUEST_TYPES.findIndex(t => t.id === type);
+      if (idx !== -1) {
+        qv.scrollTo({ left: qv.clientWidth * idx, behavior: 'smooth' });
+      }
+    }
+    const header = document.getElementById('quest-area-header-container');
+    if (header) {
+      header.innerHTML = renderQuestTypeWheel();
+      initWheelInteraction();
+    }
+  }
+
+  function updateQuestCarouselNav() {
+    const qv = document.getElementById('quest-list-carousel');
+    if (!qv) return;
+    const idx = Math.round(qv.scrollLeft / qv.clientWidth);
+    const type = QUEST_TYPES[idx];
+    if (type && type.id !== activeQuestType) {
+      activeQuestType = type.id;
+      const header = document.getElementById('quest-area-header-container');
+      if (header) {
+        header.innerHTML = renderQuestTypeWheel();
+        initWheelInteraction();
+      }
+    }
   }
 
   function setHabitualStatus(id, status) {
@@ -722,52 +763,24 @@ window.LM.views.dashboard = (function () {
       window.LM.components.notifications.show(`✕ Habitual missed. -${h.xpLoss} XP`, 'warning');
     }
     S.upsertHabitual({ ...h, todayStatus: status });
-    LM.router.render();
+    // Re-render only habituals grid to avoid full reload
+    const grid = document.getElementById('quest-grid-habituals') || document.querySelector('#qpanel-habituals .quest-grid');
+    if (grid) grid.innerHTML = renderHabitualCards(S.getMacros());
+    else LM.router.render();
   }
 
   function completeChainStep(chainId, stepId) {
     const result = S.completeChainStep(chainId, stepId);
     if (result) {
       window.LM.components.notifications.show(`✓ Step complete! +${result.xpAmount} XP`, 'success');
-      LM.router.render();
+      const grid = document.getElementById('quest-grid-chains') || document.querySelector('#qpanel-chains .quest-grid');
+      if (grid) grid.innerHTML = renderChainDashCards(S.getMacros());
+      else LM.router.render();
     }
   }
 
   // ── Quest Type Wheel Interaction ─────────────────────────────────────────
   function initWheelInteraction() {
-    const settings = S.getSettings();
-    if (settings.questSelectorStyle === 'swipe') {
-      const zone = document.getElementById('quest-swipe-zone');
-      if (!zone) return;
-      let startX = 0;
-      let isSwiping = false;
-
-      zone.addEventListener('touchstart', e => {
-        startX = e.touches[0].clientX;
-        isSwiping = true;
-      }, {passive: true});
-
-      zone.addEventListener('touchend', e => {
-        if (!isSwiping) return;
-        isSwiping = false;
-        const endX = e.changedTouches[0].clientX;
-        const deltaX = endX - startX;
-        
-        if (Math.abs(deltaX) > 40) {
-          const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
-          const idx = QUEST_TYPES.indexOf(activeType);
-          let nextIdx = idx;
-          if (deltaX > 0) { // Swipe right (back)
-            nextIdx = (idx - 1 + QUEST_TYPES.length) % QUEST_TYPES.length;
-          } else { // Swipe left (forward)
-            nextIdx = (idx + 1) % QUEST_TYPES.length;
-          }
-          LM.views.dashboard.setQuestType(QUEST_TYPES[nextIdx].id);
-        }
-      });
-      return;
-    }
-
     const svg  = document.getElementById('quest-type-svg');
     const disc = document.getElementById('quest-wheel-disc');
     if (!svg || !disc) return;
@@ -886,6 +899,15 @@ window.LM.views.dashboard = (function () {
     } else {
       // ── DEFAULT LAYOUT INIT ──
       W.init();
+    }
+
+    // Restore fluid swipe quest carousel position
+    const qv = document.getElementById('quest-list-carousel');
+    if (qv) {
+      const activeIdx = QUEST_TYPES.findIndex(t => t.id === activeQuestType);
+      if (activeIdx > 0) {
+        setTimeout(() => { qv.scrollLeft = qv.clientWidth * activeIdx; }, 10);
+      }
     }
 
     // Macro tabs selector
@@ -1040,5 +1062,5 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateQuestCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
 })();
