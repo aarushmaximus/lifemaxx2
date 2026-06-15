@@ -121,10 +121,20 @@ window.LM.views.dashboard = (function () {
 
     // Dropdown view (formerly arrows) or Swipe view
     if (settings.questSelectorStyle === 'arrows' || settings.questSelectorStyle === 'swipe') {
+      const isSwipe = settings.questSelectorStyle === 'swipe';
+      const swipeHints = isSwipe ? `
+        <div style="display:flex;align-items:center;gap:6px;margin-left:12px;opacity:0.3;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:1px;font-weight:bold;">SWIPE</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+      ` : '';
+
       return `
-        <div class="quest-type-label" style="position:relative;cursor:pointer;">
-          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
-          <span class="quest-type-name">${activeType.label}</span>
+        <div id="quest-swipe-zone" style="display:flex;align-items:center;position:relative;cursor:pointer;width:100%;justify-content:flex-start;">
+          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};width:8px;height:8px;border-radius:50%;margin-right:10px;"></span>
+          <span class="quest-type-name" style="font-size:0.9rem;margin:0;">${activeType.label}</span>
+          ${swipeHints}
           <select style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="LM.views.dashboard.setQuestType(this.value)">
             ${selectOptions}
           </select>
@@ -729,17 +739,17 @@ window.LM.views.dashboard = (function () {
   function initWheelInteraction() {
     const settings = S.getSettings();
     if (settings.questSelectorStyle === 'swipe') {
-      const wrap = document.querySelector('.quest-area-wrap');
-      if (!wrap) return;
+      const zone = document.getElementById('quest-swipe-zone');
+      if (!zone) return;
       let startX = 0;
       let isSwiping = false;
 
-      wrap.addEventListener('touchstart', e => {
+      zone.addEventListener('touchstart', e => {
         startX = e.touches[0].clientX;
         isSwiping = true;
       }, {passive: true});
 
-      wrap.addEventListener('touchend', e => {
+      zone.addEventListener('touchend', e => {
         if (!isSwiping) return;
         isSwiping = false;
         const endX = e.changedTouches[0].clientX;
