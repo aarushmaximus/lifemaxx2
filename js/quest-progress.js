@@ -182,8 +182,11 @@ window.LM.questProgress = (function () {
     if (pi.type === 'manual') {
       detailHTML = `
         <div class="pi-manual-row" onclick="event.stopPropagation();">
-          <input type="range" class="pi-slider" min="0" max="100" value="${pi.value}" onchange="LM.questProgress.updateManual('${q.id}', this.value)">
-          <span class="pi-percent font-display">${pi.value}%</span>
+          <div class="pi-bar-track" style="position: absolute; top: 0; left: 0; width: calc(100% - 42px); height: 100%; z-index: 1;">
+            <div class="pi-bar-fill" style="width: ${pi.value}%;"></div>
+          </div>
+          <input type="range" class="pi-slider" min="0" max="100" value="${pi.value}" onchange="LM.questProgress.updateManual('${q.id}', this.value)" style="width: calc(100% - 42px);">
+          <span class="pi-percent font-display" style="margin-left: auto;">${pi.value}%</span>
         </div>`;
     } else if (pi.type === 'checks') {
       const bubbles = (pi.checklist || []).map((done, i) => {
@@ -192,7 +195,11 @@ window.LM.questProgress = (function () {
             ${done ? '✓' : (i + 1)}
           </button>`;
       }).join('');
-      detailHTML = `<div class="pi-checks-row" onclick="event.stopPropagation();">${bubbles}</div>`;
+      detailHTML = `
+        <div class="pi-bar-track" style="margin-bottom: 8px;">
+          <div class="pi-bar-fill" style="width: ${pi.value}%;"></div>
+        </div>
+        <div class="pi-checks-row" onclick="event.stopPropagation();">${bubbles}</div>`;
     } else if (pi.type === 'timer') {
       const display = Math.max(0, pi.timerRemaining);
       const m = Math.floor(display / 60);
@@ -200,6 +207,9 @@ window.LM.questProgress = (function () {
       const clockStr = `${m}:${s < 10 ? '0' : ''}${s} / ${Math.round(pi.timerDuration / 60)}m`;
       
       detailHTML = `
+        <div class="pi-bar-track" style="margin-bottom: 8px;">
+          <div class="pi-bar-fill" style="width: ${pi.value}%;"></div>
+        </div>
         <div class="pi-timer-row" onclick="event.stopPropagation();">
           <button class="btn-play-pause ${pi.timerIsRunning ? 'playing' : ''}" onclick="LM.questProgress.toggleTimer('${q.id}'); event.stopPropagation();">
             ${pi.timerIsRunning ? '⏸' : '▶'}
@@ -210,9 +220,6 @@ window.LM.questProgress = (function () {
 
     return `
       <div class="quest-pi-container">
-        <div class="pi-bar-track">
-          <div class="pi-bar-fill" style="width: ${pi.value}%;"></div>
-        </div>
         ${detailHTML}
       </div>`;
   }

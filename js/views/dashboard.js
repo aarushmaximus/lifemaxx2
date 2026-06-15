@@ -278,7 +278,7 @@ window.LM.views.dashboard = (function () {
         `<option value="${m.id}" ${selectedMacroId === m.id ? 'selected' : ''}>${m.name}</option>`
       ).join('');
 
-      wheelSectionHTML = `
+      const wheelSplitHTML = `
         <div class="dash-split-layout">
           <div class="dash-split-wheels">
             <div class="mini-wheel-container">
@@ -302,13 +302,103 @@ window.LM.views.dashboard = (function () {
             </div>
           </div>
         </div>`;
+
+      // Build Macro Skills Panel
+      const F = window.LM.formulas;
+      const macroBarsHTML = macros.map(m => {
+        const pct = F.progressPercent(m.currentXP || 0, m);
+        const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
+        const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
+        return `
+          <div class="macro-bar-row" style="margin-bottom:12px;cursor:pointer;" onclick="LM.router.navigate('#skill-hub/${m.id}')">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;">
+              <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-1);display:flex;align-items:center;gap:6px;">
+                 <div style="width:6px;height:6px;border-radius:50%;background:${m.accentColor};"></div>
+                 ${m.name} <span style="color:${m.accentColor};">LV${m.currentLevel || 0}</span>
+              </span>
+              <span style="font-size:0.65rem;color:var(--text-3);">${F.formatXP(into)}/${F.formatXP(req)}</span>
+            </div>
+            <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${m.accentColor};box-shadow:0 0 6px ${m.accentColor};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const macrosPanelHTML = `
+        <div class="dash-macros-panel">
+          <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+             <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-2);letter-spacing:0.1em;">MACRO SKILL PROGRESS</span>
+          </div>
+          <div class="dash-macros-list">
+            ${macroBarsHTML}
+          </div>
+        </div>
+      `;
+
+      wheelSectionHTML = `
+        <div class="dash-carousel-wrap">
+          <div class="dash-carousel-viewport" id="dash-carousel" onscroll="LM.views.dashboard.updateCarouselNav()">
+            <div class="dash-carousel-panel">
+              ${wheelSplitHTML}
+            </div>
+            <div class="dash-carousel-panel" style="padding-left:16px;">
+              ${macrosPanelHTML}
+            </div>
+          </div>
+          <div class="carousel-nav-dots" id="dash-nav-dots">
+            <div class="nav-dot active" onclick="document.getElementById('dash-carousel').scrollTo({left:0,behavior:'smooth'})"></div>
+            <div class="nav-dot" onclick="document.getElementById('dash-carousel').scrollTo({left:9999,behavior:'smooth'})"></div>
+          </div>
+        </div>
+      `;
+
     } else {
       // ── DEFAULT LAYOUT: Single Large Wheel ──
       wheelSectionHTML = `
-        <div style="display:flex; flex-direction:column; align-items:center; padding:16px 0;">
-          <p style="font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.18em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
-          ${W.renderHTML()}
-        </div>`;
+        <div class="dash-carousel-wrap">
+          <div class="dash-carousel-viewport" id="dash-carousel" onscroll="LM.views.dashboard.updateCarouselNav()">
+            <div class="dash-carousel-panel">
+              <div style="display:flex; flex-direction:column; align-items:center; padding:16px 0;">
+                <p style="font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.18em; color:var(--text-3); text-transform:uppercase; margin-bottom:12px;">SELECT SKILL · DRAG QUEST TO COMPLETE</p>
+                ${W.renderHTML()}
+              </div>
+            </div>
+            <div class="dash-carousel-panel" style="padding-left:16px;">
+              ${ (() => {
+                  const F = window.LM.formulas;
+                  const mBars = macros.map(m => {
+                    const pct = F.progressPercent(m.currentXP || 0, m);
+                    const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
+                    const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
+                    return \`<div class="macro-bar-row" style="margin-bottom:12px;cursor:pointer;" onclick="LM.router.navigate('#skill-hub/\${m.id}')">
+                      <div style="display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;">
+                        <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-1);display:flex;align-items:center;gap:6px;">
+                           <div style="width:6px;height:6px;border-radius:50%;background:\${m.accentColor};"></div>
+                           \${m.name} <span style="color:\${m.accentColor};">LV\${m.currentLevel || 0}</span>
+                        </span>
+                        <span style="font-size:0.65rem;color:var(--text-3);">\${F.formatXP(into)}/\${F.formatXP(req)}</span>
+                      </div>
+                      <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
+                        <div style="width:\${pct}%;height:100%;background:\${m.accentColor};box-shadow:0 0 6px \${m.accentColor};"></div>
+                      </div>
+                    </div>\`;
+                  }).join('');
+                  return \`<div class="dash-macros-panel">
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                       <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-2);letter-spacing:0.1em;">MACRO SKILL PROGRESS</span>
+                    </div>
+                    <div class="dash-macros-list">\${mBars}</div>
+                  </div>\`;
+              })() }
+            </div>
+          </div>
+          <div class="carousel-nav-dots" id="dash-nav-dots">
+            <div class="nav-dot active" onclick="document.getElementById('dash-carousel').scrollTo({left:0,behavior:'smooth'})"></div>
+            <div class="nav-dot" onclick="document.getElementById('dash-carousel').scrollTo({left:9999,behavior:'smooth'})"></div>
+          </div>
+        </div>
+      `;
     }
 
     return `
@@ -416,11 +506,22 @@ window.LM.views.dashboard = (function () {
     S.saveSettings(s);
     
     // Re-render
-    const main = document.getElementById('main-content');
-    if (main) {
-      main.innerHTML = render();
-      init();
+    const xpFill = document.getElementById('dash-xp-fill');
+    if (xpFill && F) {
+      xpFill.style.width = F.progressPercent(overall.currentXP || 0, overall) + '%';
     }
+  }
+
+  function updateCarouselNav() {
+    const v = document.getElementById('dash-carousel');
+    const dots = document.getElementById('dash-nav-dots');
+    if (!v || !dots) return;
+    const index = Math.round(v.scrollLeft / v.clientWidth);
+    const dotEls = dots.querySelectorAll('.nav-dot');
+    dotEls.forEach((el, i) => {
+      if (i === index) el.classList.add('active');
+      else el.classList.remove('active');
+    });
   }
 
   function updateBar(skillId) {
@@ -487,5 +588,5 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav };
 })();
