@@ -121,7 +121,7 @@ window.LM.views.settings = (function () {
               <div style="margin-left:24px; margin-top:8px;">
                 <select class="form-input" id="set-quest-selector" style="width:200px;padding:6px 10px;font-size:0.85rem;cursor:pointer;">
                   <option value="wheel" ${s.questSelectorStyle !== 'arrows' ? 'selected' : ''}>Interactive Wheel</option>
-                  <option value="arrows" ${s.questSelectorStyle === 'arrows' ? 'selected' : ''}>Arrows (< >)</option>
+                  <option value="arrows" ${s.questSelectorStyle === 'arrows' ? 'selected' : ''}>Dropdown Menu</option>
                 </select>
               </div>
             </div>

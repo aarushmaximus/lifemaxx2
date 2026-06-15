@@ -119,24 +119,15 @@ window.LM.views.dashboard = (function () {
     // The options dropdown that mirrors the mini-wheel skill select
     const selectOptions = QUEST_TYPES.map(t => `<option value="${t.id}" ${t.id === activeQuestType ? 'selected' : ''}>${t.label}</option>`).join('');
 
-    // Arrow view
+    // Dropdown view (formerly arrows)
     if (settings.questSelectorStyle === 'arrows') {
-      const idx = QUEST_TYPES.indexOf(activeType);
-      const prev = QUEST_TYPES[(idx - 1 + QUEST_TYPES.length) % QUEST_TYPES.length];
-      const next = QUEST_TYPES[(idx + 1) % QUEST_TYPES.length];
       return `
-        <div class="dash-carousel-nav" style="width:100%;margin-bottom:0;position:relative;">
-          <button class="btn-icon" onclick="LM.views.dashboard.setQuestType('${prev.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-          
-          <div class="dash-carousel-dots" style="flex:1;justify-content:center;gap:10px;position:relative;cursor:pointer;">
-            <span style="width:10px;height:10px;border-radius:50%;background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
-            <span style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.1em;color:var(--text-1);font-weight:500;">${activeType.label}</span>
-            <select style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="LM.views.dashboard.setQuestType(this.value)">
-              ${selectOptions}
-            </select>
-          </div>
-
-          <button class="btn-icon" onclick="LM.views.dashboard.setQuestType('${next.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <div class="quest-type-label" style="position:relative;cursor:pointer;">
+          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
+          <span class="quest-type-name">${activeType.label}</span>
+          <select style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="LM.views.dashboard.setQuestType(this.value)">
+            ${selectOptions}
+          </select>
         </div>
       `;
     }
@@ -160,8 +151,8 @@ window.LM.views.dashboard = (function () {
     const segs = QUEST_TYPES.map((t, i) => {
       // Dot is at the clockwise end of the segment
       const endDeg = i * 120;
-      // Use 60 degree arc to leave 60 deg gap (which becomes 30 deg visually due to round caps)
-      const startDeg = endDeg - 60; 
+      // Use 40 degree arc to leave 80 deg gap
+      const startDeg = endDeg - 40; 
       const [dx, dy] = p2c(R_MID, endDeg);
       const segPath = arcStroke(startDeg, endDeg, R_MID);
       return `
