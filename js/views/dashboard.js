@@ -141,9 +141,9 @@ window.LM.views.dashboard = (function () {
       if (q.expiresAt && q.status === 'active') {
         const leftMs = q.expiresAt - Date.now();
         if (leftMs > 0) {
-          timeStr = `<span class="quest-countdown-timer" data-expires-at="${q.expiresAt}" style="font-size:0.75rem;color:var(--accent);">Counting down...</span>`;
+          timeStr = `<span class="quest-countdown-timer" data-expires-at="${q.expiresAt}" style="font-size:0.65rem;color:var(--accent);">Counting down...</span>`;
         } else {
-          timeStr = `<span style="font-size:0.75rem;color:var(--danger);">Expired</span>`;
+          timeStr = `<span style="font-size:0.65rem;color:var(--danger);">Expired</span>`;
         }
       }
 
