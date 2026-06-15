@@ -99,58 +99,125 @@ window.LM.views.dashboard = (function () {
   }
 
   // ── Quest Type Wheel ──────────────────────────────────────────────────────
-  // A small SVG trisector wheel the user can rotate to select quest type.
-  // Types: quests (cyan), habituals (olive green), chains (yellow)
+  // A rotating disc with 3 coloured dots. Fixed chrome arrow at top points to
+  // the active type. The user drags/taps the disc to rotate it. Each type is
+  // 120° apart. Dot at top = active type.
+  // Types & their rotation offsets so that the dot lands under the top arrow:
+  //   quests    (cyan)       → wheel rotation = 0°
+  //   habituals (olive)      → wheel rotation = -120°
+  //   chains    (yellow)     → wheel rotation = -240°
   const QUEST_TYPES = [
-    { id: 'quests',    label: 'QUESTS',    dot: '#00E5FF', angle: 0   },
-    { id: 'habituals', label: 'HABITUALS', dot: '#8FAF2A', angle: 120 },
-    { id: 'chains',    label: 'CHAINS',    dot: '#FFD600', angle: 240 },
+    { id: 'quests',    label: 'QUESTS',    dot: '#00E5FF', rotDeg: 0   },
+    { id: 'habituals', label: 'HABITUALS', dot: '#8FAF2A', rotDeg: 120 },
+    { id: 'chains',    label: 'CHAINS',    dot: '#FFD600', rotDeg: 240 },
   ];
 
   function renderQuestTypeWheel() {
-    const cx = 52, cy = 52, r = 44, gap = 4;
-    // Build 3 arc segments (each 120deg minus gap)
-    function polarToCart(cx, cy, r, angleDeg) {
-      const rad = (angleDeg - 90) * Math.PI / 180;
-      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
+    const wheelRot = -activeType.rotDeg; // rotate so active dot reaches the top
+
+    // Build the 3 arc segments as SVG paths
+    // The disc rotates; the arrow is outside and fixed
+    const CX = 54, CY = 54, R_OUT = 48, R_IN = 28, GAP_DEG = 7;
+    function p2c(r, deg) {
+      const rad = (deg - 90) * Math.PI / 180;
+      return [CX + r * Math.cos(rad), CY + r * Math.sin(rad)];
     }
-    function arcPath(startDeg, endDeg, r, rInner = 28) {
-      const s1 = polarToCart(cx, cy, r, startDeg);
-      const e1 = polarToCart(cx, cy, r, endDeg);
-      const s2 = polarToCart(cx, cy, rInner, endDeg);
-      const e2 = polarToCart(cx, cy, rInner, startDeg);
-      return `M${s1.x.toFixed(2)},${s1.y.toFixed(2)} A${r},${r} 0 0,1 ${e1.x.toFixed(2)},${e1.y.toFixed(2)} L${s2.x.toFixed(2)},${s2.y.toFixed(2)} A${rInner},${rInner} 0 0,0 ${e2.x.toFixed(2)},${e2.y.toFixed(2)} Z`;
+    function arc(startDeg, endDeg) {
+      const [x1,y1] = p2c(R_OUT, startDeg);
+      const [x2,y2] = p2c(R_OUT, endDeg);
+      const [x3,y3] = p2c(R_IN, endDeg);
+      const [x4,y4] = p2c(R_IN, startDeg);
+      const f = v => v.toFixed(3);
+      return `M${f(x1)},${f(y1)} A${R_OUT},${R_OUT} 0 0,1 ${f(x2)},${f(y2)} L${f(x3)},${f(y3)} A${R_IN},${R_IN} 0 0,0 ${f(x4)},${f(y4)} Z`;
     }
-    function dotPos(midDeg, r = 36) { return polarToCart(cx, cy, r, midDeg); }
 
     const segs = QUEST_TYPES.map((t, i) => {
-      const startDeg = i * 120 + gap;
-      const endDeg = (i + 1) * 120 - gap;
-      const midDeg = i * 120 + 60;
-      const dot = dotPos(midDeg);
-      const isActive = activeQuestType === t.id;
-      const strokeCol = isActive ? '#E8E8E8' : 'rgba(255,255,255,0.15)';
-      const fillCol = isActive ? 'rgba(232,232,232,0.08)' : 'rgba(255,255,255,0.03)';
+      const mid = i * 120 + 60;
+      const [dx, dy] = p2c(38, mid);
+      const segPath = arc(i * 120 + GAP_DEG, (i + 1) * 120 - GAP_DEG);
       return `
-        <path d="${arcPath(startDeg, endDeg)}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="${isActive ? 1.5 : 0.75}" 
-              style="cursor:pointer;transition:all 0.2s;" 
-              onclick="LM.views.dashboard.setQuestType('${t.id}')"/>
-        <circle cx="${dot.x.toFixed(2)}" cy="${dot.y.toFixed(2)}" r="${isActive ? 5 : 4}" 
-                fill="${t.dot}" style="pointer-events:none;transition:all 0.2s;${isActive ? `filter:drop-shadow(0 0 4px ${t.dot});` : 'opacity:0.7;'}"/>`;
+        <path d="${segPath}"
+              fill="url(#chrome-seg)"
+              stroke="rgba(232,232,232,0.5)"
+              stroke-width="0.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+        <circle cx="${dx.toFixed(3)}" cy="${dy.toFixed(3)}" r="8"
+                fill="${t.dot}"
+                style="filter:drop-shadow(0 0 5px ${t.dot}88);"/>`;
     }).join('');
-
-    const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
 
     return `
       <div class="quest-type-selector">
+        <div class="quest-wheel-wrap" id="quest-wheel-wrap">
+          <!-- Fixed chrome arrow pointer (outside wheel, pointing down into wheel) -->
+          <svg class="quest-wheel-arrow" viewBox="0 0 24 18" width="24" height="18">
+            <defs>
+              <linearGradient id="arrow-chrome" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="#c8c8c8"/>
+                <stop offset="100%" stop-color="#888888"/>
+              </linearGradient>
+            </defs>
+            <polygon points="12,18 0,0 24,0" fill="url(#arrow-chrome)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+          </svg>
+
+          <!-- The rotating disc -->
+          <svg id="quest-type-svg"
+               width="108" height="108"
+               viewBox="0 0 108 108"
+               class="quest-type-wheel"
+               style="cursor:grab;touch-action:none;display:block;">
+            <defs>
+              <!-- Chrome gradient for segments -->
+              <linearGradient id="chrome-seg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stop-color="#d8d8d8" stop-opacity="0.18"/>
+                <stop offset="50%"  stop-color="#a8a8a8" stop-opacity="0.10"/>
+                <stop offset="100%" stop-color="#606060" stop-opacity="0.15"/>
+              </linearGradient>
+              <!-- Chrome ring gradient -->
+              <radialGradient id="chrome-ring" cx="50%" cy="30%" r="70%">
+                <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#404040" stop-opacity="0.08"/>
+              </radialGradient>
+              <!-- Chrome center -->
+              <radialGradient id="chrome-center" cx="35%" cy="25%" r="80%">
+                <stop offset="0%"   stop-color="#e8e8e8"/>
+                <stop offset="40%"  stop-color="#a0a0a0"/>
+                <stop offset="100%" stop-color="#484848"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Outer chrome ring background -->
+            <circle cx="${CX}" cy="${CY}" r="${R_OUT + 4}"
+                    fill="rgba(8,8,12,0.85)"
+                    stroke="rgba(200,200,200,0.35)"
+                    stroke-width="1.2"/>
+
+            <!-- Rotating group -->
+            <g id="quest-wheel-disc" style="transform-origin:${CX}px ${CY}px;transform:rotate(${wheelRot}deg);transition:transform 0.35s cubic-bezier(0.34,1.3,0.64,1);">
+              <!-- Segments -->
+              ${segs}
+            </g>
+
+            <!-- Chrome center hub (non-rotating, on top) -->
+            <circle cx="${CX}" cy="${CY}" r="14"
+                    fill="url(#chrome-center)"
+                    stroke="rgba(255,255,255,0.4)"
+                    stroke-width="1"/>
+            <circle cx="${CX}" cy="${CY}" r="5"
+                    fill="rgba(8,8,12,0.7)"
+                    stroke="rgba(255,255,255,0.15)"
+                    stroke-width="0.5"/>
+          </svg>
+        </div>
+
+        <!-- Type label to the right of wheel -->
         <div class="quest-type-label">
-          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 8px ${activeType.dot};"></span>
+          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
           <span class="quest-type-name">${activeType.label}</span>
         </div>
-        <svg width="104" height="104" viewBox="0 0 104 104" class="quest-type-wheel">
-          ${segs}
-          <circle cx="${cx}" cy="${cy}" r="10" fill="rgba(10,10,12,0.9)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
-        </svg>
       </div>`;
   }
 
@@ -647,6 +714,93 @@ window.LM.views.dashboard = (function () {
     }
   }
 
+  // ── Quest Type Wheel Interaction ─────────────────────────────────────────
+  function initWheelInteraction() {
+    const svg  = document.getElementById('quest-type-svg');
+    const disc = document.getElementById('quest-wheel-disc');
+    if (!svg || !disc) return;
+
+    const TYPES = ['quests', 'habituals', 'chains'];
+    const ROT   = { quests: 0, habituals: -120, chains: -240 };
+    let currentType = activeQuestType;
+    let isDragging  = false;
+    let dragMoved   = false;
+    let startAngle  = 0;
+    let accumRot    = ROT[currentType];
+
+    function getCenterOf(el) {
+      const rect = el.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+    function getAngle(cx, cy, px, py) {
+      return Math.atan2(py - cy, px - cx) * 180 / Math.PI;
+    }
+    function snapToNearest(rot) {
+      const snaps = [0, -120, -240];
+      const dists = snaps.map((s, i) => {
+        let d = ((s - rot) % 360 + 360) % 360;
+        if (d > 180) d -= 360;
+        return { idx: i, dist: Math.abs(d) };
+      });
+      return TYPES[dists.reduce((a, b) => a.dist < b.dist ? a : b).idx];
+    }
+    function applyRotation(deg, animated) {
+      disc.style.transition = animated ? 'transform 0.35s cubic-bezier(0.34,1.3,0.64,1)' : 'none';
+      disc.style.transform  = `rotate(${deg}deg)`;
+    }
+    function onTap() {
+      const next = TYPES[(TYPES.indexOf(currentType) + 1) % TYPES.length];
+      currentType = next;
+      accumRot    = ROT[next];
+      applyRotation(accumRot, true);
+      LM.views.dashboard.setQuestType(next);
+    }
+    function pointerDown(e) {
+      const pt = e.touches ? e.touches[0] : e;
+      const c  = getCenterOf(svg);
+      startAngle  = getAngle(c.x, c.y, pt.clientX, pt.clientY);
+      const prevAccum = accumRot;
+      isDragging  = true;
+      dragMoved   = false;
+      svg.style.cursor = 'grabbing';
+      e.preventDefault();
+      // Store the rotation at drag start
+      svg._dragStartRot = accumRot;
+    }
+    function pointerMove(e) {
+      if (!isDragging) return;
+      const pt    = e.touches ? e.touches[0] : e;
+      const c     = getCenterOf(svg);
+      const angle = getAngle(c.x, c.y, pt.clientX, pt.clientY);
+      const delta = angle - startAngle;
+      if (Math.abs(delta) > 3) dragMoved = true;
+      const rot = svg._dragStartRot + delta;
+      applyRotation(rot, false);
+      accumRot = rot;
+      e.preventDefault();
+    }
+    function pointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      svg.style.cursor = 'grab';
+      if (!dragMoved) { onTap(); return; }
+      const snapped = snapToNearest(accumRot);
+      accumRot    = ROT[snapped];
+      applyRotation(accumRot, true);
+      if (snapped !== currentType) {
+        currentType = snapped;
+        LM.views.dashboard.setQuestType(snapped);
+      }
+    }
+
+    svg.addEventListener('mousedown',  pointerDown, { passive: false });
+    svg.addEventListener('touchstart', pointerDown, { passive: false });
+    window.addEventListener('mousemove',  pointerMove, { passive: false });
+    window.addEventListener('touchmove',  pointerMove, { passive: false });
+    window.addEventListener('mouseup',   pointerUp);
+    window.addEventListener('touchend',  pointerUp);
+  }
+
   function init() {
     const settings = S.getSettings();
     const historyBarEnabled = settings.historyBarEnabled === true;
@@ -693,6 +847,7 @@ window.LM.views.dashboard = (function () {
       refreshCards();
     });
 
+    initWheelInteraction();
   }
 
   function selectMacro(macroId) {
