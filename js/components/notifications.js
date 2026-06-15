@@ -2,6 +2,10 @@
 window.LM.components.notifications = (function () {
 
   function show(message, type = 'info', duration = 3500) {
+    if (window.LM.store && window.LM.store.addHistoryEntry && type !== 'xp') {
+      window.LM.store.addHistoryEntry('notification', message, { type });
+    }
+
     const historyEntries = document.getElementById('history-bar-entries');
     if (historyEntries) {
       const emptyState = historyEntries.querySelector('.history-empty');
