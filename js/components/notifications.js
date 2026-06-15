@@ -2,6 +2,35 @@
 window.LM.components.notifications = (function () {
 
   function show(message, type = 'info', duration = 3500) {
+    if (type === 'warning' || type === 'error') {
+      const historyEntries = document.getElementById('history-bar-entries');
+      if (historyEntries) {
+        const emptyState = historyEntries.querySelector('.history-empty');
+        if (emptyState) emptyState.remove();
+
+        const entry = document.createElement('div');
+        entry.className = `history-entry history-danger`;
+        entry.style.transition = 'all 0.3s ease';
+        entry.innerHTML = `
+          <span class="history-icon">⚠</span>
+          <div class="history-body">
+            <span class="history-msg" style="color: var(--danger); font-weight: 500;">${message}</span>
+          </div>
+          <div class="history-time">
+            <span>Just now</span>
+          </div>
+        `;
+        historyEntries.prepend(entry);
+        
+        setTimeout(() => {
+          entry.style.opacity = '0';
+          entry.style.transform = 'translateX(20px)';
+          setTimeout(() => entry.remove(), 300);
+        }, duration);
+        return;
+      }
+    }
+
     const container = document.getElementById('toast-container');
     if (!container) return;
 

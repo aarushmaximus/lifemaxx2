@@ -111,7 +111,7 @@ window.LM.components.wheel = (function () {
     const into = F.xpIntoCurrentLevel(data.xp, data.skill);
     const req = F.xpRequiredForNextLevel(data.xp, data.skill);
     const isOverall = skillId === 'overall';
-    const maxWidth = isOverall ? '185px' : '150px';
+    const maxWidth = isOverall ? '220px' : '140px';
 
     const settings = S.getSettings();
     const chromeOn = settings.chromeAccentsEnabled !== false;
