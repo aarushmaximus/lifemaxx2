@@ -10,6 +10,12 @@ window.LM.views.skillHub = (function () {
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`
     },
     {
+      id: 'create-habitual',
+      title: 'Create Habitual',
+      desc: 'Daily XP habit with gain/loss tracking',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>`
+    },
+    {
       id: 'chain-quests',
       title: 'Chain Quests',
       desc: 'Multi-step ordered quest sequences',
@@ -36,6 +42,7 @@ window.LM.views.skillHub = (function () {
     const pct = F.progressPercent(macro.currentXP || 0, macro);
     const chains = S.getChains(macroId);
     const activeChains = chains.filter(c => c.steps.some(s => !s.completedAt)).length;
+    const habituals = S.getHabituals().filter(h => h.macroId === macroId);
 
     return `
       <div class="skill-hub-view" style="--sk-accent:${macro.accentColor};">
@@ -51,15 +58,58 @@ window.LM.views.skillHub = (function () {
           <div class="skill-hub-xp-bar-fill" style="width:${pct}%;background:${macro.accentColor};"></div>
         </div>
 
+        <!-- Habitual creation panel (hidden by default) -->
+        <div id="habitual-create-panel" style="display:none;background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h2 style="font-family:var(--font-display);font-size:0.85rem;letter-spacing:0.12em;color:#8FAF2A;">NEW HABITUAL</h2>
+            <button class="btn-icon" onclick="document.getElementById('habitual-create-panel').style.display='none'">✕</button>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:0.75rem;color:var(--text-3);font-family:var(--font-display);letter-spacing:0.08em;">NAME</label>
+            <input type="text" class="form-input" id="habitual-name-inp" placeholder="e.g. Morning Run, Read 30 mins">
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:16px;">
+            <div class="form-group" style="flex:1;">
+              <label style="font-size:0.75rem;color:var(--text-3);font-family:var(--font-display);letter-spacing:0.08em;">XP GAIN (if done)</label>
+              <input type="number" class="form-input" id="habitual-xpgain-inp" placeholder="e.g. 50" min="1">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label style="font-size:0.75rem;color:var(--text-3);font-family:var(--font-display);letter-spacing:0.08em;">XP LOSS (if missed)</label>
+              <input type="number" class="form-input" id="habitual-xploss-inp" placeholder="e.g. 25" min="0">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('habitual-create-panel').style.display='none'">Cancel</button>
+            <button class="btn btn-sm" id="btn-save-habitual" style="background:#8FAF2A;border:none;color:#08080c;font-weight:700;">Save Habitual</button>
+          </div>
+        </div>
+
+        <!-- Active habituals for this skill -->
+        ${habituals.length > 0 ? `
+        <div style="margin-bottom:16px;">
+          <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.12em;color:var(--text-3);margin-bottom:8px;">ACTIVE HABITUALS</div>
+          ${habituals.map(h => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-surface);border:1px solid #8FAF2A33;border-radius:10px;margin-bottom:6px;">
+              <div>
+                <div style="font-size:0.85rem;font-weight:500;">${h.name}</div>
+                <div style="font-size:0.7rem;color:var(--text-3);">+${h.xpGain} / -${h.xpLoss} XP</div>
+              </div>
+              <button class="btn-icon danger" onclick="LM.views.skillHub.deleteHabitual('${h.id}')" title="Delete habitual">✕</button>
+            </div>`).join('')}
+        </div>` : ''}
+
         <div class="skill-hub-options">
           ${OPTIONS.map(opt => {
             let badge = '';
             if (opt.id === 'chain-quests' && activeChains > 0) {
               badge = `<span class="hub-badge" style="background:${macro.accentColor};">${activeChains}</span>`;
             }
+            if (opt.id === 'create-habitual' && habituals.length > 0) {
+              badge = `<span class="hub-badge" style="background:#8FAF2A;">${habituals.length}</span>`;
+            }
             return `
               <button class="skill-hub-option" id="hub-opt-${opt.id}" data-macroi="${macroId}">
-                <div class="hub-opt-icon" style="color:${macro.accentColor};">${opt.icon}</div>
+                <div class="hub-opt-icon" style="color:${opt.id === 'create-habitual' ? '#8FAF2A' : macro.accentColor};">${opt.icon}</div>
                 <div class="hub-opt-text">
                   <div class="hub-opt-title">${opt.title}${badge}</div>
                   <div class="hub-opt-desc">${opt.desc}</div>
@@ -75,6 +125,10 @@ window.LM.views.skillHub = (function () {
     document.getElementById('hub-opt-create-quest')?.addEventListener('click', () => {
       window.LM.components.questModal.open(null, false);
     });
+    document.getElementById('hub-opt-create-habitual')?.addEventListener('click', () => {
+      const panel = document.getElementById('habitual-create-panel');
+      if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
     document.getElementById('hub-opt-chain-quests')?.addEventListener('click', () => {
       LM.router.navigate(`#skill-chains/${macroId}`);
     });
@@ -84,7 +138,38 @@ window.LM.views.skillHub = (function () {
     document.getElementById('hub-opt-widgets')?.addEventListener('click', () => {
       LM.router.navigate(`#skill-widgets/${macroId}`);
     });
+
+    document.getElementById('btn-save-habitual')?.addEventListener('click', () => {
+      const name = document.getElementById('habitual-name-inp')?.value?.trim();
+      const xpGain = parseInt(document.getElementById('habitual-xpgain-inp')?.value) || 0;
+      const xpLoss = parseInt(document.getElementById('habitual-xploss-inp')?.value) || 0;
+      if (!name) { window.LM.components.notifications.show('Please enter a name.', 'error'); return; }
+      if (xpGain <= 0) { window.LM.components.notifications.show('XP Gain must be > 0.', 'error'); return; }
+      const S = window.LM.store;
+      const now = new Date();
+      const istMs = now.getTime() + (5.5 * 60 * 60 * 1000);
+      const todayIST = new Date(istMs).toISOString().slice(0, 10);
+      S.upsertHabitual({
+        id: S.uid(),
+        macroId,
+        name,
+        xpGain,
+        xpLoss,
+        createdAt: Date.now(),
+        todayStatus: null,
+        lastResetDate: todayIST
+      });
+      window.LM.components.notifications.show(`Habitual "${name}" created!`, 'success');
+      LM.router.render();
+    });
   }
 
-  return { render, init };
+  function deleteHabitual(id) {
+    if (!confirm('Delete this habitual? This cannot be undone.')) return;
+    window.LM.store.deleteHabitual(id);
+    window.LM.components.notifications.show('Habitual deleted.', 'info');
+    LM.router.render();
+  }
+
+  return { render, init, deleteHabitual };
 })();

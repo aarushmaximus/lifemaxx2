@@ -2299,3 +2299,177 @@ select option {
     min-width: 0 !important;
   }
 }
+
+/* ── Quest Type Wheel ────────────────────────────────────────────────── */
+.quest-area-wrap {
+  margin-top: 20px;
+}
+
+.quest-area-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.quest-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.quest-type-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quest-type-dot-label {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.quest-type-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.quest-type-wheel {
+  cursor: pointer;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+  transition: filter 0.2s;
+  flex-shrink: 0;
+}
+.quest-type-wheel:hover {
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.6));
+}
+
+/* ── Habitual Cards ────────────────────────────────────────────────────── */
+.habitual-card {
+  background: rgba(10,10,10,0.7);
+  border: 1px solid rgba(143,175,42,0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+.habitual-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(143,175,42,0.15), rgba(143,175,42,0.02) 50%, rgba(143,175,42,0.06));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.habitual-card.habitual-done { border-color: rgba(34,197,94,0.35); }
+.habitual-card.habitual-failed { border-color: rgba(239,68,68,0.3); }
+
+.habitual-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.habitual-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.habitual-tag {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: #8FAF2A;
+  font-weight: 500;
+}
+
+.habitual-skill-tag {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  border: 1px solid;
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+
+.habitual-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-1);
+  margin: 0;
+}
+
+.habitual-xp-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.habitual-xp-pill {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+.habitual-xp-pill.gain { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+.habitual-xp-pill.loss { background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.18); }
+
+.habitual-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.habitual-btn {
+  flex: 1;
+  height: 52px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: var(--bg-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-3);
+}
+.habitual-btn:hover:not(:disabled) { transform: scale(1.04); }
+.habitual-btn.yes:hover:not(:disabled),
+.habitual-btn.yes.active { background: rgba(34,197,94,0.15); border-color: #22c55e; color: #22c55e; box-shadow: 0 0 16px rgba(34,197,94,0.2); }
+.habitual-btn.no:hover:not(:disabled),
+.habitual-btn.no.active { background: rgba(239,68,68,0.12); border-color: #ef4444; color: #ef4444; box-shadow: 0 0 16px rgba(239,68,68,0.15); }
+.habitual-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.habitual-status-msg {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* Quest grid for habituals (single col looks better for the binary choice) */
+.quest-grid:has(.habitual-card) {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+

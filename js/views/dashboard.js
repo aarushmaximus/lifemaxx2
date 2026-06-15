@@ -6,6 +6,7 @@ window.LM.views.dashboard = (function () {
   let activeStatusFilter = 'all'; // 'all', 'active', 'missed'
   let activeSkillFilter = 'all';
   let activeMacroId = null; // for the expanded macro skill widget
+  let activeQuestType = 'quests'; // 'quests' | 'habituals' | 'chains'
 
   const isWithinTimeWindow = F.isWithinTimeWindow;
 
@@ -95,6 +96,144 @@ window.LM.views.dashboard = (function () {
     const m = macros.find(x=>x.id===skillId);
     if (!m) return { level:0, color:'var(--accent)', into:0, req:1, pct:0 };
     return { level:m.currentLevel||0, color:m.accentColor, into:F.xpIntoCurrentLevel(m.currentXP||0,m), req:F.xpRequiredForNextLevel(m.currentXP||0,m), pct:F.progressPercent(m.currentXP||0,m) };
+  }
+
+  // ── Quest Type Wheel ──────────────────────────────────────────────────────
+  // A small SVG trisector wheel the user can rotate to select quest type.
+  // Types: quests (cyan), habituals (olive green), chains (yellow)
+  const QUEST_TYPES = [
+    { id: 'quests',    label: 'QUESTS',    dot: '#00E5FF', angle: 0   },
+    { id: 'habituals', label: 'HABITUALS', dot: '#8FAF2A', angle: 120 },
+    { id: 'chains',    label: 'CHAINS',    dot: '#FFD600', angle: 240 },
+  ];
+
+  function renderQuestTypeWheel() {
+    const cx = 52, cy = 52, r = 44, gap = 4;
+    // Build 3 arc segments (each 120deg minus gap)
+    function polarToCart(cx, cy, r, angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+    function arcPath(startDeg, endDeg, r, rInner = 28) {
+      const s1 = polarToCart(cx, cy, r, startDeg);
+      const e1 = polarToCart(cx, cy, r, endDeg);
+      const s2 = polarToCart(cx, cy, rInner, endDeg);
+      const e2 = polarToCart(cx, cy, rInner, startDeg);
+      return `M${s1.x.toFixed(2)},${s1.y.toFixed(2)} A${r},${r} 0 0,1 ${e1.x.toFixed(2)},${e1.y.toFixed(2)} L${s2.x.toFixed(2)},${s2.y.toFixed(2)} A${rInner},${rInner} 0 0,0 ${e2.x.toFixed(2)},${e2.y.toFixed(2)} Z`;
+    }
+    function dotPos(midDeg, r = 36) { return polarToCart(cx, cy, r, midDeg); }
+
+    const segs = QUEST_TYPES.map((t, i) => {
+      const startDeg = i * 120 + gap;
+      const endDeg = (i + 1) * 120 - gap;
+      const midDeg = i * 120 + 60;
+      const dot = dotPos(midDeg);
+      const isActive = activeQuestType === t.id;
+      const strokeCol = isActive ? '#E8E8E8' : 'rgba(255,255,255,0.15)';
+      const fillCol = isActive ? 'rgba(232,232,232,0.08)' : 'rgba(255,255,255,0.03)';
+      return `
+        <path d="${arcPath(startDeg, endDeg)}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="${isActive ? 1.5 : 0.75}" 
+              style="cursor:pointer;transition:all 0.2s;" 
+              onclick="LM.views.dashboard.setQuestType('${t.id}')"/>
+        <circle cx="${dot.x.toFixed(2)}" cy="${dot.y.toFixed(2)}" r="${isActive ? 5 : 4}" 
+                fill="${t.dot}" style="pointer-events:none;transition:all 0.2s;${isActive ? `filter:drop-shadow(0 0 4px ${t.dot});` : 'opacity:0.7;'}"/>`;
+    }).join('');
+
+    const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
+
+    return `
+      <div class="quest-type-selector">
+        <div class="quest-type-label">
+          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 8px ${activeType.dot};"></span>
+          <span class="quest-type-name">${activeType.label}</span>
+        </div>
+        <svg width="104" height="104" viewBox="0 0 104 104" class="quest-type-wheel">
+          ${segs}
+          <circle cx="${cx}" cy="${cy}" r="10" fill="rgba(10,10,12,0.9)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+        </svg>
+      </div>`;
+  }
+
+  // ── Habitual Cards ─────────────────────────────────────────────────────────
+  function renderHabitualCards(macros) {
+    const habituals = S.getHabituals();
+    if (habituals.length === 0) {
+      return `<div class="empty-state"><p>No habituals yet. Create one from a Skill's hub page.</p></div>`;
+    }
+    return habituals.map(h => {
+      const macro = macros.find(m => m.id === h.macroId);
+      const accentColor = macro ? macro.accentColor : '#8FAF2A';
+      const macroName = macro ? macro.name : 'Unknown Skill';
+      const isYes = h.todayStatus === 'yes';
+      const isNo = h.todayStatus === 'no';
+      const isPending = !isYes && !isNo;
+      return `
+        <div class="habitual-card ${isYes ? 'habitual-done' : isNo ? 'habitual-failed' : ''}">
+          <div class="habitual-card-header">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="habitual-dot" style="background:#8FAF2A;box-shadow:0 0 6px #8FAF2A44;"></div>
+              <span class="habitual-tag">HABITUAL</span>
+            </div>
+            <span class="habitual-skill-tag" style="color:${accentColor};border-color:${accentColor}44;">${macroName}</span>
+          </div>
+          <h3 class="habitual-name">${h.name}</h3>
+          <div class="habitual-xp-row">
+            <span class="habitual-xp-pill gain">+${h.xpGain} XP if done</span>
+            <span class="habitual-xp-pill loss">-${h.xpLoss} XP if missed</span>
+          </div>
+          <div class="habitual-actions ${isPending ? '' : 'habitual-answered'}">
+            <button class="habitual-btn yes ${isYes ? 'active' : ''}" 
+                    onclick="LM.views.dashboard.setHabitualStatus('${h.id}', 'yes')"
+                    ${!isPending && !isYes ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M20 6L9 17l-5-5"/></svg>
+            </button>
+            <button class="habitual-btn no ${isNo ? 'active' : ''}" 
+                    onclick="LM.views.dashboard.setHabitualStatus('${h.id}', 'no')"
+                    ${!isPending && !isNo ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          ${!isPending ? `<p class="habitual-status-msg">${isYes ? '✓ Marked done · +'+h.xpGain+' XP earned' : '✕ Marked missed · -'+h.xpLoss+' XP deducted'}</p>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Chain Quests on Dashboard ──────────────────────────────────────────────
+  function renderChainDashCards(macros) {
+    const allChains = S.getAllChains ? S.getAllChains() : [];
+    const activeChains = allChains.filter(c => c.steps.some(s => !s.completedAt));
+    if (activeChains.length === 0) {
+      return `<div class="empty-state"><p>No active chain quests. Create one from a Skill's hub page.</p></div>`;
+    }
+    return activeChains.map(c => {
+      const macro = macros.find(m => m.id === c.macroId);
+      const accent = macro ? macro.accentColor : 'var(--accent)';
+      const macroName = macro ? macro.name : 'Unknown';
+      const total = c.steps.length;
+      const doneCount = c.steps.filter(s => s.completedAt).length;
+      const actIdx = c.steps.findIndex(s => !s.completedAt);
+      const pct = total > 0 ? Math.round((doneCount / total) * 100) : 100;
+      const activeStep = actIdx >= 0 ? c.steps[actIdx] : null;
+      return `
+        <div class="quest-card chain-dash-card" style="border-color:${accent}22;">
+          <div class="quest-card-header">
+            <span class="quest-type-badge" style="background:rgba(255,214,0,0.1);color:#FFD600;border:1px solid rgba(255,214,0,0.3);">CHAIN</span>
+            <span class="quest-type-badge" style="color:${accent};border-color:${accent}33;">${macroName}</span>
+            <div class="quest-card-actions">
+              <span style="font-size:0.7rem;color:var(--text-3);">${pct}% done</span>
+            </div>
+          </div>
+          <h3 class="quest-card-name">${c.name}</h3>
+          <div style="margin:4px 0 8px;display:flex;gap:4px;align-items:center;">
+            ${c.steps.map((s, i) => `<div style="width:${Math.floor(80/total)}px;height:4px;border-radius:100px;background:${s.completedAt ? accent : 'rgba(255,255,255,0.08)'};"></div>`).join('')}
+          </div>
+          ${activeStep ? `
+          <div class="quest-card-footer">
+            <div style="font-size:0.7rem;color:var(--text-3);margin-bottom:6px;">Step ${actIdx+1}/${total}: ${activeStep.name} · +${activeStep.xpAmount}XP</div>
+            <button class="btn-complete" onclick="LM.views.dashboard.completeChainStep('${c.id}','${activeStep.id}')">✓ Complete Step</button>
+          </div>` : `<div style="font-size:0.75rem;color:var(--success);padding:8px 0;">🏆 Chain Complete!</div>`}
+        </div>`;
+    }).join('');
   }
 
   function renderQuestCards(macros, limit = null, upcoming = false) {
@@ -451,20 +590,19 @@ window.LM.views.dashboard = (function () {
           ${wheelSectionHTML}
 
           <!-- ACTIVE QUESTS -->
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; color: var(--text-1);">
-                ACTIVE OBJECTIVES
-              </h2>
+          <div class="quest-area-wrap">
+            <div class="quest-area-header">
+              ${renderQuestTypeWheel()}
             </div>
-
-            <!-- Active Cards -->
             <div class="quest-grid" id="quest-grid">
-              ${renderQuestCards(macros, null, false)}
+              ${activeQuestType === 'quests'    ? renderQuestCards(macros, null, false) :
+                activeQuestType === 'habituals' ? renderHabitualCards(macros) :
+                activeQuestType === 'chains'    ? renderChainDashCards(macros) : ''}
             </div>
           </div>
 
-          <!-- LOCKED / UPCOMING QUESTS -->
+          <!-- UPCOMING / LOCKED (only for regular quests) -->
+          ${activeQuestType === 'quests' ? `
           <div style="margin-top:24px;">
             <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
               UPCOMING / LOCKED OBJECTIVES
@@ -472,10 +610,41 @@ window.LM.views.dashboard = (function () {
             <div class="quest-grid" id="upcoming-quest-grid">
               ${renderQuestCards(macros, null, true)}
             </div>
-          </div>
+          </div>` : ''}
         </div> <!-- End dash-center -->
       </div>`;
 
+  } // end render()
+
+  function setQuestType(type) {
+    activeQuestType = type;
+    LM.router.render();
+  }
+
+  function setHabitualStatus(id, status) {
+    const h = S.getHabitual(id);
+    if (!h) return;
+    const macros = S.getMacros();
+    const macro = macros.find(m => m.id === h.macroId);
+    if (status === 'yes' && h.todayStatus !== 'yes') {
+      S.awardXP([{ macroSkillId: h.macroId, xpAmount: h.xpGain }], false, `Habitual done: ${h.name}`);
+      S.addHistoryEntry('habitual_done', `Habitual done: ${h.name}`, { habitualId: id, xp: h.xpGain });
+      window.LM.components.notifications.show(`✓ Habitual done! +${h.xpGain} XP`, 'success');
+    } else if (status === 'no' && h.todayStatus !== 'no') {
+      S.awardXP([{ macroSkillId: h.macroId, xpAmount: -h.xpLoss }], false, `Habitual missed: ${h.name}`);
+      S.addHistoryEntry('habitual_missed', `Habitual missed: ${h.name}`, { habitualId: id, xp: -h.xpLoss });
+      window.LM.components.notifications.show(`✕ Habitual missed. -${h.xpLoss} XP`, 'warning');
+    }
+    S.upsertHabitual({ ...h, todayStatus: status });
+    LM.router.render();
+  }
+
+  function completeChainStep(chainId, stepId) {
+    const result = S.completeChainStep(chainId, stepId);
+    if (result) {
+      window.LM.components.notifications.show(`✓ Step complete! +${result.xpAmount} XP`, 'success');
+      LM.router.render();
+    }
   }
 
   function init() {
@@ -664,5 +833,5 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateMacrosPanel };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
 })();

@@ -8,6 +8,7 @@ window.LM.store = (function () {
     xplog: 'lm_xplog',
     presets: 'lm_presets',
     chains: 'lm_chains',
+    habituals: 'lm_habituals',
     woTemplates: 'lm_workout_templates',
     lastUpdated: 'lm_last_updated',
     lastReviewDate: 'lm_last_review_date',
@@ -559,6 +560,61 @@ Please analyze my performance and output a JSON response matching the following 
     return chain.steps[stepIdx];
   }
 
+  // ── Habituals ──
+  // A habitual is a daily task tied to a macro skill.
+  // Fields: { id, macroId, name, xpGain, xpLoss, createdAt, todayStatus: null|'yes'|'no', lastResetDate }
+  function getHabituals() { return load(KEYS.habituals) || []; }
+  function saveHabituals(list) { save(KEYS.habituals, list); emit('change'); }
+  function getHabitual(id) { return getHabituals().find(h => h.id === id) || null; }
+
+  function upsertHabitual(h) {
+    const list = getHabituals();
+    const idx = list.findIndex(x => x.id === h.id);
+    if (idx >= 0) list[idx] = h; else list.push(h);
+    saveHabituals(list);
+  }
+
+  function deleteHabitual(id) {
+    saveHabituals(getHabituals().filter(h => h.id !== id));
+  }
+
+  // Returns the current IST date string e.g. "2026-06-15"
+  function getISTDateString() {
+    const now = new Date();
+    // IST = UTC + 5:30
+    const istMs = now.getTime() + (5.5 * 60 * 60 * 1000);
+    const ist = new Date(istMs);
+    return ist.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  }
+
+  // Called on app load: reset any habituals whose lastResetDate != today (IST)
+  // If todayStatus is null (not answered) AND it's past midnight IST since lastResetDate → deduct xpLoss
+  function checkHabitualReset() {
+    const todayIST = getISTDateString();
+    let list = getHabituals();
+    let changed = false;
+    list = list.map(h => {
+      if (!h.lastResetDate) {
+        // First time, just set date
+        return { ...h, lastResetDate: todayIST, todayStatus: null };
+      }
+      if (h.lastResetDate !== todayIST) {
+        // New day! Apply penalty if no answer was given yesterday
+        if (h.todayStatus === null || h.todayStatus === undefined) {
+          // Missed — deduct xpLoss
+          if (h.xpLoss && h.xpLoss > 0) {
+            awardXP([{ macroSkillId: h.macroId, xpAmount: -h.xpLoss }], false, `Habitual missed: ${h.name}`);
+            addHistoryEntry('habitual_missed', `Habitual missed: ${h.name}`, { habitualId: h.id, xp: -h.xpLoss });
+          }
+        }
+        changed = true;
+        return { ...h, lastResetDate: todayIST, todayStatus: null };
+      }
+      return h;
+    });
+    if (changed) saveHabituals(list);
+  }
+
   // ── Coach Chats ──
   function getCoachChats() { return load(KEYS.coachChats) || []; }
   function saveCoachChats(list) { save(KEYS.coachChats, list); emit('change'); }
@@ -583,6 +639,7 @@ Please analyze my performance and output a JSON response matching the following 
       settings: getSettings(),
       presets: getPresets(),
       chains: getAllChains(),
+      habituals: getHabituals(),
       xplog: load(KEYS.xplog) || [],
       coachChats: getCoachChats(),
       history: getHistory(),
@@ -598,6 +655,7 @@ Please analyze my performance and output a JSON response matching the following 
     if (data.settings) save(KEYS.settings, data.settings);
     if (data.presets) save(KEYS.presets, data.presets);
     if (data.chains) save(KEYS.chains, data.chains);
+    if (data.habituals) save(KEYS.habituals, data.habituals);
     if (data.xplog) save(KEYS.xplog, data.xplog);
     if (data.coachChats) save(KEYS.coachChats, data.coachChats);
     if (data.history) save(KEYS.history, data.history);
@@ -752,7 +810,8 @@ Please analyze my performance and output a JSON response matching the following 
     getMicroSkills, upsertMicroSkill, deleteMicroSkill,
     getPresets, getPreset, upsertPreset, deletePreset,
     getQuests, getQuest, upsertQuest, deleteQuest,
-    getChains, getChain, upsertChain, deleteChain, completeChainStep,
+    getChains, getAllChains, getChain, upsertChain, deleteChain, completeChainStep,
+    getHabituals, getHabitual, upsertHabitual, deleteHabitual, checkHabitualReset,
     getOverall, saveOverall,
     getSettings, saveSettings,
     getXPLog, saveXPLog,

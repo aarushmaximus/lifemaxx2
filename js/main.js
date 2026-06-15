@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Daily/weekly reset check
   LM.store.checkResets();
   LM.store.checkTimers();
+  LM.store.checkHabitualReset(); // IST midnight habitual reset
   setInterval(() => {
     LM.store.checkTimers();
   }, 10000); // Check every 10 seconds
