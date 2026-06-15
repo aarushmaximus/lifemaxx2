@@ -242,6 +242,11 @@ window.LM.views.settings = (function () {
         </div>
 
       </div>
+      
+      <!-- App Version Info -->
+      <div style="text-align:center; padding: 10px 20px 40px; font-size: 0.75rem; color: var(--text-3); font-family: var(--font-mono); letter-spacing: 0.1em; opacity: 0.7;">
+        LIFEMAXX SYSTEM VERSION: v${localStorage.getItem('lm_app_version') || 'UNKNOWN'}
+      </div>
     `;
   }
 
