@@ -371,25 +371,25 @@ window.LM.views.dashboard = (function () {
                     const pct = F.progressPercent(m.currentXP || 0, m);
                     const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
                     const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
-                    return \`<div class="macro-bar-row" style="margin-bottom:12px;cursor:pointer;" onclick="LM.router.navigate('#skill-hub/\${m.id}')">
+                    return `<div class="macro-bar-row" style="margin-bottom:12px;cursor:pointer;" onclick="LM.router.navigate('#skill-hub/${m.id}')">
                       <div style="display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;">
                         <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-1);display:flex;align-items:center;gap:6px;">
-                           <div style="width:6px;height:6px;border-radius:50%;background:\${m.accentColor};"></div>
-                           \${m.name} <span style="color:\${m.accentColor};">LV\${m.currentLevel || 0}</span>
+                           <div style="width:6px;height:6px;border-radius:50%;background:${m.accentColor};"></div>
+                           ${m.name} <span style="color:${m.accentColor};">LV${m.currentLevel || 0}</span>
                         </span>
-                        <span style="font-size:0.65rem;color:var(--text-3);">\${F.formatXP(into)}/\${F.formatXP(req)}</span>
+                        <span style="font-size:0.65rem;color:var(--text-3);">${F.formatXP(into)}/${F.formatXP(req)}</span>
                       </div>
                       <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
-                        <div style="width:\${pct}%;height:100%;background:\${m.accentColor};box-shadow:0 0 6px \${m.accentColor};"></div>
+                        <div style="width:${pct}%;height:100%;background:${m.accentColor};box-shadow:0 0 6px ${m.accentColor};"></div>
                       </div>
-                    </div>\`;
+                    </div>`;
                   }).join('');
-                  return \`<div class="dash-macros-panel">
+                  return `<div class="dash-macros-panel">
                     <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                        <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-2);letter-spacing:0.1em;">MACRO SKILL PROGRESS</span>
                     </div>
-                    <div class="dash-macros-list">\${mBars}</div>
-                  </div>\`;
+                    <div class="dash-macros-list">${mBars}</div>
+                  </div>`;
               })() }
             </div>
           </div>
