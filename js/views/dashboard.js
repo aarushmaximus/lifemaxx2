@@ -103,6 +103,7 @@ window.LM.views.dashboard = (function () {
       const tSkills = q.targetSkills || [];
       if (q.hiddenFromDashboard) return false;
       if (q.status === 'completed' && !q.isReadyToClaim) return false;
+      if (q.status === 'deleted') return false;
       
       const isLocked = q.status === 'active' && !isWithinTimeWindow(q.timeWindow);
 

@@ -239,7 +239,7 @@ window.LM.views.me = (function () {
                 const skillName = m ? m.name : 'Unknown';
                 const sign = l.delta >= 0 ? '+' : '';
                 return `
-                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-default">
+                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-pointer" onclick="LM.components.notifications.show('${(l.reason || 'Data Registered').replace(/'/g, "\\'")}', 'info', 4000)">
                     <div>
                       <p class="text-on-surface font-bold text-sm truncate max-w-[200px] tracking-wider uppercase">${l.reason || 'Data Registered'}</p>
                       <p class="text-[10px] text-primary font-mono tracking-widest uppercase">${skillName} ${sign}${l.delta}</p>
