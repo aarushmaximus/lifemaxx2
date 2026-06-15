@@ -239,7 +239,7 @@ window.LM.views.me = (function () {
                 const skillName = m ? m.name : 'Unknown';
                 const sign = l.delta >= 0 ? '+' : '';
                 return `
-                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-pointer" onclick="LM.components.notifications.show('${(l.reason || 'Data Registered').replace(/'/g, "\\'")}', 'info', 4000)">
+                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-pointer" onclick="LM.views.me.showActivityBubble('${(l.reason || 'Data Registered').replace(/'/g, "\\'")}')">
                     <div>
                       <p class="text-on-surface font-bold text-sm truncate max-w-[200px] tracking-wider uppercase">${l.reason || 'Data Registered'}</p>
                       <p class="text-[10px] text-primary font-mono tracking-widest uppercase">${skillName} ${sign}${l.delta}</p>
@@ -268,9 +268,44 @@ window.LM.views.me = (function () {
     `;
   }
 
+  function showActivityBubble(text) {
+    const existing = document.getElementById('activity-bubble');
+    if (existing) existing.remove();
+    const bubble = document.createElement('div');
+    bubble.id = 'activity-bubble';
+    bubble.style.position = 'fixed';
+    bubble.style.top = '50%';
+    bubble.style.left = '50%';
+    bubble.style.transform = 'translate(-50%, -50%) scale(0.9)';
+    bubble.style.background = 'var(--bg-surface)';
+    bubble.style.border = '1px solid var(--border)';
+    bubble.style.padding = '24px';
+    bubble.style.borderRadius = '12px';
+    bubble.style.zIndex = '9999';
+    bubble.style.maxWidth = '80vw';
+    bubble.style.width = '320px';
+    bubble.style.color = 'var(--text-1)';
+    bubble.style.boxShadow = '0 10px 40px rgba(0,0,0,0.8), 0 0 0 100vmax rgba(0,0,0,0.5)';
+    bubble.style.opacity = '0';
+    bubble.style.transition = 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+    
+    bubble.innerHTML = `
+      <h3 style="font-family: var(--font-display); color: var(--accent); margin-bottom: 12px; font-size: 0.85rem; letter-spacing: 0.1em;">ACTIVITY DETAIL</h3>
+      <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-2); margin-bottom: 20px;">${text}</p>
+      <button onclick="this.parentElement.remove()" style="padding: 8px 12px; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1); border-radius: 8px; cursor: pointer; width: 100%; font-family: var(--font-display); letter-spacing: 0.1em; transition: all 0.2s;">DISMISS</button>
+    `;
+    
+    document.body.appendChild(bubble);
+    // Animate in
+    requestAnimationFrame(() => {
+      bubble.style.opacity = '1';
+      bubble.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+  }
+
   function init() {
     // Nav items clicked instantly trigger route switches via hashchange
   }
 
-  return { render, init };
+  return { render, init, showActivityBubble };
 })();
