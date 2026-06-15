@@ -305,7 +305,27 @@ window.LM.views.dashboard = (function () {
 
       // Build Macro Skills Panel
       const F = window.LM.formulas;
-      const macroBarsHTML = macros.map(m => {
+      const overall = S.getOverall();
+      const overallBarPct = F.progressPercent(overall.currentXP || 0, overall);
+      const overallInto = F.xpIntoCurrentLevel(overall.currentXP || 0, overall);
+      const overallReq = F.xpRequiredForNextLevel(overall.currentXP || 0, overall);
+      
+      const overallBarHTML = `
+        <div class="macro-bar-row overall-bar-row" style="margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+            <span style="font-family:var(--font-display);font-size:0.85rem;color:var(--text-1);font-weight:bold;display:flex;align-items:center;gap:8px;">
+               <div style="width:8px;height:8px;border-radius:50%;background:var(--chrome,#E8E8E8);box-shadow:0 0 8px var(--chrome,#E8E8E8);"></div>
+               OVERALL <span class="chrome-metallic-text" style="font-weight:bold;">LV${overall.currentLevel || 0}</span>
+             </span>
+            <span style="font-size:0.75rem;color:var(--text-2);font-weight:500;">${F.formatXP(overallInto)}/${F.formatXP(overallReq)}</span>
+          </div>
+          <div style="width:100%;height:8px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden;">
+            <div class="xp-bar-fill-chrome" style="width:${overallBarPct}%;height:100%;"></div>
+          </div>
+        </div>
+      `;
+
+      const macroBarsHTML = overallBarHTML + macros.map(m => {
         const pct = F.progressPercent(m.currentXP || 0, m);
         const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
         const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
@@ -319,7 +339,7 @@ window.LM.views.dashboard = (function () {
               <span style="font-size:0.65rem;color:var(--text-3);">${F.formatXP(into)}/${F.formatXP(req)}</span>
             </div>
             <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${m.accentColor};box-shadow:0 0 6px ${m.accentColor};"></div>
+              <div class="xp-bar-fill-chrome" style="width:${pct}%;height:100%;"></div>
             </div>
           </div>
         `;
@@ -367,7 +387,27 @@ window.LM.views.dashboard = (function () {
             <div class="dash-carousel-panel" style="padding-left:16px;">
               ${ (() => {
                   const F = window.LM.formulas;
-                  const mBars = macros.map(m => {
+                  const overall = S.getOverall();
+                  const overallBarPct = F.progressPercent(overall.currentXP || 0, overall);
+                  const overallInto = F.xpIntoCurrentLevel(overall.currentXP || 0, overall);
+                  const overallReq = F.xpRequiredForNextLevel(overall.currentXP || 0, overall);
+                  
+                  const overallBarHTML = `
+                    <div class="macro-bar-row overall-bar-row" style="margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+                      <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+                        <span style="font-family:var(--font-display);font-size:0.85rem;color:var(--text-1);font-weight:bold;display:flex;align-items:center;gap:8px;">
+                           <div style="width:8px;height:8px;border-radius:50%;background:var(--chrome,#E8E8E8);box-shadow:0 0 8px var(--chrome,#E8E8E8);"></div>
+                           OVERALL <span class="chrome-metallic-text" style="font-weight:bold;">LV${overall.currentLevel || 0}</span>
+                         </span>
+                        <span style="font-size:0.75rem;color:var(--text-2);font-weight:500;">${F.formatXP(overallInto)}/${F.formatXP(overallReq)}</span>
+                      </div>
+                      <div style="width:100%;height:8px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden;">
+                        <div class="xp-bar-fill-chrome" style="width:${overallBarPct}%;height:100%;"></div>
+                      </div>
+                    </div>
+                  `;
+
+                  const mBars = overallBarHTML + macros.map(m => {
                     const pct = F.progressPercent(m.currentXP || 0, m);
                     const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
                     const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
@@ -380,7 +420,7 @@ window.LM.views.dashboard = (function () {
                         <span style="font-size:0.65rem;color:var(--text-3);">${F.formatXP(into)}/${F.formatXP(req)}</span>
                       </div>
                       <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
-                        <div style="width:${pct}%;height:100%;background:${m.accentColor};box-shadow:0 0 6px ${m.accentColor};"></div>
+                        <div class="xp-bar-fill-chrome" style="width:${pct}%;height:100%;"></div>
                       </div>
                     </div>`;
                   }).join('');
@@ -406,19 +446,6 @@ window.LM.views.dashboard = (function () {
         <!-- CENTER COLUMN -->
         <div class="dash-center">
           
-          <!-- XP Bar -->
-          <div class="dash-xp-bar-container">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-1); text-transform:uppercase;">CURRENT XP PROGRESS</span>
-              <span id="dash-xp-label" style="font-size:0.8rem; color:var(--text-2);">${F.formatXP(barData.into)} / ${F.formatXP(barData.req)} XP (${Math.round(barData.pct)}%)</span>
-            </div>
-            <div class="xp-bar-wrap">
-              <div class="xp-bar-track" style="height: 8px; border-radius:4px; background: rgba(255,255,255,0.05);">
-                <div class="xp-bar-fill" id="dash-xp-fill" style="width:${barData.pct}%;background:${barData.color}; border-radius:4px;"></div>
-              </div>
-            </div>
-          </div>
-
           <!-- XP WHEEL / SPLIT LAYOUT -->
           ${wheelSectionHTML}
 
@@ -505,11 +532,8 @@ window.LM.views.dashboard = (function () {
     s.wheelSkillId = macroId;
     S.saveSettings(s);
     
-    // Re-render
-    const xpFill = document.getElementById('dash-xp-fill');
-    if (xpFill && F) {
-      xpFill.style.width = F.progressPercent(overall.currentXP || 0, overall) + '%';
-    }
+    // Re-render macro indicators
+    updateMacrosPanel();
   }
 
   function updateCarouselNav() {
@@ -531,6 +555,57 @@ window.LM.views.dashboard = (function () {
     const label = document.getElementById('dash-xp-label');
     if (fill) { fill.style.width = `${data.pct}%`; fill.style.background = data.color; }
     if (label) label.textContent = `${F.formatXP(data.into)} / ${F.formatXP(data.req)} XP (${Math.round(data.pct)}%)`;
+    
+    updateMacrosPanel();
+  }
+
+  function updateMacrosPanel() {
+    const lists = document.querySelectorAll('.dash-macros-list');
+    if (lists.length === 0) return;
+    const macros = S.getMacros();
+    const overall = S.getOverall();
+    const F = window.LM.formulas;
+    
+    const overallBarPct = F.progressPercent(overall.currentXP || 0, overall);
+    const overallInto = F.xpIntoCurrentLevel(overall.currentXP || 0, overall);
+    const overallReq = F.xpRequiredForNextLevel(overall.currentXP || 0, overall);
+    
+    const overallBarHTML = `
+      <div class="macro-bar-row overall-bar-row" style="margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+          <span style="font-family:var(--font-display);font-size:0.85rem;color:var(--text-1);font-weight:bold;display:flex;align-items:center;gap:8px;">
+             <div style="width:8px;height:8px;border-radius:50%;background:var(--chrome,#E8E8E8);box-shadow:0 0 8px var(--chrome,#E8E8E8);"></div>
+             OVERALL <span class="chrome-metallic-text" style="font-weight:bold;">LV${overall.currentLevel || 0}</span>
+           </span>
+          <span style="font-size:0.75rem;color:var(--text-2);font-weight:500;">${F.formatXP(overallInto)}/${F.formatXP(overallReq)}</span>
+        </div>
+        <div style="width:100%;height:8px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden;">
+          <div class="xp-bar-fill-chrome" style="width:${overallBarPct}%;height:100%;"></div>
+        </div>
+      </div>
+    `;
+
+    const mBars = overallBarHTML + macros.map(m => {
+      const pct = F.progressPercent(m.currentXP || 0, m);
+      const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
+      const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
+      return `<div class="macro-bar-row" style="margin-bottom:12px;cursor:pointer;" onclick="LM.router.navigate('#skill-hub/${m.id}')">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;">
+          <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-1);display:flex;align-items:center;gap:6px;">
+             <div style="width:6px;height:6px;border-radius:50%;background:${m.accentColor};"></div>
+             ${m.name} <span style="color:${m.accentColor};">LV${m.currentLevel || 0}</span>
+          </span>
+          <span style="font-size:0.65rem;color:var(--text-3);">${F.formatXP(into)}/${F.formatXP(req)}</span>
+        </div>
+        <div style="width:100%;height:4px;background:var(--bg-raised);border-radius:100px;overflow:hidden;">
+          <div class="xp-bar-fill-chrome" style="width:${pct}%;height:100%;"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    lists.forEach(list => {
+      list.innerHTML = mBars;
+    });
   }
 
   function refreshCards() {
@@ -588,5 +663,5 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateMacrosPanel };
 })();

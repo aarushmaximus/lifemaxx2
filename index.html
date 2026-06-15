@@ -22,11 +22,11 @@
       theme: {
         extend: {
           "colors": {
-            "primary": "#4a7cff", "background": "#08080c", "surface": "#08080c",
-            "surface-dim": "#08080c", "surface-container-lowest": "#08080c",
-            "surface-container": "#111116", "surface-container-highest": "#1c1c22",
-            "on-surface": "#e8e8f0", "on-surface-variant": "#6b6b78",
-            "secondary": "#e0e0e8", "on-secondary": "#08080c",
+            "primary": "#e8e8e8", "background": "#000000", "surface": "#060606",
+            "surface-dim": "#060606", "surface-container-lowest": "#050505",
+            "surface-container": "#121212", "surface-container-highest": "#1a1a1a",
+            "on-surface": "#e8e8f0", "on-surface-variant": "#7a7a85",
+            "secondary": "#e0e0e8", "on-secondary": "#0a0a0a",
             "error": "#ef4444", "on-error": "#ffffff"
           },
           "fontFamily": {
@@ -172,7 +172,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '60';
+    const APP_VERSION = '62';
 
     async function clearAndReload() {
       // 1. Unregister every service worker
