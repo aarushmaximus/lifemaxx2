@@ -2308,12 +2308,17 @@ select option {
 .quest-area-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center; /* Center the label */
+  position: relative; /* Anchor for wheel */
   margin-bottom: 16px;
+  min-height: 48px;
 }
 
 /* Wheel + arrow stacked vertically */
 .quest-wheel-wrap {
+  position: absolute;
+  right: 0;
+  top: -12px; /* Drag wheel upwards */
   display: flex;
   flex-direction: column;
   align-items: center;
