@@ -114,6 +114,26 @@ window.LM.views.dashboard = (function () {
 
   function renderQuestTypeWheel() {
     const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
+    const settings = S.getSettings();
+
+    // Arrow view
+    if (settings.questSelectorStyle === 'arrows') {
+      const idx = QUEST_TYPES.indexOf(activeType);
+      const prev = QUEST_TYPES[(idx - 1 + QUEST_TYPES.length) % QUEST_TYPES.length];
+      const next = QUEST_TYPES[(idx + 1) % QUEST_TYPES.length];
+      return `
+        <div class="dash-carousel-nav" style="width:100%;margin-bottom:0;">
+          <button class="btn-icon" onclick="LM.views.dashboard.setQuestType('${prev.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+          <div class="dash-carousel-dots" style="flex:1;justify-content:center;gap:10px;">
+            <span style="width:10px;height:10px;border-radius:50%;background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
+            <span style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.1em;color:var(--text-1);font-weight:500;">${activeType.label}</span>
+          </div>
+          <button class="btn-icon" onclick="LM.views.dashboard.setQuestType('${next.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+      `;
+    }
+
+    // Wheel view
     const wheelRot = -activeType.rotDeg; // rotate so active dot reaches the top
 
     // Wheel dimensions (smaller)
@@ -132,7 +152,8 @@ window.LM.views.dashboard = (function () {
     const segs = QUEST_TYPES.map((t, i) => {
       // Dot is at the clockwise end of the segment
       const endDeg = i * 120;
-      const startDeg = endDeg - 100; // 100 degree arc, leaves 20 degree gap
+      // Use 80 degree arc to leave 40 deg gap (which becomes 20 deg visually due to 14px round caps)
+      const startDeg = endDeg - 80; 
       const [dx, dy] = p2c(R_MID, endDeg);
       const segPath = arcStroke(startDeg, endDeg, R_MID);
       return `
@@ -182,17 +203,11 @@ window.LM.views.dashboard = (function () {
               <stop offset="50%"  stop-color="#a8a8a8"/>
               <stop offset="100%" stop-color="#555555"/>
             </linearGradient>
-            <!-- Chrome center -->
-            <radialGradient id="chrome-center" cx="35%" cy="25%" r="80%">
-              <stop offset="0%"   stop-color="#e8e8e8"/>
-              <stop offset="40%"  stop-color="#999999"/>
-              <stop offset="100%" stop-color="#333333"/>
-            </radialGradient>
           </defs>
 
-          <!-- Outer chrome ring background -->
+          <!-- Outer chrome ring background (Black) -->
           <circle cx="${CX}" cy="${CY}" r="34"
-                  fill="#222"
+                  fill="#050505"
                   stroke="rgba(200,200,200,0.3)"
                   stroke-width="1"/>
 
@@ -202,15 +217,12 @@ window.LM.views.dashboard = (function () {
             ${segs}
           </g>
 
-          <!-- Chrome center hub (non-rotating, on top) -->
-          <circle cx="${CX}" cy="${CY}" r="10"
-                  fill="url(#chrome-center)"
-                  stroke="rgba(255,255,255,0.4)"
-                  stroke-width="0.5"/>
-          <circle cx="${CX}" cy="${CY}" r="4"
-                  fill="rgba(10,10,10,0.9)"
-                  stroke="rgba(255,255,255,0.15)"
-                  stroke-width="0.5"/>
+          <!-- Small center chrome dot -->
+          <circle cx="${CX}" cy="${CY}" r="3"
+                  fill="#e8e8e8"
+                  stroke="rgba(255,255,255,0.8)"
+                  stroke-width="0.5"
+                  style="filter:drop-shadow(0 0 2px rgba(255,255,255,0.8));"/>
         </svg>
       </div>`;
   }

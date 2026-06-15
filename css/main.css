@@ -2341,8 +2341,9 @@ select option {
 /* Label row: dot + type name */
 .quest-type-label {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .quest-type-dot-label {

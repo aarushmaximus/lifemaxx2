@@ -111,6 +111,20 @@ window.LM.views.settings = (function () {
                 </p>
               </div>
             </div>
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                Quest Selector Style
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                Choose how you switch between Quests, Habituals, and Chains on the Dashboard.
+              </p>
+              <div style="margin-left:24px; margin-top:8px;">
+                <select class="form-input" id="set-quest-selector" style="width:200px;padding:6px 10px;font-size:0.85rem;cursor:pointer;">
+                  <option value="wheel" ${s.questSelectorStyle !== 'arrows' ? 'selected' : ''}>Interactive Wheel</option>
+                  <option value="arrows" ${s.questSelectorStyle === 'arrows' ? 'selected' : ''}>Arrows (< >)</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -460,6 +474,15 @@ window.LM.views.settings = (function () {
         st.chromeAccentsEnabled = e.target.checked;
         S.saveSettings(st);
         window.LM.components.theme.applyTheme('chrome');
+      });
+    }
+
+    const questSelector = document.getElementById('set-quest-selector');
+    if (questSelector) {
+      questSelector.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.questSelectorStyle = e.target.value;
+        S.saveSettings(st);
       });
     }
 
