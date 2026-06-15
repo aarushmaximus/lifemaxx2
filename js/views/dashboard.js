@@ -116,108 +116,102 @@ window.LM.views.dashboard = (function () {
     const activeType = QUEST_TYPES.find(t => t.id === activeQuestType);
     const wheelRot = -activeType.rotDeg; // rotate so active dot reaches the top
 
-    // Build the 3 arc segments as SVG paths
-    // The disc rotates; the arrow is outside and fixed
-    const CX = 54, CY = 54, R_OUT = 48, R_IN = 28, GAP_DEG = 7;
+    // Wheel dimensions (smaller)
+    const CX = 36, CY = 36, R_MID = 20, STROKE_W = 14;
     function p2c(r, deg) {
       const rad = (deg - 90) * Math.PI / 180;
       return [CX + r * Math.cos(rad), CY + r * Math.sin(rad)];
     }
-    function arc(startDeg, endDeg) {
-      const [x1,y1] = p2c(R_OUT, startDeg);
-      const [x2,y2] = p2c(R_OUT, endDeg);
-      const [x3,y3] = p2c(R_IN, endDeg);
-      const [x4,y4] = p2c(R_IN, startDeg);
-      const f = v => v.toFixed(3);
-      return `M${f(x1)},${f(y1)} A${R_OUT},${R_OUT} 0 0,1 ${f(x2)},${f(y2)} L${f(x3)},${f(y3)} A${R_IN},${R_IN} 0 0,0 ${f(x4)},${f(y4)} Z`;
+    // Simple arc for a thick stroke
+    function arcStroke(startDeg, endDeg, r) {
+      const [x1, y1] = p2c(r, startDeg);
+      const [x2, y2] = p2c(r, endDeg);
+      return `M${x1.toFixed(3)},${y1.toFixed(3)} A${r},${r} 0 0,1 ${x2.toFixed(3)},${y2.toFixed(3)}`;
     }
 
     const segs = QUEST_TYPES.map((t, i) => {
-      const mid = i * 120 + 60;
-      const [dx, dy] = p2c(38, mid);
-      const segPath = arc(i * 120 + GAP_DEG, (i + 1) * 120 - GAP_DEG);
+      // Dot is at the clockwise end of the segment
+      const endDeg = i * 120;
+      const startDeg = endDeg - 100; // 100 degree arc, leaves 20 degree gap
+      const [dx, dy] = p2c(R_MID, endDeg);
+      const segPath = arcStroke(startDeg, endDeg, R_MID);
       return `
+        <!-- Chrome rounded segment -->
         <path d="${segPath}"
-              fill="url(#chrome-seg)"
-              stroke="rgba(232,232,232,0.5)"
-              stroke-width="0.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"/>
-        <circle cx="${dx.toFixed(3)}" cy="${dy.toFixed(3)}" r="8"
+              fill="none"
+              stroke="url(#chrome-seg)"
+              stroke-width="${STROKE_W}"
+              stroke-linecap="round" />
+        <!-- Dot at the end -->
+        <circle cx="${dx.toFixed(3)}" cy="${dy.toFixed(3)}" r="4.5"
                 fill="${t.dot}"
-                style="filter:drop-shadow(0 0 5px ${t.dot}88);"/>`;
+                style="filter:drop-shadow(0 0 4px ${t.dot}88);"/>`;
     }).join('');
 
     return `
-      <div class="quest-type-selector">
-        <div class="quest-wheel-wrap" id="quest-wheel-wrap">
-          <!-- Fixed chrome arrow pointer (outside wheel, pointing down into wheel) -->
-          <svg class="quest-wheel-arrow" viewBox="0 0 24 18" width="24" height="18">
-            <defs>
-              <linearGradient id="arrow-chrome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#ffffff"/>
-                <stop offset="40%" stop-color="#c8c8c8"/>
-                <stop offset="100%" stop-color="#888888"/>
-              </linearGradient>
-            </defs>
-            <polygon points="12,18 0,0 24,0" fill="url(#arrow-chrome)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
-          </svg>
+      <!-- Type label on the left -->
+      <div class="quest-type-label">
+        <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
+        <span class="quest-type-name">${activeType.label}</span>
+      </div>
 
-          <!-- The rotating disc -->
-          <svg id="quest-type-svg"
-               width="108" height="108"
-               viewBox="0 0 108 108"
-               class="quest-type-wheel"
-               style="cursor:grab;touch-action:none;display:block;">
-            <defs>
-              <!-- Chrome gradient for segments -->
-              <linearGradient id="chrome-seg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%"   stop-color="#d8d8d8" stop-opacity="0.18"/>
-                <stop offset="50%"  stop-color="#a8a8a8" stop-opacity="0.10"/>
-                <stop offset="100%" stop-color="#606060" stop-opacity="0.15"/>
-              </linearGradient>
-              <!-- Chrome ring gradient -->
-              <radialGradient id="chrome-ring" cx="50%" cy="30%" r="70%">
-                <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.15"/>
-                <stop offset="100%" stop-color="#404040" stop-opacity="0.08"/>
-              </radialGradient>
-              <!-- Chrome center -->
-              <radialGradient id="chrome-center" cx="35%" cy="25%" r="80%">
-                <stop offset="0%"   stop-color="#e8e8e8"/>
-                <stop offset="40%"  stop-color="#a0a0a0"/>
-                <stop offset="100%" stop-color="#484848"/>
-              </radialGradient>
-            </defs>
+      <!-- Wheel on the extreme right -->
+      <div class="quest-wheel-wrap" id="quest-wheel-wrap">
+        <!-- Fixed chrome red arrow pointer -->
+        <svg class="quest-wheel-arrow" viewBox="0 0 20 16" width="20" height="16">
+          <defs>
+            <linearGradient id="arrow-chrome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff4444"/>
+              <stop offset="40%" stop-color="#cc0000"/>
+              <stop offset="100%" stop-color="#660000"/>
+            </linearGradient>
+          </defs>
+          <polygon points="10,16 0,0 20,0" fill="url(#arrow-chrome)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+        </svg>
 
-            <!-- Outer chrome ring background -->
-            <circle cx="${CX}" cy="${CY}" r="${R_OUT + 4}"
-                    fill="rgba(8,8,12,0.85)"
-                    stroke="rgba(200,200,200,0.35)"
-                    stroke-width="1.2"/>
+        <!-- The rotating disc -->
+        <svg id="quest-type-svg"
+             width="72" height="72"
+             viewBox="0 0 72 72"
+             class="quest-type-wheel"
+             style="cursor:grab;touch-action:none;display:block;">
+          <defs>
+            <!-- Chrome gradient for segments -->
+            <linearGradient id="chrome-seg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stop-color="#e0e0e0"/>
+              <stop offset="50%"  stop-color="#a8a8a8"/>
+              <stop offset="100%" stop-color="#555555"/>
+            </linearGradient>
+            <!-- Chrome center -->
+            <radialGradient id="chrome-center" cx="35%" cy="25%" r="80%">
+              <stop offset="0%"   stop-color="#e8e8e8"/>
+              <stop offset="40%"  stop-color="#999999"/>
+              <stop offset="100%" stop-color="#333333"/>
+            </radialGradient>
+          </defs>
 
-            <!-- Rotating group -->
-            <g id="quest-wheel-disc" style="transform-origin:${CX}px ${CY}px;transform:rotate(${wheelRot}deg);transition:transform 0.35s cubic-bezier(0.34,1.3,0.64,1);">
-              <!-- Segments -->
-              ${segs}
-            </g>
+          <!-- Outer chrome ring background -->
+          <circle cx="${CX}" cy="${CY}" r="34"
+                  fill="#222"
+                  stroke="rgba(200,200,200,0.3)"
+                  stroke-width="1"/>
 
-            <!-- Chrome center hub (non-rotating, on top) -->
-            <circle cx="${CX}" cy="${CY}" r="14"
-                    fill="url(#chrome-center)"
-                    stroke="rgba(255,255,255,0.4)"
-                    stroke-width="1"/>
-            <circle cx="${CX}" cy="${CY}" r="5"
-                    fill="rgba(8,8,12,0.7)"
-                    stroke="rgba(255,255,255,0.15)"
-                    stroke-width="0.5"/>
-          </svg>
-        </div>
+          <!-- Rotating group -->
+          <g id="quest-wheel-disc" style="transform-origin:${CX}px ${CY}px;transform:rotate(${wheelRot}deg);transition:transform 0.35s cubic-bezier(0.34,1.3,0.64,1);">
+            <!-- Segments -->
+            ${segs}
+          </g>
 
-        <!-- Type label to the right of wheel -->
-        <div class="quest-type-label">
-          <span class="quest-type-dot-label" style="background:${activeType.dot};box-shadow:0 0 10px ${activeType.dot};"></span>
-          <span class="quest-type-name">${activeType.label}</span>
-        </div>
+          <!-- Chrome center hub (non-rotating, on top) -->
+          <circle cx="${CX}" cy="${CY}" r="10"
+                  fill="url(#chrome-center)"
+                  stroke="rgba(255,255,255,0.4)"
+                  stroke-width="0.5"/>
+          <circle cx="${CX}" cy="${CY}" r="4"
+                  fill="rgba(10,10,10,0.9)"
+                  stroke="rgba(255,255,255,0.15)"
+                  stroke-width="0.5"/>
+        </svg>
       </div>`;
   }
 

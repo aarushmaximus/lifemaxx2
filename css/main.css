@@ -2308,14 +2308,8 @@ select option {
 .quest-area-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
-}
-
-/* The whole selector: wheel on left, label on right */
-.quest-type-selector {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 /* Wheel + arrow stacked vertically */
