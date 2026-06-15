@@ -238,8 +238,9 @@ window.LM.views.me = (function () {
                 const m = macros.find(x => x.id === l.macroId);
                 const skillName = m ? m.name : 'Unknown';
                 const sign = l.delta >= 0 ? '+' : '';
+                const safeReason = (l.reason || 'Data Registered').replace(/"/g, '&quot;').replace(/'/g, "\\'").replace(/(\r\n|\n|\r)/gm, " ");
                 return `
-                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-pointer" onclick="LM.views.me.showActivityBubble('${(l.reason || 'Data Registered').replace(/'/g, "\\'")}')">
+                  <li class="flex justify-between items-center py-2 border-b border-surface-container-highest hover:bg-surface-container-highest transition-all px-2 cursor-pointer" onclick="LM.views.me.showActivityBubble('${safeReason}')">
                     <div>
                       <p class="text-on-surface font-bold text-sm truncate max-w-[200px] tracking-wider uppercase">${l.reason || 'Data Registered'}</p>
                       <p class="text-[10px] text-primary font-mono tracking-widest uppercase">${skillName} ${sign}${l.delta}</p>
