@@ -123,10 +123,8 @@ window.LM.views.dashboard = (function () {
     if (settings.questSelectorStyle === 'arrows' || settings.questSelectorStyle === 'swipe') {
       const isSwipe = settings.questSelectorStyle === 'swipe';
       const swipeHints = isSwipe ? `
-        <div style="display:flex;align-items:center;gap:6px;margin-left:12px;opacity:0.3;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          <span style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:1px;font-weight:bold;">SWIPE</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
+          ${QUEST_TYPES.map(t => `<div style="width:5px;height:5px;border-radius:50%;background:var(--text-1);opacity:${t.id === activeQuestType ? '1' : '0.2'};transform:scale(${t.id === activeQuestType ? '1.2' : '1'});transition:0.2s;"></div>`).join('')}
         </div>
       ` : '';
 
