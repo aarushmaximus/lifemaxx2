@@ -177,6 +177,18 @@ window.LM.views.questLog = (function () {
       else if (isDeleted) cardClass = 'quest-card-deleted-status';
       else if (isLocked) cardClass = 'quest-card-disabled';
 
+      let statControls = '';
+      if (q.type === 'statistic' && q.status === 'active' && !isLocked) {
+        statControls = `
+          <div class="stat-controls" style="display:flex; align-items:center; gap:12px; margin-top:8px; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:8px; width:max-content; border:1px solid var(--border);" onclick="event.stopPropagation();">
+            <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.questLog.updateStatistic('${q.id}', -1)">-</button>
+            <span style="font-family:var(--font-mono); font-size:1.1rem; font-weight:bold; min-width:40px; text-align:center; color:var(--accent);">${q.currentValue || 0}</span>
+            <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.questLog.updateStatistic('${q.id}', 1)">+</button>
+            <span style="font-size:0.75rem; color:var(--text-3); font-family:var(--font-display); letter-spacing:0.05em; margin-left:4px;">/ ${q.dailyGoal} ${q.unit || ''}</span>
+          </div>
+        `;
+      }
+
       return `
         <div class="quest-log-row ${cardClass}" style="margin-bottom: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color 0.2s;">
           <div class="quest-log-main" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; cursor: pointer;" onclick="LM.components.questModal.open('${q.id}', false)">
@@ -192,12 +204,13 @@ window.LM.views.questLog = (function () {
                     ${skillTags}
                     ${timeStr}
                   </div>
+                  ${statControls}
                   ${window.LM.questProgress ? window.LM.questProgress.renderIndicator(q) : ''}
                 </div>
               </div>
             </div>
             <div class="quest-log-right" style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
-              ${(!isLocked && !isMissed && !isCompleted && !isDeleted) 
+              ${(!isLocked && !isMissed && !isCompleted && !isDeleted && q.type !== 'statistic') 
                 ? `<button class="btn btn-primary btn-sm" style="padding: 6px 12px; border-radius: 6px;" onclick="LM.views.questLog.completeQuest('${q.id}')">✓</button>`
                 : ''
               }
@@ -258,6 +271,15 @@ window.LM.views.questLog = (function () {
       window.LM.components.wheel.handleDrop(questId);
       LM.router.render();
     }
+  }
+
+  function updateStatistic(questId, delta) {
+    const quest = S.getQuest(questId);
+    if (!quest || quest.type !== 'statistic') return;
+    quest.currentValue = (quest.currentValue || 0) + delta;
+    if (quest.currentValue < 0) quest.currentValue = 0; // Prevent negative unless desired
+    S.upsertQuest(quest);
+    LM.router.render(); // Re-render to update UI
   }
 
   function deleteQuest(questId) {
@@ -516,5 +538,5 @@ window.LM.views.questLog = (function () {
     refresh();
   }
 
-  return { render, init, setActiveTab, setSkillFilter, setStatusFilter, completeQuest, deleteQuest };
+  return { render, init, setActiveTab, setSkillFilter, setStatusFilter, completeQuest, deleteQuest, updateStatistic };
 })();

@@ -14,7 +14,9 @@ window.LM.store = (function () {
     lastReviewDate: 'lm_last_review_date',
     cachedReview: 'lm_cached_review',
     coachChats: 'lm_coach_chats',
-    history: 'lm_history'
+    history: 'lm_history',
+    dailyLogs: 'lm_daily_logs',
+    cellPresets: 'lm_cell_presets'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -463,6 +465,45 @@ Please analyze my performance and output a JSON response matching the following 
     }
 
     if (lastReview !== todayStr) {
+      // Midnight Reset Logic for Statistics
+      const quests = getQuests();
+      const logs = getDailyLogs();
+      const yesterdayLog = logs[lastReview] || getDailyLog(lastReview);
+      
+      let changed = false;
+      quests.forEach(q => {
+        if (q.type === 'statistic') {
+          if (!yesterdayLog.statsSnapshot) yesterdayLog.statsSnapshot = {};
+          yesterdayLog.statsSnapshot[q.id] = { name: q.name, value: q.currentValue || 0, goal: q.dailyGoal, unit: q.unit };
+          
+          // Calculate and award XP based on proximity to dailyGoal
+          if (q.targetSkills && q.targetSkills.length > 0 && q.dailyGoal > 0) {
+            const diff = Math.abs((q.currentValue || 0) - q.dailyGoal);
+            const closeness = Math.max(0, 1 - (diff / q.dailyGoal)); // Range 0 to 1
+            
+            if (closeness > 0) {
+              const scaledSkills = q.targetSkills.map(t => ({
+                macroSkillId: t.macroSkillId,
+                microSkillId: t.microSkillId,
+                xpAmount: Math.round(t.xpAmount * closeness)
+              })).filter(t => t.xpAmount > 0);
+              
+              if (scaledSkills.length > 0) {
+                awardXP(scaledSkills, false, `Statistic Goal: ${q.name} (${Math.round(closeness*100)}% Match)`);
+              }
+            }
+          }
+
+          q.currentValue = 0; // Reset for new day
+          changed = true;
+        }
+      });
+      
+      if (changed) saveQuests(quests);
+      
+      logs[lastReview] = yesterdayLog;
+      saveDailyLogs(logs);
+
       triggerMidnightReview(lastReview);
       save(KEYS.lastReviewDate, todayStr);
     }
@@ -631,6 +672,37 @@ Please analyze my performance and output a JSON response matching the following 
     saveCoachChats(getCoachChats().filter(c => c.id !== id));
   }
 
+  // ── Daily Logs (24h Cells) ──
+  function getDailyLogs() { return load(KEYS.dailyLogs) || {}; }
+  function saveDailyLogs(logs) { save(KEYS.dailyLogs, logs); emit('change'); }
+  
+  function getDailyLog(dateStr) {
+    const logs = getDailyLogs();
+    if (logs[dateStr]) return logs[dateStr];
+    return {
+      date: dateStr,
+      cells: Array.from({ length: 24 }).map(() => ({ status: null, note: '', quests: [] })),
+      statsSnapshot: {}
+    };
+  }
+
+  function upsertDailyLog(log) {
+    const logs = getDailyLogs();
+    logs[log.date] = log;
+    saveDailyLogs(logs);
+  }
+
+  // ── Cell Presets ──
+  function getCellPresets() { 
+    return load(KEYS.cellPresets) || [
+      { id: 'sleep', label: 'Sleep', color: '#1E1E2A', icon: 'bedtime' },
+      { id: 'work', label: 'Work', color: '#1D3557', icon: 'work' },
+      { id: 'workout', label: 'Workout', color: '#E63946', icon: 'fitness_center' },
+      { id: 'relax', label: 'Relax', color: '#2A9D8F', icon: 'coffee' }
+    ]; 
+  }
+  function saveCellPresets(list) { save(KEYS.cellPresets, list); emit('change'); }
+
   function exportBackup() {
     return {
       macros: getMacros(),
@@ -643,6 +715,8 @@ Please analyze my performance and output a JSON response matching the following 
       xplog: load(KEYS.xplog) || [],
       coachChats: getCoachChats(),
       history: getHistory(),
+      dailyLogs: getDailyLogs(),
+      cellPresets: getCellPresets(),
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
@@ -659,6 +733,8 @@ Please analyze my performance and output a JSON response matching the following 
     if (data.xplog) save(KEYS.xplog, data.xplog);
     if (data.coachChats) save(KEYS.coachChats, data.coachChats);
     if (data.history) save(KEYS.history, data.history);
+    if (data.dailyLogs) save(KEYS.dailyLogs, data.dailyLogs);
+    if (data.cellPresets) save(KEYS.cellPresets, data.cellPresets);
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
     emit('change');
@@ -817,6 +893,8 @@ Please analyze my performance and output a JSON response matching the following 
     getXPLog, saveXPLog,
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
+    getDailyLogs, getDailyLog, upsertDailyLog,
+    getCellPresets, saveCellPresets,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, triggerMidnightReview, getCachedReview, checkMidnightReview,
     getHistory, addHistoryEntry, clearHistory,

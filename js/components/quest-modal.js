@@ -197,10 +197,31 @@ window.LM.components.questModal = (function () {
           </div>
         ` : ''}
 
+        <!-- Type Selection -->
+        <div class="form-group">
+          <label>Quest Type</label>
+          <select id="qm-type" class="form-input" style="background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);" ${dis}>
+            <option value="task" ${it.type !== 'statistic' ? 'selected' : ''}>Standard Task / Action</option>
+            <option value="statistic" ${it.type === 'statistic' ? 'selected' : ''}>Statistic Tracker (e.g., Calories, Steps)</option>
+          </select>
+        </div>
+
         <!-- Name -->
         <div class="form-group">
-          <label>Quest Name / Action</label>
+          <label id="qm-name-label">Quest Name / Action</label>
           <input id="qm-name" class="form-input" type="text" placeholder="e.g. Read 15 pages, Run 5km..." value="${name}" ${dis}>
+        </div>
+
+        <!-- Statistic Fields (Dynamic) -->
+        <div id="qm-statistic-fields" style="display: ${it.type === 'statistic' ? 'flex' : 'none'}; gap: 12px; margin-bottom: 12px;">
+           <div class="form-group" style="flex: 1; margin: 0;">
+             <label>Daily Goal</label>
+             <input id="qm-stat-goal" class="form-input" type="number" placeholder="e.g. 2000" value="${it.dailyGoal || ''}" ${dis}>
+           </div>
+           <div class="form-group" style="flex: 1; margin: 0;">
+             <label>Unit (Optional)</label>
+             <input id="qm-stat-unit" class="form-input" type="text" placeholder="e.g. kcal, steps" value="${it.unit || ''}" ${dis}>
+           </div>
         </div>
         
         <!-- Description -->
@@ -358,6 +379,15 @@ window.LM.components.questModal = (function () {
     if (piEnable && piFields) {
       piEnable.addEventListener('change', () => {
         piFields.style.display = piEnable.checked ? 'flex' : 'none';
+      });
+    }
+
+    // Quest Type toggle
+    const typeSel = document.getElementById('qm-type');
+    const statFields = document.getElementById('qm-statistic-fields');
+    if (typeSel && statFields) {
+      typeSel.addEventListener('change', () => {
+        statFields.style.display = typeSel.value === 'statistic' ? 'flex' : 'none';
       });
     }
 
@@ -685,11 +715,14 @@ You MUST return a JSON object with this exact structure:
     // ── SAVE QUEST MODE ──
     const presetId = document.getElementById('qm-preset-select')?.value || null;
     const existing = editingId ? S.getQuest(editingId) : null;
+    
+    const questType = document.getElementById('qm-type')?.value || 'task';
 
     const quest = {
       id: editingId || S.uid(),
       name,
       description: desc,
+      type: questType,
       presetId,
       status: existing?.status || 'active',
       scheduledDate: existing?.scheduledDate || new Date().toDateString(),
@@ -703,6 +736,12 @@ You MUST return a JSON object with this exact structure:
       targetSkills,
       progressIndicator
     };
+
+    if (questType === 'statistic') {
+      quest.dailyGoal = parseFloat(document.getElementById('qm-stat-goal')?.value || 0);
+      quest.unit = document.getElementById('qm-stat-unit')?.value?.trim() || '';
+      quest.currentValue = existing?.currentValue || 0;
+    }
 
     S.upsertQuest(quest);
     close();
