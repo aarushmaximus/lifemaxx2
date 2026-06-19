@@ -152,6 +152,11 @@ window.LM.views.skillChains = (function () {
   }
 
   function renderMetadataMode(macro) {
+    const allMacros = S.getMacros();
+    const macroOptions = allMacros.map(m => 
+      `<option value="${m.id}" ${m.id === (_draftChain?.macroId || macro.id) ? 'selected' : ''}>${m.name}</option>`
+    ).join('');
+
     return `
       <div class="bg-surface-container rounded-2xl p-6 border border-surface-container-highest" style="margin-bottom: 50vh;">
         <h2 class="font-display mb-6 text-primary">CREATE NEW CHAIN</h2>
@@ -163,7 +168,9 @@ window.LM.views.skillChains = (function () {
         
         <div class="form-group mb-4">
           <label class="form-group label">Macro Skill</label>
-          <input type="text" class="form-input" disabled value="${macro.name}" style="opacity: 0.7;">
+          <select class="form-input" id="chain-macro-sel">
+            ${macroOptions}
+          </select>
         </div>
 
         <div class="form-group mb-6">
@@ -261,6 +268,7 @@ window.LM.views.skillChains = (function () {
       return;
     }
     _draftChain.name = name;
+    _draftChain.macroId = document.getElementById('chain-macro-sel')?.value || _draftChain.macroId;
     _draftChain.goal = document.getElementById('chain-goal-inp')?.value?.trim() || '';
     _mode = 'create_steps';
     LM.router.render();

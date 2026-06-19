@@ -257,7 +257,7 @@
   .nav-active { background: transparent !important; color: var(--accent) !important; }
   #fab { bottom: 90px; right: 20px; }
   .modal { width: 95vw; max-height: 90vh; }
-  .view-container { padding: 16px; }
+  .view-container { padding: 88px 16px 24px 16px; }
   /* Ensure all buttons are tappable */
   button, .btn, .icon-btn, .chip, .nav-item, .quest-card, .btn-complete {
     touch-action: manipulation;
