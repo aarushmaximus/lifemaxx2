@@ -194,15 +194,20 @@ window.LM.views.analysis = (function () {
     }
 
     // General Stats
-    const stats = S.getQuests().filter(q => q.type === 'statistic');
+    const stats = S.getStatistics();
     let statsHtml = `<div class="bg-surface-container rounded-2xl p-5 mb-8">
       <h3 class="font-label-lg text-on-surface mb-4">Daily Statistic Metrics</h3>
-      ${stats.length ? stats.map(s => `
+      ${stats.length ? stats.map(s => {
+        const todayStr = new Date().toDateString();
+        const logs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+        logs.sort((a,b) => b.timestamp - a.timestamp);
+        const val = logs.length ? logs[0].value : 0;
+        return `
         <div class="flex justify-between items-center mb-3 last:mb-0">
           <span class="text-sm text-on-surface-variant">${s.name}</span>
-          <span class="font-bold text-primary">${s.currentValue || 0} / ${s.dailyGoal} <span class="text-xs text-on-surface-variant font-normal">${s.unit || ''}</span></span>
+          <span class="font-bold text-primary">${val} / ${s.goalValue} <span class="text-xs text-on-surface-variant font-normal">${s.unit || ''}</span></span>
         </div>
-      `).join('') : '<p class="text-xs text-on-surface-variant">No statistic quests active. Create one in the Quests tab.</p>'}
+      `}).join('') : '<p class="text-xs text-on-surface-variant">No statistics active. Create one in the Skills Hub.</p>'}
     </div>`;
 
     return `
@@ -216,26 +221,27 @@ window.LM.views.analysis = (function () {
 
   // ── Rendering Archive ──
   function renderStatCharts() {
-    const logs = S.getDailyLogs();
-    const dates = Object.keys(logs).sort((a,b) => new Date(a) - new Date(b)); // Ascending
-    if (dates.length < 1) return '';
+    const logs = S.getStatLogs();
+    if (logs.length === 0) return '';
+    
+    // Group logs by date, taking the latest value for each stat per day
+    const datesSet = new Set(logs.map(l => l.dateStr));
+    const dates = Array.from(datesSet).sort((a,b) => new Date(a) - new Date(b));
+    if (dates.length === 0) return '';
 
     const statSeries = {};
-    dates.forEach(date => {
-      const snap = logs[date].statsSnapshot || {};
-      Object.keys(snap).forEach(statId => {
-        if (!statSeries[statId]) {
-          statSeries[statId] = { name: snap[statId].name, unit: snap[statId].unit, data: [] };
-        }
-      });
+    const stats = S.getStatistics();
+    if (stats.length === 0) return '';
+    
+    stats.forEach(s => {
+      statSeries[s.id] = { name: s.name, unit: s.unit, data: [] };
     });
 
-    if (Object.keys(statSeries).length === 0) return '';
-
     dates.forEach((date, i) => {
-      const snap = logs[date].statsSnapshot || {};
+      const logsForDate = logs.filter(l => l.dateStr === date);
       Object.keys(statSeries).forEach(statId => {
-        const val = snap[statId] ? snap[statId].value : 0;
+        const statLogs = logsForDate.filter(l => l.statId === statId).sort((a,b) => b.timestamp - a.timestamp);
+        const val = statLogs.length > 0 ? statLogs[0].value : 0;
         statSeries[statId].data.push({ x: i, y: val, date });
       });
     });
@@ -289,7 +295,8 @@ window.LM.views.analysis = (function () {
     dates.forEach(date => {
       const log = logs[date];
       // Quick summary
-      const loggedHours = log.cells.filter(c => c.status).length;
+      const cells = log.cells || Array(24).fill({ status: null });
+      const loggedHours = cells.filter(c => c.status).length;
       archiveHtml += `
         <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest cursor-pointer hover:border-primary transition-colors">
           <div class="flex justify-between items-center mb-3">
@@ -297,7 +304,7 @@ window.LM.views.analysis = (function () {
             <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours Logged</span>
           </div>
           <div class="flex gap-1 h-6">
-            ${log.cells.map(c => {
+            ${cells.map(c => {
               if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
               let preset = S.getCellPresets().find(p => p.id === c.status);
               return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};" title="${c.status}"></div>`;
@@ -430,11 +437,19 @@ window.LM.views.analysis = (function () {
     pushMessage('system', "Analyzing data...", true);
 
     const log = S.getDailyLog(getTodayStr());
-    const stats = S.getQuests().filter(q => q.type === 'statistic');
+    const stats = S.getStatistics();
     
     // Build context string
-    const logCtx = log.cells.map((c, i) => `Hour ${i}: ${c.status || 'EMPTY'} (Note: ${c.note || 'none'})`).join('\n');
-    const statsCtx = stats.map(s => `${s.name}: ${s.currentValue||0}/${s.dailyGoal} ${s.unit||''}`).join('\n');
+    const cells = log.cells || Array(24).fill({ status: null, note: '' });
+    const logCtx = cells.map((c, i) => `Hour ${i}: ${c.status || 'EMPTY'} (Note: ${c.note || 'none'})`).join('\n');
+    
+    const todayStr = getTodayStr();
+    const statsCtx = stats.map(s => {
+      const sLogs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+      sLogs.sort((a,b) => b.timestamp - a.timestamp);
+      const val = sLogs.length ? sLogs[0].value : 0;
+      return `${s.name}: ${val}/${s.goalValue} ${s.unit||''}`;
+    }).join('\n');
     
     const chat = S.getCoachChat(activeChatId);
     const contextMessages = chat.messages.slice(-6).filter(m => m.sender !== 'system');
