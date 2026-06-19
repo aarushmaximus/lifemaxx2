@@ -219,7 +219,7 @@ window.LM.views.skillChains = (function () {
     else if (_mode === 'create_steps') contentHtml = renderStepsMode(macro);
 
     return `
-      <div class="view-container chains-view" style="max-width: 600px; margin: 0 auto;">
+      <div class="view-container chains-view" style="max-width: 600px; margin: 0 auto; height: 100%; overflow-y: auto; padding-bottom: 80px; display: block;">
         ${_mode === 'list' ? `
         <div class="view-header" style="margin-bottom:24px;">
           <button class="btn-back" onclick="LM.router.navigate('#skill-hub/${macroId}')">← Back to Hub</button>
