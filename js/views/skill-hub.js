@@ -16,6 +16,12 @@ window.LM.views.skillHub = (function () {
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>`
     },
     {
+      id: 'create-statistic',
+      title: 'Create Statistic',
+      desc: 'Track metrics like calories or study hours',
+      icon: `<span class="material-symbols-outlined" style="font-size:26px;">add_chart</span>`
+    },
+    {
       id: 'chain-quests',
       title: 'Chain Quests',
       desc: 'Multi-step ordered quest sequences',
@@ -128,6 +134,9 @@ window.LM.views.skillHub = (function () {
     document.getElementById('hub-opt-create-habitual')?.addEventListener('click', () => {
       const panel = document.getElementById('habitual-create-panel');
       if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('hub-opt-create-statistic')?.addEventListener('click', () => {
+      window.LM.components.questModal.open(null, false, 'statistic', macroId);
     });
     document.getElementById('hub-opt-chain-quests')?.addEventListener('click', () => {
       LM.router.navigate(`#skill-chains/${macroId}`);

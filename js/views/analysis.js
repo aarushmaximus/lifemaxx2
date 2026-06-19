@@ -117,7 +117,12 @@ window.LM.views.analysis = (function () {
         content = `<span class="material-symbols-outlined text-sm text-on-surface-variant/30">lock</span>`;
       } else if (isLogged) {
         borderClass = 'border-[#2A9D8F] border opacity-90';
-        content = preset ? `<span class="material-symbols-outlined text-sm text-white">${preset.icon}</span>` : `<span class="text-[10px] text-white font-bold truncate px-1">${cell.status}</span>`;
+        let customIcon = `<span class="material-symbols-outlined text-sm text-white">fiber_manual_record</span>`;
+        if (cell.macroId) {
+          const macro = S.getMacros().find(m => m.id === cell.macroId);
+          if (macro) customIcon = `<span class="material-symbols-outlined text-sm" style="color: ${macro.accentColor}">adjust</span>`;
+        }
+        content = preset ? `<span class="material-symbols-outlined text-sm text-white">${preset.icon}</span>` : customIcon;
       } else if (isUnlockedNotLogged) {
         borderClass = 'border-[#E9C46A] border';
         content = `<span class="material-symbols-outlined text-sm text-[#E9C46A]">priority_high</span>`;
@@ -158,6 +163,8 @@ window.LM.views.analysis = (function () {
             <button onclick="LM.views.analysis.selectCell(null)" class="text-on-surface-variant hover:text-white"><span class="material-symbols-outlined">close</span></button>
           </div>
           
+          ${cell.status && !presets.find(p=>p.id===cell.status) ? `<p class="text-sm font-bold text-primary mb-3">Logged: <span class="text-white">${cell.status}</span></p>` : ''}
+          
           <p class="text-xs text-on-surface-variant mb-2">Select Activity Status:</p>
           <div class="flex flex-wrap gap-2 mb-4">
             ${presets.map(p => `
@@ -172,7 +179,7 @@ window.LM.views.analysis = (function () {
           
           <form onsubmit="LM.views.analysis.setCustomStatus(event)" class="flex gap-2 mb-4">
              <input type="text" id="custom-status-input" placeholder="Or type custom status..." class="flex-1 bg-surface-container border border-surface-container-highest rounded-lg px-3 py-1.5 text-sm text-on-surface focus:border-primary outline-none" value="${!presets.find(p=>p.id===cell.status) && cell.status ? cell.status : ''}">
-             <button type="submit" class="bg-surface-container border border-surface-container-highest rounded-lg px-3 py-1.5 text-sm hover:border-primary transition-colors"><span class="material-symbols-outlined text-sm text-primary">add</span></button>
+             <button type="submit" class="bg-surface-container border border-surface-container-highest rounded-lg px-3 py-1.5 text-sm hover:border-primary transition-colors"><span class="material-symbols-outlined text-sm text-primary">check</span></button>
           </form>
 
           <p class="text-xs text-on-surface-variant mb-2 mt-4">Tag Macro Skill (Optional):</p>

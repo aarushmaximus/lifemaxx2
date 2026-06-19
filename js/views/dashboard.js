@@ -692,14 +692,6 @@ window.LM.views.dashboard = (function () {
                 <div class="quest-grid" id="quest-grid">
                   ${renderQuestCards(macros, null, false)}
                 </div>
-                <div style="margin-top:24px;">
-                  <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
-                    UPCOMING / LOCKED OBJECTIVES
-                  </h2>
-                  <div class="quest-grid" id="upcoming-quest-grid">
-                    ${renderQuestCards(macros, null, true)}
-                  </div>
-                </div>
               </div>
 
               <!-- 1: Habituals -->
@@ -1046,9 +1038,6 @@ window.LM.views.dashboard = (function () {
     const macros = S.getMacros();
     const grid = document.getElementById('quest-grid');
     if (grid) grid.innerHTML = renderQuestCards(macros, 3, false);
-    
-    const upcomingGrid = document.getElementById('upcoming-quest-grid');
-    if (upcomingGrid) upcomingGrid.innerHTML = renderQuestCards(macros, 3, true);
   }
 
   function onDragStart(event, questId) {

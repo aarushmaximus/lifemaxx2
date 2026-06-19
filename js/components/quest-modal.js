@@ -62,25 +62,19 @@ window.LM.components.questModal = (function () {
     const piTimerDuration = it.progressIndicator ? Math.round(it.progressIndicator.timerDuration / 60) : 20;
 
     const piAccordionHTML = `
-        <!-- Progress Indicators Accordion -->
-        <div id="qm-pi-toggle" class="advanced-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 16px 0; font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.08em; color:var(--text-2); user-select:none;">
-          <span id="qm-pi-arrow">▶</span>
-          <span>Quest Progress Indicators</span>
-        </div>
-        
-        <div id="qm-pi-content" class="advanced-content" style="display:none; flex-direction:column; gap:16px; border-left: 2px solid var(--border); padding-left: 14px; margin-left: 6px; padding-bottom: 8px;">
-          <div class="form-check">
-            <input type="checkbox" id="qm-pi-enable" ${hasPI ? 'checked' : ''} ${dis}>
-            <label for="qm-pi-enable">Enable Progress Indicator</label>
+        <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-top: 24px;">
+          <div class="form-check" style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
+            <label for="qm-pi-enable" style="margin: 0; font-weight: 600; color: var(--text-1); cursor: pointer;">Enable Progress Tracker</label>
+            <input type="checkbox" id="qm-pi-enable" ${hasPI ? 'checked' : ''} ${dis} style="width:18px;height:18px;cursor:pointer;">
           </div>
           
-          <div id="qm-pi-fields" style="display: ${hasPI ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 10px;">
+          <div id="qm-pi-fields" style="display: ${hasPI ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
             <div class="form-group" style="margin: 0;">
-              <label>Indicator Type</label>
+              <label>Tracker Type</label>
               <select id="qm-pi-type" class="form-input" style="background:var(--bg-raised); border:1px solid var(--border); color:var(--text-1);" ${dis}>
                 <option value="manual" ${piType === 'manual' ? 'selected' : ''}>Manual Slider (0% - 100%)</option>
                 <option value="checks" ${piType === 'checks' ? 'selected' : ''}>Checklists (Custom number of steps)</option>
-                <option value="timer" ${piType === 'timer' ? 'selected' : ''}>Time Tracker (Study/Practice countdown timer)</option>
+                <option value="timer" ${piType === 'timer' ? 'selected' : ''}>Time Tracker (Countdown timer)</option>
               </select>
             </div>
             
@@ -123,55 +117,62 @@ window.LM.components.questModal = (function () {
             <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
           </div>
 
-          <h3 class="font-display" style="font-size: 0.85rem; letter-spacing: 0.08em; color: var(--accent); margin-top: 20px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px;">PRESET SCHEDULING & CONFIGURATION</h3>
-
-          <!-- Scheduled Days -->
-          <div class="form-group">
-            <label>Scheduled Days (Auto-Spawns on these days)</label>
-            <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
-              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
-              ).join('')}
+          <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-top: 16px;">
+            <div class="form-check" style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
+              <label for="qm-advanced-enable" style="margin: 0; font-weight: 600; color: var(--text-1); cursor: pointer;">Advanced Configuration</label>
+              <input type="checkbox" id="qm-advanced-enable" ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'checked' : ''} class="toggle-switch" style="width:18px;height:18px;cursor:pointer;">
             </div>
-          </div>
-
-          <!-- Time Window -->
-          <div class="form-group">
-            <div class="form-check">
-              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
-              <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
-            </div>
-            <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>Start Time</label>
-                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
+            
+            <div id="qm-advanced-content" style="display: ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'flex' : 'none'}; flex-direction: column; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+              <!-- Scheduled Days -->
+              <div class="form-group">
+                <label>Scheduled Days</label>
+                <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
+                    `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
+                  ).join('')}
+                </div>
               </div>
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>End Time</label>
-                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
-              </div>
-            </div>
-          </div>
 
-          <!-- Expiration Limits -->
-          <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="form-check">
-              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
-              <label for="qm-has-time-limit">Enable Quest Expiration Timer</label>
-            </div>
-            <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>Expiration Duration (Hours)</label>
-                <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}">
+              <!-- Time Window -->
+              <div class="form-group">
+                <div class="form-check">
+                  <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
+                  <label for="qm-time-window-check">Restrict to time window</label>
+                </div>
+                <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
+                  <div class="form-group" style="flex: 1; margin: 0;">
+                    <label>Start Time</label>
+                    <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
+                  </div>
+                  <div class="form-group" style="flex: 1; margin: 0;">
+                    <label>End Time</label>
+                    <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
-              <label for="qm-neg-miss">Negative XP penalty if missed</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
-              <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
+
+              <!-- Expiration -->
+              <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="form-check">
+                  <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
+                  <label for="qm-has-time-limit">Enable Expiration Timer</label>
+                </div>
+                <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
+                  <div class="form-group" style="flex: 1; margin: 0;">
+                    <label>Duration (Hours)</label>
+                    <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}">
+                  </div>
+                </div>
+                <div class="form-check">
+                  <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
+                  <label for="qm-neg-miss">Penalty if missed</label>
+                </div>
+                <div class="form-check">
+                  <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
+                  <label for="qm-neg-complete">Penalty on completion</label>
+                </div>
+              </div>
             </div>
           </div>
           ${piAccordionHTML}
@@ -258,64 +259,65 @@ window.LM.components.questModal = (function () {
           ${!isReadOnly ? `<button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>` : ''}
         </div>
 
-        <!-- Collapsible Advanced Options Accordion -->
-        <div id="qm-advanced-toggle" class="advanced-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 16px 0; font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.08em; color:var(--text-2); user-select:none;">
-          <span id="qm-advanced-arrow">▶</span>
-          <span>Advanced Quest Options</span>
-        </div>
-        
-        <div id="qm-advanced-content" class="advanced-content" style="display:none; flex-direction:column; gap:16px; border-left: 2px solid var(--border); padding-left: 14px; margin-left: 6px; padding-bottom: 8px;">
-          
-          <!-- Scheduled Days -->
-          <div class="form-group">
-            <label>Scheduled Days (Weekly Repeat)</label>
-            <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
-              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center; ${isReadOnly ? 'pointer-events:none; opacity:0.7;' : ''}">${d}</button>`
-              ).join('')}
-            </div>
-          </div>
-
-          <!-- Time Window Restrict -->
-          <div class="form-group">
-            <div class="form-check">
-              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} ${dis}>
-              <label for="qm-time-window-check">Restrict to daily time window (Greyed out outside bounds)</label>
-            </div>
-            <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>Start Time</label>
-                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" ${dis}>
-              </div>
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>End Time</label>
-                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" ${dis}>
-              </div>
-            </div>
-          </div>
-
-          <!-- Expiration & Penalties -->
-          <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="form-check">
-              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} ${dis}>
-              <label for="qm-has-time-limit">Enable Quest Expiration Timer</label>
-            </div>
-            <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
-              <div class="form-group" style="flex: 1; margin: 0;">
-                <label>Expiration Duration (Hours)</label>
-                <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" ${dis}>
-              </div>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} ${dis}>
-              <label for="qm-neg-miss">Negative XP penalty if missed</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} ${dis}>
-              <label for="qm-neg-complete">Negative XP on completion (For bad habits)</label>
-            </div>
+        <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-top: 16px;">
+          <div class="form-check" style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
+            <label for="qm-advanced-enable" style="margin: 0; font-weight: 600; color: var(--text-1); cursor: pointer;">Advanced Configuration</label>
+            <input type="checkbox" id="qm-advanced-enable" ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'checked' : ''} class="toggle-switch" style="width:18px;height:18px;cursor:pointer;" ${dis}>
           </div>
           
+          <div id="qm-advanced-content" style="display: ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'flex' : 'none'}; flex-direction: column; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+            
+            <!-- Scheduled Days -->
+            <div class="form-group">
+              <label>Scheduled Days</label>
+              <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
+                  `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center; ${isReadOnly ? 'pointer-events:none; opacity:0.7;' : ''}">${d}</button>`
+                ).join('')}
+              </div>
+            </div>
+
+            <!-- Time Window Restrict -->
+            <div class="form-group">
+              <div class="form-check">
+                <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} ${dis}>
+                <label for="qm-time-window-check">Restrict to time window</label>
+              </div>
+              <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                  <label>Start Time</label>
+                  <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" ${dis}>
+                </div>
+                <div class="form-group" style="flex: 1; margin: 0;">
+                  <label>End Time</label>
+                  <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" ${dis}>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expiration & Penalties -->
+            <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-check">
+                <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} ${dis}>
+                <label for="qm-has-time-limit">Enable Expiration Timer</label>
+              </div>
+              <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                  <label>Expiration Duration (Hours)</label>
+                  <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" ${dis}>
+                </div>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} ${dis}>
+                <label for="qm-neg-miss">Penalty if missed</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} ${dis}>
+                <label for="qm-neg-complete">Penalty on completion</label>
+              </div>
+            </div>
+            
+          </div>
         </div>
         ${piAccordionHTML}
       </div>
@@ -347,39 +349,25 @@ window.LM.components.questModal = (function () {
   }
 
   function initEvents(modal, presets, macros) {
-    // Collapsible toggle handler (Only exists in Quest Mode)
-    const advToggle = document.getElementById('qm-advanced-toggle');
+    // Advanced Config toggle
+    const advToggle = document.getElementById('qm-advanced-enable');
     const advContent = document.getElementById('qm-advanced-content');
-    const advArrow = document.getElementById('qm-advanced-arrow');
-    
-    if (advToggle && advContent && advArrow) {
-      advToggle.addEventListener('click', () => {
-        const isCollapsed = advContent.style.display === 'none';
-        advContent.style.display = isCollapsed ? 'flex' : 'none';
-        advArrow.textContent = isCollapsed ? '▼' : '▶';
+    if (advToggle && advContent) {
+      advToggle.addEventListener('change', () => {
+        advContent.style.display = advToggle.checked ? 'flex' : 'none';
       });
     }
 
     // Progress Indicator collapsible toggle
-    const piToggle = document.getElementById('qm-pi-toggle');
-    const piContent = document.getElementById('qm-pi-content');
-    const piArrow = document.getElementById('qm-pi-arrow');
-    if (piToggle && piContent && piArrow) {
-      piToggle.addEventListener('click', () => {
-        const isCollapsed = piContent.style.display === 'none';
-        piContent.style.display = isCollapsed ? 'flex' : 'none';
-        piArrow.textContent = isCollapsed ? '▼' : '▶';
+    const piToggle = document.getElementById('qm-pi-enable');
+    const piContent = document.getElementById('qm-pi-fields');
+    if (piToggle && piContent) {
+      piToggle.addEventListener('change', () => {
+        piContent.style.display = piToggle.checked ? 'flex' : 'none';
       });
     }
 
-    // Progress Indicator enable toggle
-    const piEnable = document.getElementById('qm-pi-enable');
-    const piFields = document.getElementById('qm-pi-fields');
-    if (piEnable && piFields) {
-      piEnable.addEventListener('change', () => {
-        piFields.style.display = piEnable.checked ? 'flex' : 'none';
-      });
-    }
+
 
     // Quest Type toggle
     const typeSel = document.getElementById('qm-type');
