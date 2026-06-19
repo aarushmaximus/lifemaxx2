@@ -94,236 +94,258 @@ window.LM.components.questModal = (function () {
     // ── PRESET MODE HTML ──
     if (isPresetMode) {
       return `
-        <div class="modal-header">
-          <h2 class="font-display">${item ? 'EDIT PRESET TEMPLATE' : 'CREATE PRESET TEMPLATE'}</h2>
+        <div class="modal-header" style="border-bottom:none; padding-bottom:0;">
+          <h2 class="font-display" style="font-size:1.4rem; letter-spacing:0.05em; color:var(--text-1);">${item ? 'EDIT TEMPLATE' : 'CREATE NEW TEMPLATE'}</h2>
           <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Preset Template Name</label>
-            <input id="qm-name" class="form-input" type="text" placeholder="e.g. Gym Session, Morning Ritual..." value="${name}">
+        <div class="modal-body" style="padding-top:10px;">
+          
+          <div style="margin-bottom:24px;">
+            <input id="qm-name" type="text" placeholder="Template Name (e.g. Morning Routine)" value="${name}" style="width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); padding:10px 0; font-size:1.6rem; font-weight:600; color:var(--text-1); outline:none; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           
-          <div class="form-group">
-            <label>Description</label>
-            <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this preset cover?">${description}</textarea>
+          <div style="margin-bottom:24px;">
+            <textarea id="qm-desc" placeholder="What does this template cover?" style="width:100%; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; min-height:80px; color:var(--text-2); font-size:0.95rem; outline:none; resize:vertical; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">${description}</textarea>
           </div>
 
-          <div class="form-group" style="margin-top: 5px;">
-            <label>Target Skills & XP Rewards</label>
-            <div id="qm-skills-list">
+          <!-- Target Skills Box -->
+          <div style="margin-bottom:24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <label style="font-family:var(--font-display); font-size:0.8rem; letter-spacing:0.1em; color:var(--text-1);">XP REWARDS</label>
+              <button type="button" id="qm-add-skill" style="background:rgba(255,255,255,0.1); border:none; color:var(--text-1); padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">+ ADD</button>
+            </div>
+            <div id="qm-skills-list" style="display:flex; flex-direction:column; gap:12px;">
               ${targetSkills.length > 0 ? targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('') : buildSkillRow({ macroSkillId: defaultMacroId }, 0, macros)}
             </div>
-            <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
-          </div>
-
-          <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-top: 16px;">
-            <div class="form-check" style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
-              <label for="qm-advanced-enable" style="margin: 0; font-weight: 600; color: var(--text-1); cursor: pointer;">Advanced Configuration</label>
-              <input type="checkbox" id="qm-advanced-enable" ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'checked' : ''} class="toggle-switch" style="width:18px;height:18px;cursor:pointer;">
-            </div>
-            
-            <div id="qm-advanced-content" style="display: ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'flex' : 'none'}; flex-direction: column; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
-              <!-- Scheduled Days -->
-              <div class="form-group">
-                <label>Scheduled Days</label>
-                <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
-                  ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-                    `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center;">${d}</button>`
-                  ).join('')}
-                </div>
-              </div>
-
-              <!-- Time Window -->
-              <div class="form-group">
-                <div class="form-check">
-                  <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''}>
-                  <label for="qm-time-window-check">Restrict to time window</label>
-                </div>
-                <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
-                  <div class="form-group" style="flex: 1; margin: 0;">
-                    <label>Start Time</label>
-                    <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}">
-                  </div>
-                  <div class="form-group" style="flex: 1; margin: 0;">
-                    <label>End Time</label>
-                    <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Expiration -->
-              <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
-                <div class="form-check">
-                  <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''}>
-                  <label for="qm-has-time-limit">Enable Expiration Timer</label>
-                </div>
-                <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
-                  <div class="form-group" style="flex: 1; margin: 0;">
-                    <label>Duration (Hours)</label>
-                    <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}">
-                  </div>
-                </div>
-                <div class="form-check">
-                  <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''}>
-                  <label for="qm-neg-miss">Penalty if missed</label>
-                </div>
-                <div class="form-check">
-                  <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''}>
-                  <label for="qm-neg-complete">Penalty on completion</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          ${piAccordionHTML}
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
-          <button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Preset' : 'Create Preset'}</button>
-        </div>`;
-    }
-
-    // ── INDIVIDUAL QUEST MODE HTML ──
-    return `
-      <div class="modal-header">
-        <h2 class="font-display">${item ? (isReadOnly ? 'VIEW QUEST DETAILS' : 'EDIT QUEST') : 'CREATE QUEST'}</h2>
-        <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
-      </div>
-      <div class="modal-body">
-        <!-- Status Badge if Read Only -->
-        ${isReadOnly ? `
-          <div style="background: var(--bg-raised); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="font-size: 0.78rem; font-family: var(--font-display); letter-spacing: 0.08em; color: var(--text-2);">QUEST STATUS:</span>
-            <span class="quest-type-badge" style="background: ${it.status === 'completed' ? 'rgba(16,185,129,0.15)' : it.status === 'missed' ? 'rgba(239,68,68,0.15)' : 'rgba(120,120,140,0.15)'}; color: ${it.status === 'completed' ? 'var(--success)' : it.status === 'missed' ? 'var(--danger)' : 'var(--text-2)'}; border: 1px solid currentColor;">${it.status.toUpperCase()}</span>
-          </div>
-        ` : ''}
-
-        <!-- Type Selection -->
-        <div class="form-group">
-          <label>Quest Type</label>
-          <select id="qm-type" class="form-input" style="background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);" ${dis}>
-            <option value="task" ${typeValue !== 'statistic' ? 'selected' : ''}>Standard Task / Action</option>
-            <option value="statistic" ${typeValue === 'statistic' ? 'selected' : ''}>Statistic Tracker (e.g., Calories, Steps)</option>
-          </select>
-        </div>
-
-        <!-- Name -->
-        <div class="form-group">
-          <label id="qm-name-label">Quest Name / Action</label>
-          <input id="qm-name" class="form-input" type="text" placeholder="e.g. Read 15 pages, Run 5km..." value="${name}" ${dis}>
-        </div>
-
-        <!-- Statistic Fields (Dynamic) -->
-        <div id="qm-statistic-fields" style="display: ${typeValue === 'statistic' ? 'flex' : 'none'}; gap: 12px; margin-bottom: 12px;">
-           <div class="form-group" style="flex: 1; margin: 0;">
-             <label>Daily Goal</label>
-             <input id="qm-stat-goal" class="form-input" type="number" placeholder="e.g. 2000" value="${it.dailyGoal || ''}" ${dis}>
-           </div>
-           <div class="form-group" style="flex: 1; margin: 0;">
-             <label>Unit (Optional)</label>
-             <input id="qm-stat-unit" class="form-input" type="text" placeholder="e.g. kcal, steps" value="${it.unit || ''}" ${dis}>
-           </div>
-        </div>
-        
-        <!-- Description -->
-        <div class="form-group">
-          <label>Description</label>
-          <textarea id="qm-desc" class="form-input form-textarea" placeholder="What does this quest involve?" ${dis}>${description}</textarea>
-        </div>
-
-        <!-- Preset Selection -->
-        <div class="form-group" style="display: ${isReadOnly ? 'none' : 'block'};">
-          <label>Apply Preset Template (Optional)</label>
-          <select id="qm-preset-select" class="form-input" style="cursor: pointer; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);" ${dis}>
-            <option value="">— No Preset (Manual Setup) —</option>
-            ${presets.map(p => `<option value="${p.id}" ${it.presetId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-          </select>
-        </div>
-
-        <!-- Generate Chain with AI -->
-        ${!isReadOnly ? `
-        <div class="form-group" style="border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-top:10px; background:rgba(255, 74, 141, 0.03);">
-          <label style="color:var(--accent); font-weight:bold; font-family:var(--font-display); letter-spacing:0.05em;">⚡ GENERATE QUEST CHAIN WITH GEMINI</label>
-          <textarea id="qm-ai-prompt" class="form-input form-textarea" placeholder="Describe a goal to break down into a chain (e.g. 'Learn React and build a project', 'Prepare for a 10k run in 4 steps')"></textarea>
-          <button type="button" class="btn btn-ghost btn-sm" id="qm-ai-generate-btn" style="margin-top:8px; width:100%; border-color:var(--accent); color:var(--accent);">Generate & Add Chain</button>
-          <div id="qm-ai-status" style="font-size:0.75rem; color:var(--text-3); margin-top:6px; font-family:var(--font-mono); display:none;">Processing...</div>
-        </div>
-        ` : ''}
-
-        <!-- Target Skills -->
-        <div class="form-group" style="margin-top: 5px;">
-          <label>Target Skills & XP Rewards</label>
-          <div id="qm-skills-list">
-            ${targetSkills.length > 0 ? targetSkills.map((t, i) => buildSkillRow(t, i, macros, isReadOnly)).join('') : buildSkillRow({ macroSkillId: defaultMacroId }, 0, macros, isReadOnly)}
-          </div>
-          ${!isReadOnly ? `<button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>` : ''}
-        </div>
-
-        <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-top: 16px;">
-          <div class="form-check" style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
-            <label for="qm-advanced-enable" style="margin: 0; font-weight: 600; color: var(--text-1); cursor: pointer;">Advanced Configuration</label>
-            <input type="checkbox" id="qm-advanced-enable" ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'checked' : ''} class="toggle-switch" style="width:18px;height:18px;cursor:pointer;" ${dis}>
-          </div>
-          
-          <div id="qm-advanced-content" style="display: ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'flex' : 'none'}; flex-direction: column; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
             
             <!-- Scheduled Days -->
-            <div class="form-group">
-              <label>Scheduled Days</label>
-              <div class="type-tabs" style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <div style="margin-top:24px; margin-bottom:24px;">
+              <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">AUTO-SPAWN DAYS</label>
+              <div class="type-tabs" style="display:flex; gap:4px; flex-wrap:wrap;">
                 ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
-                  `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex: 1; min-width: 40px; padding: 6px 0; text-align: center; ${isReadOnly ? 'pointer-events:none; opacity:0.7;' : ''}">${d}</button>`
+                  `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex:1; min-width:40px; padding:6px 0; text-align:center;">${d}</button>`
                 ).join('')}
               </div>
             </div>
 
             <!-- Time Window Restrict -->
-            <div class="form-group">
-              <div class="form-check">
-                <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} ${dis}>
-                <label for="qm-time-window-check">Restrict to time window</label>
-              </div>
-              <div id="qm-time-window-fields" style="display: ${hasTimeWindow ? 'flex' : 'none'}; gap: 12px; margin-top: 10px;">
-                <div class="form-group" style="flex: 1; margin: 0;">
-                  <label>Start Time</label>
-                  <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" ${dis}>
+            <div style="margin-bottom:24px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer; margin-bottom:8px;">
+                <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} style="accent-color:var(--primary);">
+                Restrict to daily time window
+              </label>
+              <div id="qm-time-window-fields" style="display:${hasTimeWindow ? 'flex' : 'none'}; gap:12px; margin-top:8px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">START</label>
+                  <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" style="width:100%; padding:8px;">
                 </div>
-                <div class="form-group" style="flex: 1; margin: 0;">
-                  <label>End Time</label>
-                  <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" ${dis}>
+                <div style="flex:1;">
+                  <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">END</label>
+                  <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" style="width:100%; padding:8px;">
                 </div>
               </div>
             </div>
 
             <!-- Expiration & Penalties -->
-            <div class="form-row" style="display: flex; flex-direction: column; gap: 10px;">
-              <div class="form-check">
-                <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} ${dis}>
-                <label for="qm-has-time-limit">Enable Expiration Timer</label>
-              </div>
-              <div id="qm-time-limit-fields" style="display: ${hasTimeLimit ? 'flex' : 'none'}; gap: 12px; margin-top: 10px; align-items: center; width: 100%;">
-                <div class="form-group" style="flex: 1; margin: 0;">
-                  <label>Expiration Duration (Hours)</label>
-                  <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" ${dis}>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+                <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} style="accent-color:var(--primary);">
+                Enable Expiration Timer
+              </label>
+              <div id="qm-time-limit-fields" style="display:${hasTimeLimit ? 'flex' : 'none'}; gap:12px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">DURATION (HOURS)</label>
+                  <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" style="width:100%; padding:8px;">
                 </div>
               </div>
-              <div class="form-check">
-                <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} ${dis}>
-                <label for="qm-neg-miss">Penalty if missed</label>
-              </div>
-              <div class="form-check">
-                <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} ${dis}>
-                <label for="qm-neg-complete">Penalty on completion</label>
-              </div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+                <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} style="accent-color:var(--primary);">
+                Penalty if missed
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+                <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} style="accent-color:var(--primary);">
+                Penalty on completion
+              </label>
             </div>
             
+            ${piAccordionHTML}
           </div>
         </div>
-        ${piAccordionHTML}
+        <div class="modal-footer" style="border-top:1px solid var(--border); padding-top:20px; display:flex; justify-content:flex-end; gap:12px;">
+          <button type="button" style="background:transparent; border:1px solid var(--border); color:var(--text-1); padding:10px 24px; border-radius:10px; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'" onclick="LM.components.questModal.close(); return false;">Cancel</button>
+          <button type="button" id="qm-submit" style="background:var(--primary); color:#000; border:none; padding:10px 28px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 4px 14px rgba(42,157,143,0.3); transition:transform 0.1s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(42,157,143,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(42,157,143,0.3)'">${item ? 'Save Template' : 'Create Template'}</button>
+        </div>`;
+    }
+
+    // ── INDIVIDUAL QUEST MODE HTML ──
+    return `
+      <div class="modal-header" style="border-bottom:none; padding-bottom:0;">
+        <h2 class="font-display" style="font-size:1.4rem; letter-spacing:0.05em; color:var(--text-1);">${item ? (isReadOnly ? 'VIEW QUEST' : 'EDIT QUEST') : 'CREATE NEW QUEST'}</h2>
+        <button type="button" class="modal-close" onclick="LM.components.questModal.close(); return false;">✕</button>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" onclick="LM.components.questModal.close(); return false;">Cancel</button>
-        ${!isReadOnly ? `<button type="button" class="btn btn-primary" id="qm-submit">${item ? 'Save Changes' : 'Create Quest'}</button>` : ''}
+      <div class="modal-body" style="padding-top:10px;">
+        
+        <!-- Status Badge -->
+        ${isReadOnly ? `
+          <div style="background:var(--bg-raised); border-radius:12px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <span style="font-size:0.8rem; font-family:var(--font-display); letter-spacing:0.1em; color:var(--text-2);">STATUS</span>
+            <span class="quest-type-badge" style="background:${it.status === 'completed' ? 'rgba(16,185,129,0.15)' : it.status === 'missed' ? 'rgba(239,68,68,0.15)' : 'rgba(120,120,140,0.15)'}; color:${it.status === 'completed' ? 'var(--success)' : it.status === 'missed' ? 'var(--danger)' : 'var(--text-2)'}; border:1px solid currentColor;">${it.status.toUpperCase()}</span>
+          </div>
+        ` : ''}
+
+        <!-- Big Name Input -->
+        <div style="margin-bottom:24px;">
+           <input id="qm-name" type="text" placeholder="What is your objective?" value="${name}" ${dis} style="width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); padding:10px 0; font-size:1.6rem; font-weight:600; color:var(--text-1); outline:none; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div style="display:flex; gap:16px; margin-bottom:24px;">
+          <!-- Type Selection -->
+          <div style="flex:1;">
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px; font-family:var(--font-display); letter-spacing:0.05em;">QUEST TYPE</label>
+            <select id="qm-type" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px; width:100%; font-weight:500;" ${dis}>
+              <option value="task" ${typeValue !== 'statistic' ? 'selected' : ''}>Action Task</option>
+              <option value="statistic" ${typeValue === 'statistic' ? 'selected' : ''}>Statistic Tracker</option>
+            </select>
+          </div>
+          <!-- Preset -->
+          <div style="flex:1; display:${isReadOnly ? 'none' : 'block'};">
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px; font-family:var(--font-display); letter-spacing:0.05em;">TEMPLATE</label>
+            <select id="qm-preset-select" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px; width:100%; font-weight:500;" ${dis}>
+              <option value="">— Blank —</option>
+              ${presets.map(p => `<option value="${p.id}" ${it.presetId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- Statistic Fields -->
+        <div id="qm-statistic-fields" style="display:${typeValue === 'statistic' ? 'flex' : 'none'}; gap:16px; margin-bottom:24px; background:rgba(255,255,255,0.02); padding:16px; border-radius:12px; border:1px solid var(--border);">
+           <div style="flex:1;">
+             <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">DAILY GOAL</label>
+             <input id="qm-stat-goal" type="number" placeholder="e.g. 2000" value="${it.dailyGoal || ''}" ${dis} style="width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); padding:8px 0; font-size:1.2rem; color:var(--text-1); outline:none;">
+           </div>
+           <div style="flex:1;">
+             <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">UNIT (OPTIONAL)</label>
+             <input id="qm-stat-unit" type="text" placeholder="e.g. kcal" value="${it.unit || ''}" ${dis} style="width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); padding:8px 0; font-size:1.2rem; color:var(--text-1); outline:none;">
+           </div>
+        </div>
+        
+        <!-- Description -->
+        <div style="margin-bottom:24px;">
+          <textarea id="qm-desc" placeholder="Add some notes or details..." ${dis} style="width:100%; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; min-height:80px; color:var(--text-2); font-size:0.95rem; outline:none; resize:vertical; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">${description}</textarea>
+        </div>
+
+        <!-- Target Skills Box -->
+        <div style="margin-bottom:24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <label style="font-family:var(--font-display); font-size:0.8rem; letter-spacing:0.1em; color:var(--text-1);">XP REWARDS</label>
+            ${!isReadOnly ? `<button type="button" id="qm-add-skill" style="background:rgba(255,255,255,0.1); border:none; color:var(--text-1); padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">+ ADD</button>` : ''}
+          </div>
+          <div id="qm-skills-list" style="display:flex; flex-direction:column; gap:12px;">
+            ${targetSkills.length > 0 ? targetSkills.map((t, i) => buildSkillRow(t, i, macros, isReadOnly)).join('') : buildSkillRow({ macroSkillId: defaultMacroId }, 0, macros, isReadOnly)}
+          </div>
+        </div>
+
+        <!-- Config Toggles -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <label style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <input type="checkbox" id="qm-advanced-enable" ${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer;" ${dis}>
+            <span style="font-weight:600; font-size:0.85rem;">Constraints</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <input type="checkbox" id="qm-pi-enable" ${hasPI ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer;" ${dis}>
+            <span style="font-weight:600; font-size:0.85rem;">Progress Tracker</span>
+          </label>
+        </div>
+
+        <!-- Advanced Content Hidden Panel -->
+        <div id="qm-advanced-content" style="display:${hasTimeWindow || hasTimeLimit || isNegativeOnMiss || isNegativeOnComplete || scheduledDays.length < 7 ? 'flex' : 'none'}; flex-direction:column; gap:16px; background:rgba(255,255,255,0.01); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+          <!-- Scheduled Days -->
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">SCHEDULED DAYS</label>
+            <div class="type-tabs" style="display:flex; gap:4px; flex-wrap:wrap;">
+              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => 
+                `<button type="button" class="type-tab day-tab ${scheduledDays.includes(i) ? 'active' : ''}" data-day="${i}" style="flex:1; min-width:40px; padding:6px 0; text-align:center; ${isReadOnly ? 'pointer-events:none; opacity:0.7;' : ''}">${d}</button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <!-- Time Window Restrict -->
+          <div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer; margin-bottom:8px;">
+              <input type="checkbox" id="qm-time-window-check" ${hasTimeWindow ? 'checked' : ''} ${dis} style="accent-color:var(--primary);">
+              Restrict to time window
+            </label>
+            <div id="qm-time-window-fields" style="display:${hasTimeWindow ? 'flex' : 'none'}; gap:12px; margin-top:8px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">START</label>
+                <input id="qm-time-start" class="form-input" type="time" value="${timeWindow.start}" ${dis} style="width:100%; padding:8px;">
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">END</label>
+                <input id="qm-time-end" class="form-input" type="time" value="${timeWindow.end}" ${dis} style="width:100%; padding:8px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Expiration & Penalties -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+              <input type="checkbox" id="qm-has-time-limit" ${hasTimeLimit ? 'checked' : ''} ${dis} style="accent-color:var(--primary);">
+              Enable Expiration Timer
+            </label>
+            <div id="qm-time-limit-fields" style="display:${hasTimeLimit ? 'flex' : 'none'}; gap:12px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:0.7rem; color:var(--text-3); margin-bottom:4px;">DURATION (HOURS)</label>
+                <input id="qm-time-limit-duration" class="form-input" type="number" min="0.1" step="0.1" value="${it.timeLimitHours || 24}" ${dis} style="width:100%; padding:8px;">
+              </div>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+              <input type="checkbox" id="qm-neg-miss" ${isNegativeOnMiss ? 'checked' : ''} ${dis} style="accent-color:var(--primary);">
+              Penalty if missed
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-1); cursor:pointer;">
+              <input type="checkbox" id="qm-neg-complete" ${isNegativeOnComplete ? 'checked' : ''} ${dis} style="accent-color:var(--primary);">
+              Penalty on completion
+            </label>
+          </div>
+        </div>
+        
+        <!-- Progress Hidden Panel -->
+        <div id="qm-pi-fields" style="display:${hasPI ? 'flex' : 'none'}; flex-direction:column; gap:16px; background:rgba(255,255,255,0.01); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">TRACKER TYPE</label>
+            <select id="qm-pi-type" class="form-input" style="width:100%; padding:10px;" ${dis}>
+              <option value="manual" ${piType === 'manual' ? 'selected' : ''}>Manual Slider (0% - 100%)</option>
+              <option value="checks" ${piType === 'checks' ? 'selected' : ''}>Checklists</option>
+              <option value="timer" ${piType === 'timer' ? 'selected' : ''}>Time Tracker</option>
+            </select>
+          </div>
+          
+          <div id="qm-pi-checks-group" style="display:${piType === 'checks' ? 'block' : 'none'};">
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">NUMBER OF STEPS</label>
+            <input type="number" id="qm-pi-checks-count" class="form-input" min="1" max="20" value="${piChecksCount}" ${dis} style="width:100%; padding:10px;">
+          </div>
+          
+          <div id="qm-pi-timer-group" style="display:${piType === 'timer' ? 'block' : 'none'};">
+            <label style="display:block; font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">DURATION (MINUTES)</label>
+            <input type="number" id="qm-pi-timer-duration" class="form-input" min="1" max="600" value="${piTimerDuration}" ${dis} style="width:100%; padding:10px;">
+          </div>
+        </div>
+
+        <!-- AI Gen -->
+        ${!isReadOnly ? `
+        <div style="border:1px dashed var(--accent); border-radius:12px; padding:20px; background:rgba(255, 74, 141, 0.03); text-align:center;">
+          <div style="color:var(--accent); font-weight:bold; font-family:var(--font-display); letter-spacing:0.05em; margin-bottom:12px;">⚡ AI QUEST CHAIN GENERATOR</div>
+          <textarea id="qm-ai-prompt" placeholder="e.g. 'Build a React project'..." style="width:100%; background:rgba(0,0,0,0.2); border:1px solid rgba(255,74,141,0.2); border-radius:8px; padding:12px; color:var(--text-1); font-size:0.95rem; margin-bottom:12px; resize:none; outline:none; min-height:70px; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,74,141,0.2)'"></textarea>
+          <button type="button" id="qm-ai-generate-btn" style="background:var(--accent); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:bold; cursor:pointer; width:100%; transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Generate Tasks</button>
+          <div id="qm-ai-status" style="font-size:0.75rem; color:var(--text-3); margin-top:10px; display:none;">Thinking...</div>
+        </div>
+        ` : ''}
+
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--border); padding-top:20px; display:flex; justify-content:flex-end; gap:12px;">
+        <button type="button" style="background:transparent; border:1px solid var(--border); color:var(--text-1); padding:10px 24px; border-radius:10px; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'" onclick="LM.components.questModal.close(); return false;">Cancel</button>
+        ${!isReadOnly ? `<button type="button" id="qm-submit" style="background:var(--primary); color:#000; border:none; padding:10px 28px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 4px 14px rgba(42,157,143,0.3); transition:transform 0.1s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(42,157,143,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(42,157,143,0.3)'">${item ? 'Save Quest' : 'Create Quest'}</button>` : ''}
       </div>`;
   }
 
