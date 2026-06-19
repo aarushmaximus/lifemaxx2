@@ -147,26 +147,25 @@ window.LM.components.statModal = (function () {
     let stat = null;
     if (statId) stat = window.LM.store.getStatistic(statId);
 
-    if (!modalEl) {
-      modalEl = document.createElement('div');
-      modalEl.className = 'modal-backdrop';
-      modalEl.id = 'stat-modal';
-      document.body.appendChild(modalEl);
-    }
+    const modalEl = document.getElementById('stat-modal');
+    const overlay = document.getElementById('modal-overlay');
 
-    const content = document.createElement('div');
-    content.className = 'modal-content';
-    content.innerHTML = renderModalHTML(macros, stat);
-    modalEl.innerHTML = '';
-    modalEl.appendChild(content);
-    modalEl.classList.add('visible');
+    if (!modalEl || !overlay) return;
+
+    modalEl.innerHTML = renderModalHTML(macros, stat);
+    modalEl.classList.add('modal-open');
+    overlay.classList.add('overlay-open');
 
     initEvents(modalEl, macros);
   }
 
   function closeModal() {
-    if (modalEl) {
-      modalEl.classList.remove('visible');
+    const modalEl = document.getElementById('stat-modal');
+    const overlay = document.getElementById('modal-overlay');
+    if (modalEl) modalEl.classList.remove('modal-open');
+    // Only close overlay if no other modals are open
+    if (overlay && !document.querySelector('.modal.modal-open')) {
+      overlay.classList.remove('overlay-open');
     }
     editingId = null;
   }

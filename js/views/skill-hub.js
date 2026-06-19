@@ -104,6 +104,27 @@ window.LM.views.skillHub = (function () {
             </div>`).join('')}
         </div>` : ''}
 
+        <!-- Active statistics for this skill -->
+        ${(() => {
+          const stats = S.getStatistics().filter(s => s.targetSkill && s.targetSkill.macroSkillId === macroId);
+          if (stats.length === 0) return '';
+          return `
+          <div style="margin-bottom:16px;">
+            <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.12em;color:var(--text-3);margin-bottom:8px;">ACTIVE STATISTICS</div>
+            ${stats.map(s => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-surface);border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:6px;">
+                <div>
+                  <div style="font-size:0.85rem;font-weight:500;">${s.name}</div>
+                  <div style="font-size:0.7rem;color:var(--text-3);">Goal: ${s.goalValue} ${s.unit} • XP: +${s.maxXP} / -${s.negativeXP}</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn-icon" onclick="LM.components.statModal.open('${s.id}')" title="Edit Statistic" style="color:var(--text-2);">✎</button>
+                  <button class="btn-icon danger" onclick="if(confirm('Delete ${s.name}?')) { LM.store.deleteStatistic('${s.id}'); LM.router.render(); }" title="Delete Statistic">✕</button>
+                </div>
+              </div>`).join('')}
+          </div>`;
+        })()}
+
         <div class="skill-hub-options">
           ${OPTIONS.map(opt => {
             let badge = '';
@@ -136,7 +157,7 @@ window.LM.views.skillHub = (function () {
       if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     });
     document.getElementById('hub-opt-create-statistic')?.addEventListener('click', () => {
-      window.LM.components.questModal.open(null, false, 'statistic', macroId);
+      window.LM.components.statModal.open(null);
     });
     document.getElementById('hub-opt-chain-quests')?.addEventListener('click', () => {
       LM.router.navigate(`#skill-chains/${macroId}`);

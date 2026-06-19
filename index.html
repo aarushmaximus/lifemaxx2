@@ -121,6 +121,9 @@
   <!-- Skill Modal -->
   <div id="skill-modal" class="modal" role="dialog" aria-modal="true" aria-label="Manage Skills"></div>
 
+  <!-- Stat Modal -->
+  <div id="stat-modal" class="modal" role="dialog" aria-modal="true" aria-label="Manage Statistic"></div>
+
   <!-- Boss Completion Overlay -->
   <div id="boss-overlay">
     <div class="boss-content">
@@ -177,7 +180,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '84';
+    const APP_VERSION = '85';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
