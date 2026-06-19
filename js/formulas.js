@@ -69,9 +69,15 @@ window.LM.formulas = (function () {
     if (penaltyRange <= 0) {
       return deviation === 0 ? maxXP : -Math.abs(negativeXP);
     }
-    const penaltyRatio = Math.min(deviation / penaltyRange, 1.0);
-    const spread = maxXP + Math.abs(negativeXP);
-    const finalXP = maxXP - (penaltyRatio * spread);
+    
+    // If you hit or exceed the deviation limit, you get the negative penalty
+    if (deviation >= penaltyRange) {
+      return -Math.abs(negativeXP);
+    }
+
+    // Inside the range, scale positive XP down from maxXP to 0
+    const penaltyRatio = deviation / penaltyRange;
+    const finalXP = maxXP * (1 - penaltyRatio);
     return Math.round(finalXP * 10) / 10; // 1 decimal place
   }
 
