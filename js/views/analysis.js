@@ -15,11 +15,17 @@ window.LM.views.analysis = (function () {
     `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
     `You read the user's 24-hour log grid and statistic metrics. You point out exactly where they slacked off, and you demand efficiency. ` +
     `You keep your answers highly analytical, concise (3 sentences max), and you ALWAYS end by asking a probing question based on the hard data provided. ` +
-    `Never break character.`;
+    `Never break character. Output ONLY plain text. Do not output structured data or code blocks.`;
 
   function init() {
     render();
     initChat();
+  }
+
+  function format12Hour(hour) {
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h = hour % 12 || 12;
+    return `${h} ${ampm}`;
   }
 
   function toggleTab(tab) {
@@ -75,6 +81,15 @@ window.LM.views.analysis = (function () {
     S.upsertDailyLog(log);
   }
 
+  function setCellMacro(e) {
+    if (activeCellIdx === null) return;
+    const today = getTodayStr();
+    const log = S.getDailyLog(today);
+    log.cells[activeCellIdx].macroId = e.target.value;
+    S.upsertDailyLog(log);
+    window.LM.router.render();
+  }
+
   // ── Rendering Today ──
   function renderToday() {
     const today = getTodayStr();
@@ -94,7 +109,8 @@ window.LM.views.analysis = (function () {
       let bgColor = preset ? preset.color : (isLogged ? '#1D3557' : 'transparent');
       
       let borderClass = 'border-surface-container';
-      let content = `<span class="text-[10px] text-on-surface-variant/30">${i}:00</span>`;
+      let content = `<span class="text-[10px] text-on-surface-variant/30">${format12Hour(i)}</span>`;
+      let inlineStyle = `background-color: ${bgColor};`;
       
       if (isLocked) {
         borderClass = 'border-surface-container-highest opacity-50';
@@ -107,14 +123,23 @@ window.LM.views.analysis = (function () {
         content = `<span class="material-symbols-outlined text-sm text-[#E9C46A]">priority_high</span>`;
       }
 
+      if (cell.macroId) {
+        const macro = S.getMacros().find(m => m.id === cell.macroId);
+        if (macro) {
+          borderClass += ' border-2';
+          inlineStyle += ` border-color: ${macro.accentColor};`;
+        }
+      }
+
       if (isSelected) {
         borderClass = 'border-primary border-2 shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-110 z-10 transition-transform';
+        inlineStyle = `background-color: ${bgColor};`; // reset to just background and tailwind borders
       }
 
       gridHtml += `
         <div onclick="LM.views.analysis.selectCell(${i})" 
              class="aspect-square rounded-2xl flex items-center justify-center cursor-pointer transition-all duration-300 ${borderClass}" 
-             style="background-color: ${bgColor};">
+             style="${inlineStyle}">
           ${content}
         </div>
       `;
@@ -126,33 +151,10 @@ window.LM.views.analysis = (function () {
     if (activeCellIdx !== null) {
       const cell = log.cells[activeCellIdx];
       
-      // Quests completed in this timeframe
-      // We check history for quest completions in this hour today
-      const startOfHour = new Date();
-      startOfHour.setHours(activeCellIdx, 0, 0, 0);
-      const endOfHour = new Date();
-      endOfHour.setHours(activeCellIdx, 59, 59, 999);
-      
-      const completedQuests = S.getHistory().filter(h => 
-        h.type === 'quest_completed' && 
-        h.timestamp >= startOfHour.getTime() && 
-        h.timestamp <= endOfHour.getTime()
-      );
-      
-      let questsHtml = '';
-      if (completedQuests.length > 0) {
-        questsHtml = `<div class="mt-4 pt-4 border-t border-surface-container-highest">
-          <span class="text-xs text-primary font-bold tracking-widest uppercase mb-2 block">Quests Claimed this Hour:</span>
-          <ul class="text-sm text-on-surface-variant space-y-1">
-            ${completedQuests.map(q => `<li>• ${q.message.replace('Quest Completed: ', '')}</li>`).join('')}
-          </ul>
-        </div>`;
-      }
-
       activeCellHtml = `
         <div class="bg-surface-container-highest rounded-2xl p-5 shadow-lg mb-8 animate-fade-in origin-top">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-headline-sm text-on-surface">${activeCellIdx}:00 - ${activeCellIdx+1}:00</h3>
+            <h3 class="font-headline-sm text-on-surface">${format12Hour(activeCellIdx)} - ${format12Hour(activeCellIdx+1)}</h3>
             <button onclick="LM.views.analysis.selectCell(null)" class="text-on-surface-variant hover:text-white"><span class="material-symbols-outlined">close</span></button>
           </div>
           
@@ -173,9 +175,13 @@ window.LM.views.analysis = (function () {
              <button type="submit" class="bg-surface-container border border-surface-container-highest rounded-lg px-3 py-1.5 text-sm hover:border-primary transition-colors"><span class="material-symbols-outlined text-sm text-primary">add</span></button>
           </form>
 
+          <p class="text-xs text-on-surface-variant mb-2 mt-4">Tag Macro Skill (Optional):</p>
+          <select onchange="LM.views.analysis.setCellMacro(event)" class="w-full bg-surface-container border border-surface-container-highest rounded-lg px-3 py-2 text-sm text-on-surface focus:border-primary outline-none mb-4">
+            <option value="">-- No Skill Tag --</option>
+            ${S.getMacros().map(m => `<option value="${m.id}" ${cell.macroId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
+          </select>
+
           <textarea onchange="LM.views.analysis.updateCellNote(event)" placeholder="Add a note for this hour..." class="w-full bg-surface-container border border-surface-container-highest rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none resize-none h-20">${cell.note || ''}</textarea>
-          
-          ${questsHtml}
         </div>
       `;
     }

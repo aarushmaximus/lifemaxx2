@@ -519,9 +519,14 @@ window.LM.views.dashboard = (function () {
             </div>
           </div>
           <div class="history-bar" id="history-bar">
-            <div class="history-bar-header">
-              <span class="material-symbols-outlined" style="font-size:16px;opacity:0.6;">history</span>
-              <span>ACTIVITY FEED</span>
+            <div class="history-bar-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span class="material-symbols-outlined" style="font-size:16px;opacity:0.6;">history</span>
+                <span>ACTIVITY FEED</span>
+              </div>
+              <button onclick="LM.store.clearHistory(); LM.router.render();" style="background:transparent; border:none; color:var(--text-3); cursor:pointer;" class="hover:text-danger transition-colors" title="Clear History">
+                <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
+              </button>
             </div>
             <div class="history-bar-entries" id="history-bar-entries">
               ${renderHistoryBar()}
@@ -712,6 +717,36 @@ window.LM.views.dashboard = (function () {
               </div>
             </div>
           </div>
+          
+          <!-- STATISTICS TRACKERS -->
+          ${ (() => {
+            const stats = S.getQuests().filter(q => q.type === 'statistic' && q.status === 'active');
+            if (stats.length === 0) return '';
+            return `
+              <div class="dash-statistics-wrap" style="margin-top:24px; padding-bottom: 24px;">
+                <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
+                  STATISTIC TRACKERS
+                </h2>
+                <div class="quest-grid">
+                  ${stats.map(q => `
+                    <div class="quest-card" style="border-color:var(--border);">
+                      <div class="quest-card-header">
+                        <span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">STATISTIC</span>
+                      </div>
+                      <h3 class="quest-card-name">${q.name}</h3>
+                      <div class="stat-controls" style="display:flex; align-items:center; gap:12px; margin-top:12px; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:8px; width:max-content; border:1px solid var(--border);" onclick="event.stopPropagation();">
+                        <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.dashboard.updateStatistic('${q.id}', -1)">-</button>
+                        <span style="font-family:var(--font-mono); font-size:1.1rem; font-weight:bold; min-width:40px; text-align:center; color:var(--accent);">${q.currentValue || 0}</span>
+                        <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.dashboard.updateStatistic('${q.id}', 1)">+</button>
+                        <span style="font-size:0.75rem; color:var(--text-3); font-family:var(--font-display); letter-spacing:0.05em; margin-left:4px;">/ ${q.dailyGoal} ${q.unit || ''}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          })() }
+
         </div> <!-- End dash-center -->
       </div>`;
 
@@ -1062,5 +1097,14 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateQuestCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
+  function updateStatistic(questId, delta) {
+    const quest = S.getQuest(questId);
+    if (!quest || quest.type !== 'statistic') return;
+    quest.currentValue = (quest.currentValue || 0) + delta;
+    if (quest.currentValue < 0) quest.currentValue = 0;
+    S.upsertQuest(quest);
+    LM.router.render();
+  }
+
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateStatistic, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateQuestCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
 })();

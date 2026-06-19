@@ -83,7 +83,7 @@ window.LM.aiEngine = (function () {
       }
 
       // Enforce JSON MIME type for structured calls
-      if (prompt.includes("JSON") || prompt.includes("json")) {
+      if (/\b(?:return|output|format as)\s+JSON\b/i.test(prompt)) {
         payload.generationConfig = {
           responseMimeType: "application/json"
         };

@@ -23,8 +23,16 @@ window.LM.views.skills = (function () {
             const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
             return `
               <div class="skill-card" 
-                   style="--sk-accent:${m.accentColor};"
+                   style="--sk-accent:${m.accentColor}; position: relative;"
                    onclick="LM.router.navigate('#skill-hub/${m.id}')">
+                
+                <button onclick="event.stopPropagation(); LM.components.questModal.open(null, false, 'statistic', '${m.id}')" 
+                        class="btn-icon hover:scale-105 hover:bg-[rgba(255,255,255,0.1)] transition-all" 
+                        style="position:absolute; top:12px; right:12px; z-index:10; background:rgba(0,0,0,0.4); color:var(--text-1); padding:4px 8px; border-radius:8px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; display:flex; align-items:center; gap:4px; border:1px solid rgba(255,255,255,0.1);" 
+                        title="Add Statistic Tracker">
+                   <span class="material-symbols-outlined" style="font-size:14px;">add_chart</span> STAT
+                </button>
+
                 <div class="skill-card-shine"></div>
                 <div class="skill-card-inner">
                   <div class="skill-card-top">

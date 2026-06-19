@@ -6,7 +6,7 @@ window.LM.components.questModal = (function () {
   let editingId = null;
   let isPresetMode = false;
 
-  function open(id = null, isPreset = false, defaultType = 'task') {
+  function open(id = null, isPreset = false, defaultType = 'task', defaultMacroId = null) {
     editingId = id;
     isPresetMode = isPreset;
     
@@ -19,7 +19,7 @@ window.LM.components.questModal = (function () {
     const modal = document.getElementById('quest-modal');
     const overlay = document.getElementById('modal-overlay');
 
-    modal.innerHTML = buildHTML(item, presets, macros, defaultType);
+    modal.innerHTML = buildHTML(item, presets, macros, defaultType, defaultMacroId);
     modal.classList.add('modal-open');
     overlay.classList.add('overlay-open');
 
@@ -36,7 +36,7 @@ window.LM.components.questModal = (function () {
     _submitting = false;
   }
 
-  function buildHTML(item, presets, macros, defaultType = 'task') {
+  function buildHTML(item, presets, macros, defaultType = 'task', defaultMacroId = null) {
     const it = item || {};
     const isReadOnly = it.status && it.status !== 'active';
     const dis = isReadOnly ? 'disabled style="opacity: 0.7; pointer-events: none;"' : '';
@@ -118,8 +118,7 @@ window.LM.components.questModal = (function () {
           <div class="form-group" style="margin-top: 5px;">
             <label>Target Skills & XP Rewards</label>
             <div id="qm-skills-list">
-              ${targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('')}
-              ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros) : ''}
+              ${targetSkills.length > 0 ? targetSkills.map((t, i) => buildSkillRow(t, i, macros)).join('') : buildSkillRow({ macroSkillId: defaultMacroId }, 0, macros)}
             </div>
             <button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>
           </div>
@@ -254,8 +253,7 @@ window.LM.components.questModal = (function () {
         <div class="form-group" style="margin-top: 5px;">
           <label>Target Skills & XP Rewards</label>
           <div id="qm-skills-list">
-            ${targetSkills.map((t, i) => buildSkillRow(t, i, macros, isReadOnly)).join('')}
-            ${(targetSkills.length === 0) ? buildSkillRow(null, 0, macros, isReadOnly) : ''}
+            ${targetSkills.length > 0 ? targetSkills.map((t, i) => buildSkillRow(t, i, macros, isReadOnly)).join('') : buildSkillRow({ macroSkillId: defaultMacroId }, 0, macros, isReadOnly)}
           </div>
           ${!isReadOnly ? `<button type="button" class="btn-add-skill" id="qm-add-skill" style="margin-top: 8px;">+ Add Skill Reward</button>` : ''}
         </div>
