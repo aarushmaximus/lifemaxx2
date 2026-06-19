@@ -684,14 +684,14 @@ window.LM.views.dashboard = (function () {
             <div class="dash-carousel-viewport" id="quest-list-carousel" onscroll="LM.views.dashboard.updateQuestCarouselNav()">
               <!-- 0: Quests -->
               <div class="dash-carousel-panel" style="min-width:100%; padding-right:8px;">
-                <div class="quest-grid">
+                <div class="quest-grid" id="quest-grid">
                   ${renderQuestCards(macros, null, false)}
                 </div>
                 <div style="margin-top:24px;">
                   <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
                     UPCOMING / LOCKED OBJECTIVES
                   </h2>
-                  <div class="quest-grid">
+                  <div class="quest-grid" id="upcoming-quest-grid">
                     ${renderQuestCards(macros, null, true)}
                   </div>
                 </div>
