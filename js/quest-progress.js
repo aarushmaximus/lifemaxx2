@@ -182,10 +182,10 @@ window.LM.questProgress = (function () {
     if (pi.type === 'manual') {
       detailHTML = `
         <div class="pi-manual-row" onclick="event.stopPropagation();">
-          <div class="pi-bar-track" style="position: absolute; top: 0; left: 0; width: calc(100% - 42px); height: 100%; z-index: 1;">
+          <div class="pi-bar-track" style="position: absolute; top: 0; left: 0; width: calc(100% - 42px); height: 100%; z-index: 1; pointer-events: none;">
             <div class="pi-bar-fill" style="width: ${pi.value}%;"></div>
           </div>
-          <input type="range" class="pi-slider" min="0" max="100" value="${pi.value}" onchange="LM.questProgress.updateManual('${q.id}', this.value)" style="width: calc(100% - 42px);">
+          <input type="range" class="pi-slider" min="0" max="100" value="${pi.value}" onchange="LM.questProgress.updateManual('${q.id}', this.value)" oninput="this.previousElementSibling.firstElementChild.style.width = this.value + '%'" style="width: calc(100% - 42px); position: relative; z-index: 2; touch-action: none;" onpointerdown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
           <span class="pi-percent font-display" style="margin-left: auto;">${pi.value}%</span>
         </div>`;
     } else if (pi.type === 'checks') {
