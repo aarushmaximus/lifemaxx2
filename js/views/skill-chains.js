@@ -153,7 +153,7 @@ window.LM.views.skillChains = (function () {
 
   function renderMetadataMode(macro) {
     return `
-      <div class="bg-surface-container rounded-2xl p-6 border border-surface-container-highest">
+      <div class="bg-surface-container rounded-2xl p-6 border border-surface-container-highest" style="margin-bottom: 50vh;">
         <h2 class="font-display mb-6 text-primary">CREATE NEW CHAIN</h2>
         
         <div class="form-group mb-4">
@@ -183,7 +183,7 @@ window.LM.views.skillChains = (function () {
     const stepsHtml = _draftChain.steps.map((s, i) => renderQuestCardShadow(s, macro, true, i)).join('');
     
     return `
-      <div>
+      <div style="margin-bottom: 50vh;">
         <div class="flex justify-between items-center mb-4">
           <h2 class="font-display text-primary">CHAIN QUESTS</h2>
           <div class="text-sm text-on-surface-variant font-bold">${_draftChain.steps.length} Steps</div>
@@ -219,7 +219,7 @@ window.LM.views.skillChains = (function () {
     else if (_mode === 'create_steps') contentHtml = renderStepsMode(macro);
 
     return `
-      <div class="view-container chains-view" style="max-width: 600px; margin: 0 auto; height: 100%; overflow-y: auto; padding-bottom: 80px; display: block;">
+      <div class="view-container chains-view" style="max-width: 600px; margin: 0 auto; padding-bottom: 120px;">
         ${_mode === 'list' ? `
         <div class="view-header" style="margin-bottom:24px;">
           <button class="btn-back" onclick="LM.router.navigate('#skill-hub/${macroId}')">← Back to Hub</button>
