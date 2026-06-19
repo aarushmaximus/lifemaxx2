@@ -4,15 +4,18 @@ window.LM.components.questModal = (function () {
   const N = window.LM.components.notifications;
 
   let editingId = null;
-  let isPresetMode = false;
+  let interceptSaveCallback = null;
+  let activeExistingData = null;
 
-  function open(id = null, isPreset = false, defaultType = 'task', defaultMacroId = null) {
+  function open(id = null, isPreset = false, defaultType = 'task', defaultMacroId = null, onSaveOverride = null, existingData = null) {
     editingId = id;
     isPresetMode = isPreset;
+    interceptSaveCallback = onSaveOverride;
+    activeExistingData = existingData;
     
-    const item = id 
+    const item = existingData ? existingData : (id 
       ? (isPresetMode ? S.getPreset(id) : S.getQuest(id))
-      : null;
+      : null);
       
     const presets = S.getPresets();
     const macros = S.getMacros();
@@ -686,7 +689,7 @@ You MUST return a JSON object with this exact structure:
     const existing = editingId ? S.getQuest(editingId) : null;
 
     const quest = {
-      id: editingId || S.uid(),
+      id: editingId || activeExistingData?.id || S.uid(),
       name,
       description: desc,
       type: 'task',
@@ -703,6 +706,12 @@ You MUST return a JSON object with this exact structure:
       targetSkills,
       progressIndicator
     };
+
+    if (interceptSaveCallback) {
+      interceptSaveCallback(quest);
+      close();
+      return;
+    }
 
     S.upsertQuest(quest);
     close();

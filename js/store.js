@@ -619,12 +619,23 @@ Please analyze my performance and output a JSON response matching the following 
     const activeIdx = chain.steps.findIndex(s => !s.completedAt);
     const stepIdx = chain.steps.findIndex(s => s.id === stepId);
     if (stepIdx < 0 || stepIdx !== activeIdx) return null;
-    chain.steps[stepIdx].completedAt = Date.now();
-    if (chain.steps[stepIdx].xpAmount) {
-      awardXP([{ macroSkillId: chain.macroId, xpAmount: chain.steps[stepIdx].xpAmount }], false, `Chain: ${chain.name} — ${chain.steps[stepIdx].name}`);
+    
+    const step = chain.steps[stepIdx];
+    step.completedAt = Date.now();
+    
+    // Award XP based on the step's targetSkills (which is a full Quest object now)
+    if (step.targetSkills && step.targetSkills.length > 0) {
+      awardXP(step.targetSkills, false, `Chain: ${chain.name} — ${step.name}`);
+      
+      // Calculate total XP for the return value
+      step.xpAmount = step.targetSkills.reduce((sum, t) => sum + (t.xpAmount || 0), 0);
+    } else if (step.xpAmount) {
+      // Fallback for legacy chain steps that just had xpAmount
+      awardXP([{ macroSkillId: chain.macroId, xpAmount: step.xpAmount }], false, `Chain: ${chain.name} — ${step.name}`);
     }
+    
     saveChainsList(list);
-    return chain.steps[stepIdx];
+    return step;
   }
 
   // ── Habituals ──
