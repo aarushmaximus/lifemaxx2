@@ -712,25 +712,24 @@ window.LM.views.dashboard = (function () {
           
           <!-- STATISTICS TRACKERS -->
           ${ (() => {
-            const stats = S.getQuests().filter(q => q.type === 'statistic' && q.status === 'active');
+            const stats = S.getStatistics();
             if (stats.length === 0) return '';
             return `
               <div class="dash-statistics-wrap" style="margin-top:24px; padding-bottom: 24px;">
                 <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
-                  STATISTIC TRACKERS
+                  DAILY STATISTICS
                 </h2>
                 <div class="quest-grid">
-                  ${stats.map(q => `
+                  ${stats.map(s => `
                     <div class="quest-card" style="border-color:var(--border);">
                       <div class="quest-card-header">
-                        <span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">STATISTIC</span>
+                        <span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">STAT</span>
                       </div>
-                      <h3 class="quest-card-name">${q.name}</h3>
-                      <div class="stat-controls" style="display:flex; align-items:center; gap:12px; margin-top:12px; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:8px; width:max-content; border:1px solid var(--border);" onclick="event.stopPropagation();">
-                        <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.dashboard.updateStatistic('${q.id}', -1)">-</button>
-                        <span style="font-family:var(--font-mono); font-size:1.1rem; font-weight:bold; min-width:40px; text-align:center; color:var(--accent);">${q.currentValue || 0}</span>
-                        <button class="btn-icon" style="background:var(--bg-raised); color:var(--text-1); padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="LM.views.dashboard.updateStatistic('${q.id}', 1)">+</button>
-                        <span style="font-size:0.75rem; color:var(--text-3); font-family:var(--font-display); letter-spacing:0.05em; margin-left:4px;">/ ${q.dailyGoal} ${q.unit || ''}</span>
+                      <h3 class="quest-card-name">${s.name}</h3>
+                      <div class="stat-controls" style="display:flex; align-items:center; gap:8px; margin-top:12px;">
+                        <input type="number" id="stat-val-${s.id}" class="form-input" placeholder="e.g. ${s.goalValue}" style="width:100px; padding:6px 10px;" onclick="event.stopPropagation();">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); LM.views.dashboard.logStatistic('${s.id}')" style="padding:6px 12px;">LOG</button>
+                        <span style="font-size:0.75rem; color:var(--text-3); margin-left:auto;">Goal: ${s.goalValue} ${s.unit}</span>
                       </div>
                     </div>
                   `).join('')}
@@ -1086,14 +1085,46 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  function updateStatistic(questId, delta) {
-    const quest = S.getQuest(questId);
-    if (!quest || quest.type !== 'statistic') return;
-    quest.currentValue = (quest.currentValue || 0) + delta;
-    if (quest.currentValue < 0) quest.currentValue = 0;
-    S.upsertQuest(quest);
+  function logStatistic(statId) {
+    const input = document.getElementById(`stat-val-${statId}`);
+    if (!input || !input.value) return;
+    const loggedValue = parseFloat(input.value);
+    
+    const stat = S.getStatistic(statId);
+    if (!stat) return;
+
+    const finalXP = F.calculateStatisticXP(
+      loggedValue, 
+      stat.goalValue, 
+      stat.maxXP, 
+      stat.penaltyRange, 
+      stat.negativeXP
+    );
+
+    const dateStr = new Date().toDateString();
+    S.addStatLog(stat.id, loggedValue, dateStr, finalXP);
+    
+    if (stat.targetSkill && stat.targetSkill.macroSkillId) {
+      S.awardXP([{ macroSkillId: stat.targetSkill.macroSkillId, microSkillId: stat.targetSkill.microSkillId, xpAmount: finalXP }], false, `Stat Log: ${stat.name} (${loggedValue})`);
+    } else {
+      S.addHistoryEntry('xp_gain', `Stat Log: ${stat.name} (${loggedValue})`, { xp: finalXP });
+      // If no skill is attached, we can just apply to overall, or just let it be a history note.
+      // Usually awardXP applies to overall automatically if macro is missing, but our awardXP requires a skill list.
+      // We will pass an empty array to awardXP just to add to overall.
+      S.awardXP([], false, `Stat Log: ${stat.name} (${loggedValue})`);
+      // wait, awardXP handles overall inside the loop over skills. 
+      // Let's explicitly add to overall.
+      const o = S.getOverall();
+      o.currentXP = (o.currentXP || 0) + finalXP;
+      S.saveOverall(o);
+      S.saveXPLog([...S.getXPLog(), { id: S.uid(), timestamp: Date.now(), amount: finalXP, source: 'statistic' }]);
+      if (finalXP > 0) window.LM.components.notifications.show(`+${finalXP} XP`, 'success');
+      else if (finalXP < 0) window.LM.components.notifications.show(`${finalXP} XP`, 'warning');
+    }
+
+    input.value = '';
     LM.router.render();
   }
 
-  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, updateStatistic, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateQuestCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
+  return { render, init, onDragStart, completeQuest, claimXPMobile, deleteQuest, logStatistic, updateBar, refreshCards, selectMacro, renderHistoryBar, updateCarouselNav, updateQuestCarouselNav, updateMacrosPanel, setQuestType, setHabitualStatus, completeChainStep };
 })();

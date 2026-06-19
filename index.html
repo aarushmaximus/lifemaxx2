@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="css/main.css">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script id="tailwind-config">
+
     tailwind.config = {
       darkMode: "class",
       theme: {
@@ -157,6 +158,7 @@
   <script src="js/components/wheel.js"></script>
   <script src="js/components/quest-modal.js"></script>
   <script src="js/components/skill-modal.js"></script>
+  <script src="js/components/stat-modal.js"></script>
   <script src="js/components/research-timer.js"></script>
   <script src="js/views/dashboard.js"></script>
   <script src="js/views/skill-detail.js"></script>
@@ -175,7 +177,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '80';
+    const APP_VERSION = '83';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {

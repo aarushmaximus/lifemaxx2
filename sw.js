@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-cache-v82';
+const CACHE_NAME = 'lifemaxx-cache-v83';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './js/components/wheel.js',
   './js/components/quest-modal.js',
   './js/components/skill-modal.js',
+  './js/components/stat-modal.js',
   './js/components/research-timer.js',
   './js/views/dashboard.js',
   './js/views/skill-detail.js',

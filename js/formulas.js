@@ -64,5 +64,16 @@ window.LM.formulas = (function () {
     }
   }
 
-  return { computeBase, xpToReachLevel, levelCost, currentLevel, xpIntoCurrentLevel, xpRequiredForNextLevel, progressPercent, formatXP, isWithinTimeWindow };
+  function calculateStatisticXP(loggedValue, goalValue, maxXP, penaltyRange, negativeXP) {
+    const deviation = Math.abs(loggedValue - goalValue);
+    if (penaltyRange <= 0) {
+      return deviation === 0 ? maxXP : -Math.abs(negativeXP);
+    }
+    const penaltyRatio = Math.min(deviation / penaltyRange, 1.0);
+    const spread = maxXP + Math.abs(negativeXP);
+    const finalXP = maxXP - (penaltyRatio * spread);
+    return Math.round(finalXP * 10) / 10; // 1 decimal place
+  }
+
+  return { computeBase, xpToReachLevel, levelCost, currentLevel, xpIntoCurrentLevel, xpRequiredForNextLevel, progressPercent, formatXP, isWithinTimeWindow, calculateStatisticXP };
 })();

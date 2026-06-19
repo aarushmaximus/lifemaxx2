@@ -16,7 +16,9 @@ window.LM.store = (function () {
     coachChats: 'lm_coach_chats',
     history: 'lm_history',
     dailyLogs: 'lm_daily_logs',
-    cellPresets: 'lm_cell_presets'
+    cellPresets: 'lm_cell_presets',
+    statistics: 'lm_statistics',
+    statLogs: 'lm_stat_logs'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -102,6 +104,30 @@ window.LM.store = (function () {
     const quests = getQuests().filter(q => q.presetId !== id || q.status === 'completed');
     save(KEYS.quests, quests);
     emit('change');
+  }
+
+  // ── Statistics ──
+  function getStatistics() { return load(KEYS.statistics) || []; }
+  function saveStatistics(list) { save(KEYS.statistics, list); emit('change'); }
+  function getStatistic(id) { return getStatistics().find(s => s.id === id) || null; }
+
+  function upsertStatistic(stat) {
+    const list = getStatistics();
+    const idx = list.findIndex(s => s.id === stat.id);
+    if (idx >= 0) list[idx] = stat; else list.push(stat);
+    saveStatistics(list);
+  }
+
+  function deleteStatistic(id) {
+    saveStatistics(getStatistics().filter(s => s.id !== id));
+  }
+
+  function getStatLogs() { return load(KEYS.statLogs) || []; }
+  function saveStatLogs(list) { save(KEYS.statLogs, list); emit('change'); }
+  function addStatLog(statId, value, dateStr, xpDelta) {
+    const list = getStatLogs();
+    list.push({ id: 'slog_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), statId, value, dateStr, xpDelta, timestamp: Date.now() });
+    saveStatLogs(list);
   }
 
   // ── Quest Instances ──
@@ -885,6 +911,7 @@ Please analyze my performance and output a JSON response matching the following 
     getMacros, getMacro, upsertMacro, deleteMacro,
     getMicroSkills, upsertMicroSkill, deleteMicroSkill,
     getPresets, getPreset, upsertPreset, deletePreset,
+    getStatistics, getStatistic, upsertStatistic, deleteStatistic, getStatLogs, addStatLog,
     getQuests, getQuest, upsertQuest, deleteQuest,
     getChains, getAllChains, getChain, upsertChain, deleteChain, completeChainStep,
     getHabituals, getHabitual, upsertHabitual, deleteHabitual, checkHabitualReset,
