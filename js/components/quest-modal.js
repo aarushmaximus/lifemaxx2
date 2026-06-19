@@ -6,7 +6,7 @@ window.LM.components.questModal = (function () {
   let editingId = null;
   let isPresetMode = false;
 
-  function open(id = null, isPreset = false) {
+  function open(id = null, isPreset = false, defaultType = 'task') {
     editingId = id;
     isPresetMode = isPreset;
     
@@ -19,7 +19,7 @@ window.LM.components.questModal = (function () {
     const modal = document.getElementById('quest-modal');
     const overlay = document.getElementById('modal-overlay');
 
-    modal.innerHTML = buildHTML(item, presets, macros);
+    modal.innerHTML = buildHTML(item, presets, macros, defaultType);
     modal.classList.add('modal-open');
     overlay.classList.add('overlay-open');
 
@@ -36,10 +36,11 @@ window.LM.components.questModal = (function () {
     _submitting = false;
   }
 
-  function buildHTML(item, presets, macros) {
+  function buildHTML(item, presets, macros, defaultType = 'task') {
     const it = item || {};
     const isReadOnly = it.status && it.status !== 'active';
     const dis = isReadOnly ? 'disabled style="opacity: 0.7; pointer-events: none;"' : '';
+    const typeValue = it.type || defaultType;
     
     // Core parameters
     const name = it.name || '';
@@ -201,8 +202,8 @@ window.LM.components.questModal = (function () {
         <div class="form-group">
           <label>Quest Type</label>
           <select id="qm-type" class="form-input" style="background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-1);" ${dis}>
-            <option value="task" ${it.type !== 'statistic' ? 'selected' : ''}>Standard Task / Action</option>
-            <option value="statistic" ${it.type === 'statistic' ? 'selected' : ''}>Statistic Tracker (e.g., Calories, Steps)</option>
+            <option value="task" ${typeValue !== 'statistic' ? 'selected' : ''}>Standard Task / Action</option>
+            <option value="statistic" ${typeValue === 'statistic' ? 'selected' : ''}>Statistic Tracker (e.g., Calories, Steps)</option>
           </select>
         </div>
 
@@ -213,7 +214,7 @@ window.LM.components.questModal = (function () {
         </div>
 
         <!-- Statistic Fields (Dynamic) -->
-        <div id="qm-statistic-fields" style="display: ${it.type === 'statistic' ? 'flex' : 'none'}; gap: 12px; margin-bottom: 12px;">
+        <div id="qm-statistic-fields" style="display: ${typeValue === 'statistic' ? 'flex' : 'none'}; gap: 12px; margin-bottom: 12px;">
            <div class="form-group" style="flex: 1; margin: 0;">
              <label>Daily Goal</label>
              <input id="qm-stat-goal" class="form-input" type="number" placeholder="e.g. 2000" value="${it.dailyGoal || ''}" ${dis}>

@@ -7,9 +7,14 @@ window.LM.views.skills = (function () {
     const macros = S.getMacros();
     return `
       <div class="skills-view">
-        <div class="skills-view-header">
-          <h1 class="font-display">SKILLS</h1>
-          <p class="skills-view-sub">Tap a skill to manage quests, chains &amp; more</p>
+        <div class="skills-view-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1 class="font-display">SKILLS & STATS</h1>
+            <p class="skills-view-sub">Manage macros, micros &amp; stats</p>
+          </div>
+          <button onclick="LM.components.questModal.open(null, false, 'statistic')" class="btn btn-primary btn-sm" style="display: flex; align-items: center; gap: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">add_chart</span> Add Stat
+          </button>
         </div>
         <div class="skills-grid">
           ${macros.map(m => {

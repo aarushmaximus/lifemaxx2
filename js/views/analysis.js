@@ -451,10 +451,10 @@ window.LM.views.analysis = (function () {
   // ── Main Render ──
   function render() {
     return `
-      <div class="flex flex-col h-screen bg-background overflow-hidden">
+      <div style="padding: 100px 16px 120px; max-width: 900px; margin: 0 auto;">
         
         <!-- Tab Navigation -->
-        <header class="flex-shrink-0 h-16 border-b border-surface-container bg-surface-container-lowest/80 backdrop-blur-md flex items-center px-4 justify-between z-30 pt-safe">
+        <header class="flex items-center justify-between mb-6">
           <h2 class="font-label-lg text-on-surface">Analysis & Chronicle</h2>
           <div class="flex gap-2 bg-surface-container p-1 rounded-xl">
             <button onclick="LM.views.analysis.toggleTab('today')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'today' ? 'bg-primary text-black shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}">Today</button>
@@ -462,19 +462,19 @@ window.LM.views.analysis = (function () {
           </div>
         </header>
 
-        <!-- Main Scrolling Content Area -->
-        <main class="flex-1 overflow-y-auto pb-40">
+        <!-- Main Content -->
+        <div>
           ${activeTab === 'today' ? renderToday() : renderArchive()}
           
           <!-- Embedded AI Coach for Today -->
           ${activeTab === 'today' ? `
-          <div class="px-6 mt-4">
+          <div class="mt-8">
              <div class="border-t border-surface-container pt-6 mb-4">
                <h3 class="font-label-lg text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-primary text-lg">psychology</span> Coach Fletcher</h3>
                <p class="text-xs text-on-surface-variant mt-1">Fletcher is actively monitoring your log grid and stats.</p>
              </div>
              
-             <div id="analysis-chat-history" class="w-full flex flex-col mb-4 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></div>
+             <div id="analysis-chat-history" class="w-full flex flex-col mb-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></div>
              
              <div class="bg-surface-container border border-surface-container-highest rounded-[2rem] p-1.5 flex items-end shadow-lg">
                 <textarea id="coach-input-text" rows="1"
@@ -486,7 +486,7 @@ window.LM.views.analysis = (function () {
               </div>
           </div>
           ` : ''}
-        </main>
+        </div>
       </div>
     `;
   }
