@@ -10,6 +10,21 @@ window.LM.views.analysis = (function () {
   let activeChatId = null;
   let isAiLoading = false;
   
+  let _archiveMode = 'list';
+  let _activeWeekStart = null;
+  
+  function openWeek(weekStart) {
+    _archiveMode = 'week_details';
+    _activeWeekStart = weekStart;
+    LM.router.render();
+  }
+
+  function backToArchiveList() {
+    _archiveMode = 'list';
+    _activeWeekStart = null;
+    LM.router.render();
+  }
+
   const FLETCHER_SYSTEM_INSTRUCTION = 
     `You are Fletcher, an elite, data-obsessed productivity analyst and harsh coach. ` +
     `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
@@ -287,15 +302,12 @@ window.LM.views.analysis = (function () {
   function renderArchive() {
     const logs = S.getDailyLogs();
     const dates = Object.keys(logs).sort((a,b) => new Date(b) - new Date(a));
-    
-    // Always show archive UI even if daily RPG logs are empty, because stat logs might exist!
     const statLogs = S.getStatLogs();
     
     if (dates.length === 0 && statLogs.length === 0) {
       return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No archives found. Your data will appear here after midnight.</div>`;
     }
 
-    // Group dates by week
     const weeks = {};
     const allDatesToGroup = new Set([...dates, ...statLogs.map(sl => sl.dateStr)]);
     
@@ -307,73 +319,128 @@ window.LM.views.analysis = (function () {
 
     const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
 
-    let archiveHtml = `<div class="p-6 space-y-12">`;
-    
-    sortedWeeks.forEach(weekStart => {
-      // Generate the 7 days for this week (Sunday to Saturday)
+    if (_archiveMode === 'list') {
+      let html = `<div class="p-6 space-y-4">
+        <h2 class="font-headline-sm text-primary mb-6">Archive Calendar</h2>`;
+      
+      sortedWeeks.forEach(weekStart => {
+        const wsDate = new Date(weekStart);
+        const weDate = new Date(wsDate);
+        weDate.setDate(wsDate.getDate() + 6);
+        const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+        
+        let trackedHours = 0;
+        let daysWithData = 0;
+        weeks[weekStart].forEach(date => {
+          if (logs[date]) {
+            const cells = logs[date].cells || Array(24).fill({ status: null });
+            trackedHours += cells.filter(c => c.status).length;
+            daysWithData++;
+          }
+        });
+
+        html += `
+          <div onclick="LM.views.analysis.openWeek('${weekStart}')" class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest cursor-pointer hover:border-primary transition-colors flex justify-between items-center group shadow-sm">
+            <div>
+              <h3 class="font-label-lg text-on-surface mb-1 group-hover:text-primary transition-colors">Week of ${weekLabel}</h3>
+              <p class="text-xs text-on-surface-variant">${daysWithData} Days Tracked • ${trackedHours} Total Hours</p>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      return html;
+    } 
+    else if (_archiveMode === 'week_details' && _activeWeekStart) {
       const weekDates = [];
-      const wsDate = new Date(weekStart);
+      const wsDate = new Date(_activeWeekStart);
       for (let i = 0; i < 7; i++) {
         const d = new Date(wsDate);
         d.setDate(wsDate.getDate() + i);
         weekDates.push(d.toDateString());
       }
-      
-      const weekEnd = weekDates[6];
-      const weekLabel = `${weekStart.substring(4, 10)} - ${weekEnd.substring(4, 10)}`;
+      const weDate = new Date(weekDates[6]);
+      const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
 
-      archiveHtml += `<div class="week-group">
-        <h2 class="font-headline-sm text-primary mb-4 border-b border-surface-container-highest pb-2">${weekLabel}</h2>
-        
-        <h3 class="font-label-lg text-on-surface mb-4">Weekly Statistic Trends</h3>
-        ${renderStatChartsForWeek(weekDates)}
-        
-        <h3 class="font-label-lg text-on-surface mb-4 mt-8">Daily RPG Logs</h3>
-        <div class="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">
+      let html = `
+        <div class="p-6">
+          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-2 text-on-surface-variant hover:text-white transition-colors mb-6 font-bold text-sm">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Calendar
+          </button>
+          
+          <h2 class="font-headline-sm text-primary mb-6">${weekLabel}</h2>
+          
+          <h3 class="font-label-lg text-on-surface mb-4">Weekly Statistic Trends</h3>
+          ${renderStatChartsForWeek(weekDates)}
+          
+          <h3 class="font-label-lg text-on-surface mb-4 mt-8">Daily RPG Logs</h3>
+          <div class="space-y-4">
       `;
       
-      // Render cards in reverse chronological (latest first) or chronological?
-      // Since it's a carousel, chronological (Sun to Sat) makes sense. Let's do reverse chronological (Sat to Sun) so latest is first.
       const reverseDates = [...weekDates].reverse();
       reverseDates.forEach(date => {
         const log = logs[date];
         const isFuture = new Date(date) > new Date();
         
         if (!log) {
-          archiveHtml += `
-            <div class="min-w-[280px] bg-surface-container rounded-2xl p-5 border border-surface-container-highest snap-start opacity-50">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
+          if (!isFuture) {
+            html += `
+              <div class="bg-surface-container-highest/50 rounded-2xl p-4 border border-surface-container-highest opacity-60">
+                <div class="flex justify-between items-center">
+                  <h3 class="font-label-md text-on-surface-variant">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
+                  <span class="text-xs text-on-surface-variant">No data</span>
+                </div>
               </div>
-              <div class="text-xs text-on-surface-variant text-center my-4">${isFuture ? 'Future Date' : 'No RPG data for this day'}</div>
-            </div>
-          `;
+            `;
+          }
           return;
         }
 
         const cells = log.cells || Array(24).fill({ status: null });
         const loggedHours = cells.filter(c => c.status).length;
-        archiveHtml += `
-          <div class="min-w-[280px] bg-surface-container rounded-2xl p-5 border border-surface-container-highest snap-start hover:border-primary transition-colors cursor-pointer" onclick="LM.views.analysis.viewHistoricalLog('${date}')">
+        html += `
+          <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest shadow-sm">
             <div class="flex justify-between items-center mb-3">
-              <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
+              <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
               <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours</span>
             </div>
-            <div class="flex gap-1 h-6">
+            <div class="flex gap-1 h-6 mb-3">
               ${cells.map(c => {
                 if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
                 let preset = S.getCellPresets().find(p => p.id === c.status);
                 return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};" title="${c.status}"></div>`;
               }).join('')}
             </div>
+            
+            <!-- Hourly Details Section -->
+            <div class="mt-4 border-t border-surface-container-highest pt-4">
+              <h4 class="text-xs text-on-surface-variant font-bold mb-2 uppercase tracking-wider">Hourly Breakdown</h4>
+              <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                ${cells.map((c, i) => {
+                  if (!c.status) return '';
+                  let preset = S.getCellPresets().find(p => p.id === c.status);
+                  const ampm = i >= 12 ? 'PM' : 'AM';
+                  const h = i % 12 || 12;
+                  return `
+                    <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-surface-container-highest/30">
+                      <span class="font-mono text-xs text-on-surface-variant w-12">${h} ${ampm}</span>
+                      <div class="w-2 h-2 rounded-full" style="background-color: ${preset ? preset.color : '#1D3557'};"></div>
+                      <span class="text-on-surface font-medium">${c.status}</span>
+                      ${c.note ? `<span class="text-xs text-on-surface-variant italic ml-auto max-w-[50%] truncate" title="${c.note}">"${c.note}"</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
           </div>
         `;
       });
-      archiveHtml += `</div></div>`; // End row, end group
-    });
 
-    archiveHtml += `</div>`;
-    return archiveHtml;
+      html += `</div></div>`;
+      return html;
+    }
   }
 
   // ── AI Chat Interface ──
@@ -578,5 +645,5 @@ window.LM.views.analysis = (function () {
     `;
   }
 
-  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus };
+  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeek, backToArchiveList };
 })();
