@@ -720,19 +720,35 @@ window.LM.views.dashboard = (function () {
                   DAILY STATISTICS
                 </h2>
                 <div class="quest-grid">
-                  ${stats.map(s => `
+                  ${stats.map(s => {
+                    const todayStr = new Date().toDateString();
+                    const logs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+                    const todayTotal = logs.reduce((sum, log) => sum + log.value, 0);
+                    const left = s.goalValue - todayTotal;
+                    
+                    let leftHtml = '';
+                    if (left >= 0) {
+                      leftHtml = `<span style="font-size:0.75rem; color:var(--success); font-weight:bold; margin-left:auto;">+${left} ${s.unit || ''} left</span>`;
+                    } else {
+                      leftHtml = `<span style="font-size:0.75rem; color:var(--danger); font-weight:bold; margin-left:auto;">${left} ${s.unit || ''} left</span>`;
+                    }
+
+                    return `
                     <div class="quest-card" style="border-color:var(--border);">
                       <div class="quest-card-header">
                         <span class="quest-type-badge" style="background:var(--bg-raised);color:var(--text-3);border:1px solid var(--border);">STAT</span>
                       </div>
-                      <h3 class="quest-card-name">${s.name}</h3>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <h3 class="quest-card-name">${s.name}</h3>
+                        <div style="font-size:0.85rem; font-weight:bold; color:var(--text-1);">${todayTotal} / ${s.goalValue} <span style="font-size:0.7rem; color:var(--text-3); font-weight:normal;">${s.unit || ''}</span></div>
+                      </div>
                       <div class="stat-controls" style="display:flex; align-items:center; gap:8px; margin-top:12px;">
-                        <input type="number" id="stat-val-${s.id}" class="form-input" placeholder="e.g. ${s.goalValue}" style="width:100px; padding:6px 10px;" onclick="event.stopPropagation();">
+                        <input type="number" id="stat-val-${s.id}" class="form-input" placeholder="Add amt..." style="width:100px; padding:6px 10px;" onclick="event.stopPropagation();">
                         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); LM.views.dashboard.logStatistic('${s.id}')" style="padding:6px 12px;">LOG</button>
-                        <span style="font-size:0.75rem; color:var(--text-3); margin-left:auto;">Goal: ${s.goalValue} ${s.unit}</span>
+                        ${leftHtml}
                       </div>
                     </div>
-                  `).join('')}
+                  `}).join('')}
                 </div>
               </div>
             `;
@@ -1093,27 +1109,24 @@ window.LM.views.dashboard = (function () {
     const stat = S.getStatistic(statId);
     if (!stat) return;
 
-    const finalXP = F.calculateStatisticXP(
-      loggedValue, 
-      stat.goalValue, 
-      stat.maxXP, 
-      stat.penaltyRange, 
-      stat.negativeXP
-    );
+    // Calculate XP based on the *daily total* against the goal, not just this individual log!
+    const todayStr = new Date().toDateString();
+    const todayLogs = S.getStatLogs().filter(l => l.statId === stat.id && l.dateStr === todayStr);
+    const prevTotal = todayLogs.reduce((sum, log) => sum + log.value, 0);
+    const newTotal = prevTotal + loggedValue;
 
-    const dateStr = new Date().toDateString();
-    S.addStatLog(stat.id, loggedValue, dateStr, finalXP);
+    // Calculate XP delta
+    const xpWithNew = F.calculateStatisticXP(newTotal, stat.goalValue, stat.maxXP, stat.penaltyRange, stat.negativeXP);
+    const xpWithOld = F.calculateStatisticXP(prevTotal, stat.goalValue, stat.maxXP, stat.penaltyRange, stat.negativeXP);
+    const finalXP = xpWithNew - xpWithOld;
+
+    S.addStatLog(stat.id, loggedValue, todayStr, finalXP);
     
     if (stat.targetSkill && stat.targetSkill.macroSkillId) {
-      S.awardXP([{ macroSkillId: stat.targetSkill.macroSkillId, microSkillId: stat.targetSkill.microSkillId, xpAmount: finalXP }], false, `Stat Log: ${stat.name} (${loggedValue})`);
+      S.awardXP([{ macroSkillId: stat.targetSkill.macroSkillId, microSkillId: stat.targetSkill.microSkillId, xpAmount: finalXP }], false, `Stat Log: ${stat.name} (+${loggedValue})`);
     } else {
-      S.addHistoryEntry('xp_gain', `Stat Log: ${stat.name} (${loggedValue})`, { xp: finalXP });
-      // If no skill is attached, we can just apply to overall, or just let it be a history note.
-      // Usually awardXP applies to overall automatically if macro is missing, but our awardXP requires a skill list.
-      // We will pass an empty array to awardXP just to add to overall.
-      S.awardXP([], false, `Stat Log: ${stat.name} (${loggedValue})`);
-      // wait, awardXP handles overall inside the loop over skills. 
-      // Let's explicitly add to overall.
+      S.addHistoryEntry('xp_gain', `Stat Log: ${stat.name} (+${loggedValue})`, { xp: finalXP });
+      S.awardXP([], false, `Stat Log: ${stat.name} (+${loggedValue})`);
       const o = S.getOverall();
       o.currentXP = (o.currentXP || 0) + finalXP;
       S.saveOverall(o);

@@ -220,28 +220,21 @@ window.LM.views.analysis = (function () {
   }
 
   // ── Rendering Archive ──
-  function renderStatCharts() {
+  // ── Rendering Archive ──
+  function renderStatChartsForWeek(weekDates) {
     const logs = S.getStatLogs();
     if (logs.length === 0) return '';
-    
-    // Group logs by date, taking the latest value for each stat per day
-    const datesSet = new Set(logs.map(l => l.dateStr));
-    const dates = Array.from(datesSet).sort((a,b) => new Date(a) - new Date(b));
-    if (dates.length === 0) return '';
-
-    const statSeries = {};
     const stats = S.getStatistics();
     if (stats.length === 0) return '';
     
-    stats.forEach(s => {
-      statSeries[s.id] = { name: s.name, unit: s.unit, data: [] };
-    });
+    const statSeries = {};
+    stats.forEach(s => { statSeries[s.id] = { name: s.name, unit: s.unit, goal: s.goalValue, data: [] }; });
 
-    dates.forEach((date, i) => {
+    weekDates.forEach((date, i) => {
       const logsForDate = logs.filter(l => l.dateStr === date);
       Object.keys(statSeries).forEach(statId => {
-        const statLogs = logsForDate.filter(l => l.statId === statId).sort((a,b) => b.timestamp - a.timestamp);
-        const val = statLogs.length > 0 ? statLogs[0].value : 0;
+        const statLogs = logsForDate.filter(l => l.statId === statId);
+        const val = statLogs.reduce((acc, l) => acc + l.value, 0);
         statSeries[statId].data.push({ x: i, y: val, date });
       });
     });
@@ -249,28 +242,31 @@ window.LM.views.analysis = (function () {
     const w = 320;
     const h = 80;
     
-    let html = `<div class="mb-8"><h3 class="font-label-lg text-on-surface mb-4">Statistic Trends</h3><div class="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">`;
+    let html = `<div class="mb-6"><div class="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">`;
 
     Object.values(statSeries).forEach(series => {
-      const maxVal = Math.max(...series.data.map(d => d.y), 1);
+      const maxValY = Math.max(...series.data.map(d => d.y), series.goal * 1.2, 1);
       const points = series.data.map((d, i) => {
         const px = (i / Math.max(1, series.data.length - 1)) * w;
-        const py = h - ((d.y / maxVal) * h);
+        const py = h - ((d.y / maxValY) * h);
         return `${px},${py}`;
       }).join(' ');
+
+      const goalY = h - ((series.goal / maxValY) * h);
 
       html += `
         <div class="min-w-[280px] bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest snap-start">
           <div class="flex justify-between items-end mb-4">
             <span class="font-bold text-sm text-on-surface">${series.name}</span>
-            <span class="text-xs text-primary font-mono">${series.data[series.data.length-1].y} ${series.unit||''} (Latest)</span>
+            <span class="text-xs text-on-surface-variant font-mono">Goal: ${series.goal} ${series.unit || ''}</span>
           </div>
           <svg viewBox="0 -10 ${w} ${h+20}" class="w-full h-24 overflow-visible">
+            <line x1="0" y1="${goalY}" x2="${w}" y2="${goalY}" stroke="var(--border)" stroke-width="2" stroke-dasharray="4" />
             <polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
             ${series.data.map((d, i) => {
               const px = (i / Math.max(1, series.data.length - 1)) * w;
-              const py = h - ((d.y / maxVal) * h);
-              return `<circle cx="${px}" cy="${py}" r="4" fill="var(--surface-container)" stroke="var(--primary)" stroke-width="2"><title>${d.date}: ${d.y}</title></circle>`;
+              const py = h - ((d.y / maxValY) * h);
+              return `<circle cx="${px}" cy="${py}" r="4" fill="var(--bg-base)" stroke="var(--primary)" stroke-width="2"><title>${new Date(d.date).toLocaleDateString(undefined, {weekday:'short'})}: ${d.y}</title></circle>`;
             }).join('')}
           </svg>
         </div>
@@ -281,38 +277,101 @@ window.LM.views.analysis = (function () {
     return html;
   }
 
+  function getWeekStart(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    return d.toDateString();
+  }
+
   function renderArchive() {
     const logs = S.getDailyLogs();
     const dates = Object.keys(logs).sort((a,b) => new Date(b) - new Date(a));
     
-    if (dates.length === 0) {
+    // Always show archive UI even if daily RPG logs are empty, because stat logs might exist!
+    const statLogs = S.getStatLogs();
+    
+    if (dates.length === 0 && statLogs.length === 0) {
       return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No archives found. Your data will appear here after midnight.</div>`;
     }
 
-    let archiveHtml = `<div class="p-6 space-y-4">`;
-    archiveHtml += renderStatCharts();
+    // Group dates by week
+    const weeks = {};
+    const allDatesToGroup = new Set([...dates, ...statLogs.map(sl => sl.dateStr)]);
     
-    dates.forEach(date => {
-      const log = logs[date];
-      // Quick summary
-      const cells = log.cells || Array(24).fill({ status: null });
-      const loggedHours = cells.filter(c => c.status).length;
-      archiveHtml += `
-        <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest cursor-pointer hover:border-primary transition-colors">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
-            <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours Logged</span>
-          </div>
-          <div class="flex gap-1 h-6">
-            ${cells.map(c => {
-              if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
-              let preset = S.getCellPresets().find(p => p.id === c.status);
-              return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};" title="${c.status}"></div>`;
-            }).join('')}
-          </div>
-        </div>
-      `;
+    allDatesToGroup.forEach(date => {
+      const ws = getWeekStart(date);
+      if (!weeks[ws]) weeks[ws] = new Set();
+      weeks[ws].add(date);
     });
+
+    const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
+
+    let archiveHtml = `<div class="p-6 space-y-12">`;
+    
+    sortedWeeks.forEach(weekStart => {
+      // Generate the 7 days for this week (Sunday to Saturday)
+      const weekDates = [];
+      const wsDate = new Date(weekStart);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(wsDate);
+        d.setDate(wsDate.getDate() + i);
+        weekDates.push(d.toDateString());
+      }
+      
+      const weekEnd = weekDates[6];
+      const weekLabel = `${weekStart.substring(4, 10)} - ${weekEnd.substring(4, 10)}`;
+
+      archiveHtml += `<div class="week-group">
+        <h2 class="font-headline-sm text-primary mb-4 border-b border-surface-container-highest pb-2">${weekLabel}</h2>
+        
+        <h3 class="font-label-lg text-on-surface mb-4">Weekly Statistic Trends</h3>
+        ${renderStatChartsForWeek(weekDates)}
+        
+        <h3 class="font-label-lg text-on-surface mb-4 mt-8">Daily RPG Logs</h3>
+        <div class="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">
+      `;
+      
+      // Render cards in reverse chronological (latest first) or chronological?
+      // Since it's a carousel, chronological (Sun to Sat) makes sense. Let's do reverse chronological (Sat to Sun) so latest is first.
+      const reverseDates = [...weekDates].reverse();
+      reverseDates.forEach(date => {
+        const log = logs[date];
+        const isFuture = new Date(date) > new Date();
+        
+        if (!log) {
+          archiveHtml += `
+            <div class="min-w-[280px] bg-surface-container rounded-2xl p-5 border border-surface-container-highest snap-start opacity-50">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
+              </div>
+              <div class="text-xs text-on-surface-variant text-center my-4">${isFuture ? 'Future Date' : 'No RPG data for this day'}</div>
+            </div>
+          `;
+          return;
+        }
+
+        const cells = log.cells || Array(24).fill({ status: null });
+        const loggedHours = cells.filter(c => c.status).length;
+        archiveHtml += `
+          <div class="min-w-[280px] bg-surface-container rounded-2xl p-5 border border-surface-container-highest snap-start hover:border-primary transition-colors cursor-pointer" onclick="LM.views.analysis.viewHistoricalLog('${date}')">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
+              <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours</span>
+            </div>
+            <div class="flex gap-1 h-6">
+              ${cells.map(c => {
+                if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
+                let preset = S.getCellPresets().find(p => p.id === c.status);
+                return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};" title="${c.status}"></div>`;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      });
+      archiveHtml += `</div></div>`; // End row, end group
+    });
+
     archiveHtml += `</div>`;
     return archiveHtml;
   }
