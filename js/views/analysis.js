@@ -60,8 +60,17 @@ window.LM.views.analysis = (function () {
     `You are Fletcher, an elite, data-obsessed productivity analyst and harsh coach. ` +
     `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
     `You read the user's 24-hour log grid and statistic metrics. You point out exactly where they slacked off, and you demand efficiency. ` +
-    `You keep your answers highly analytical, concise (3 sentences max), and you ALWAYS end by asking a probing question based on the hard data provided. ` +
-    `Never break character. Output ONLY plain text. Do not output structured data or code blocks.`;
+    `You keep your answers highly analytical, concise (3 sentences max). Never break character.\n` +
+    `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest). ` +
+    `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not deny quests, just demand clarity. ` +
+    `Once you have concrete details, ASK FOR CONFIRMATION to add it. ` +
+    `If they explicitly confirm (e.g. "yes", "do it"), set "action" to "create_quest" and provide "questData". Otherwise, "action" MUST be null.\n` +
+    `YOU MUST ALWAYS RESPOND IN STRICT JSON FORMAT:\n` +
+    `{\n` +
+    `  "message": "Your actual chat response to the user",\n` +
+    `  "action": null | "create_quest",\n` +
+    `  "questData": { "title": "...", "description": "...", "xp": 100 }\n` +
+    `}`;
 
   function init() {
     render();
@@ -266,7 +275,6 @@ window.LM.views.analysis = (function () {
   }
 
   // ── Rendering Archive ──
-  // ── Rendering Archive ──
   function renderStatChartsForWeek(weekDates) {
     const logs = S.getStatLogs();
     if (logs.length === 0) return '';
@@ -431,17 +439,11 @@ window.LM.views.analysis = (function () {
                 `;
               }).join('')}
             </div>
-            
+
             ${!isCollapsed ? `
-            <div class="animate-fade-in">
-              <div class="flex flex-col gap-2">
-                <button onclick="LM.views.analysis.openWeekDetails('${weekStart}')" class="flex justify-between items-center w-full p-3 rounded-xl bg-surface-container-highest/40 hover:bg-surface-container-highest transition-colors border border-transparent hover:border-border text-sm font-bold text-on-surface">
-                  Info and Details <span class="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
-                <button onclick="LM.views.analysis.openWeekStats('${weekStart}')" class="flex justify-between items-center w-full p-3 rounded-xl bg-surface-container-highest/40 hover:bg-surface-container-highest transition-colors border border-transparent hover:border-border text-sm font-bold text-on-surface">
-                  Statistics Review <span class="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
-              </div>
+            <div class="flex gap-2">
+              <button onclick="LM.views.analysis.openWeekDetails('${weekStart}')" class="flex-1 bg-surface-container-highest hover:bg-white/10 text-on-surface text-xs font-bold py-2 rounded-xl transition-colors">Info & Details <span class="text-[10px] ml-1 opacity-50">></span></button>
+              <button onclick="LM.views.analysis.openWeekStats('${weekStart}')" class="flex-1 bg-surface-container-highest hover:bg-white/10 text-on-surface text-xs font-bold py-2 rounded-xl transition-colors">Statistics Review <span class="text-[10px] ml-1 opacity-50">></span></button>
             </div>
             ` : ''}
           </div>
@@ -449,136 +451,107 @@ window.LM.views.analysis = (function () {
       });
       html += `</div>`;
       return html;
-    } 
-    else if (_archiveMode === 'week_stats' && _activeWeekStart) {
-      const weekDates = [];
+
+    } else if (_archiveMode === 'week_stats') {
+      
       const wsDate = new Date(_activeWeekStart);
+      const weekDates = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(wsDate);
         d.setDate(wsDate.getDate() + i);
-        if (d.getTime() >= CUTOFF_DATE) {
-          weekDates.push(d.toDateString());
-        }
+        weekDates.push(d.toDateString());
       }
-      const weDate = new Date(weekDates[weekDates.length - 1]);
-      const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
 
       let html = `
         <div class="p-6">
-          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-2 text-on-surface-variant hover:text-white transition-colors mb-6 font-bold text-sm">
+          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-1 text-on-surface-variant hover:text-white text-xs font-bold mb-6 transition-colors">
             <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Calendar
           </button>
-          
-          <h2 class="font-headline-sm text-primary mb-2">Statistics Review</h2>
-          <p class="text-xs text-on-surface-variant mb-6">Week of ${weekLabel}</p>
-          
+          <h2 class="font-headline-sm text-primary mb-6">Week Statistics</h2>
           ${renderStatChartsForWeek(weekDates)}
         </div>
       `;
       return html;
-    }
-    else if (_archiveMode === 'week_details' && _activeWeekStart) {
-      const weekDates = [];
+
+    } else {
       const wsDate = new Date(_activeWeekStart);
+      const weekDates = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(wsDate);
         d.setDate(wsDate.getDate() + i);
-        if (d.getTime() >= CUTOFF_DATE) {
-          weekDates.push(d.toDateString());
-        }
+        weekDates.push(d.toDateString());
       }
-      const weDate = new Date(weekDates[weekDates.length - 1]);
-      const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
-
+      
       let html = `
         <div class="p-6">
-          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-2 text-on-surface-variant hover:text-white transition-colors mb-6 font-bold text-sm">
+          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-1 text-on-surface-variant hover:text-white text-xs font-bold mb-6 transition-colors">
             <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Calendar
           </button>
-          
-          <h2 class="font-headline-sm text-primary mb-2">Info & Details</h2>
-          <p class="text-xs text-on-surface-variant mb-8">Week of ${weekLabel}</p>
-          
+          <h2 class="font-headline-sm text-primary mb-6">Week Log Explorer</h2>
           <div class="space-y-4">
       `;
       
-      let sortedDates = [...weekDates];
-      if (_archiveSortOrder === 'desc') sortedDates.reverse();
-
-      const presets = S.getCellPresets();
-
-      sortedDates.forEach(date => {
-        const log = logs[date];
-        const isFuture = new Date(date) > new Date();
-        const isExpanded = _expandedArchiveDate === date;
+      weekDates.forEach(dateStr => {
+        if (new Date(dateStr).getTime() < CUTOFF_DATE) return;
+        const log = logs[dateStr];
+        const isExpanded = _expandedArchiveDate === dateStr;
+        const dayName = new Date(dateStr).toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'});
         
-        if (!log) {
-          if (!isFuture) {
-            html += `
-              <div class="bg-surface-container-highest/30 rounded-2xl p-4 border border-surface-container-highest opacity-50">
-                <div class="flex justify-between items-center">
-                  <h3 class="font-label-md text-on-surface-variant">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
-                  <span class="text-xs text-on-surface-variant">No log data</span>
-                </div>
-              </div>
-            `;
-          }
-          return;
-        }
-
-        const cells = log.cells || Array(24).fill({ status: null });
-        const loggedHours = cells.filter(c => c.status).length;
+        let cCount = 0;
+        if (log) cCount = (log.cells || []).filter(c=>c.status).length;
+        
         html += `
-          <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest shadow-sm transition-all">
-            <div class="flex justify-between items-center cursor-pointer" onclick="LM.views.analysis.toggleArchiveDayExpand('${date}')">
-              <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours</span>
-                <span class="material-symbols-outlined text-on-surface-variant transition-transform ${isExpanded ? 'rotate-90' : ''}">chevron_right</span>
+          <div class="bg-surface-container border border-surface-container-highest rounded-2xl overflow-hidden transition-all duration-300">
+            <div class="p-4 flex justify-between items-center cursor-pointer hover:bg-surface-container-highest/50 transition-colors" onclick="LM.views.analysis.toggleArchiveDayExpand('${dateStr}')">
+              <span class="font-bold text-sm text-on-surface">${dayName}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-on-surface-variant bg-surface-container-highest px-2 py-1 rounded-md">${cCount} hrs</span>
+                <span class="material-symbols-outlined text-on-surface-variant">${isExpanded ? 'expand_less' : 'expand_more'}</span>
               </div>
             </div>
         `;
         
         if (isExpanded) {
-          html += `
-            <div class="mt-6 pt-6 border-t border-surface-container-highest">
-              <h4 class="text-xs text-on-surface-variant font-bold mb-4 uppercase tracking-wider">Hourly Tracker Grid</h4>
-              <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3">
-          `;
-          
-          for (let i = 0; i < 24; i++) {
-            const cell = cells[i] || { status: null };
-            const preset = presets.find(p => p.id === cell.status);
-            const bgColor = preset ? preset.color : (cell.status ? 'var(--primary)' : 'var(--surface-container-highest)');
-            const content = preset ? `<span class="material-symbols-outlined text-xl sm:text-2xl">${preset.icon}</span>` : `<span class="text-xs font-bold text-on-surface-variant">${i % 12 || 12} ${i >= 12 ? 'PM' : 'AM'}</span>`;
+          html += `<div class="p-4 pt-0 border-t border-surface-container-highest/50">`;
+          if (!log || cCount === 0) {
+            html += `<div class="text-center text-xs text-on-surface-variant py-4">No data logged for this day.</div>`;
+          } else {
+            html += `<div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-4">`;
+            const presets = S.getCellPresets();
+            for (let i = 0; i < 24; i++) {
+              const cell = log.cells[i];
+              if (!cell.status) continue;
+              let preset = presets.find(p => p.id === cell.status);
+              let bgColor = preset ? preset.color : '#1D3557';
+              let icon = preset ? `<span class="material-symbols-outlined text-sm text-white">${preset.icon}</span>` : `<span class="text-[10px] text-white">★</span>`;
+              
+              if (cell.macroId) {
+                const macro = S.getMacros().find(m => m.id === cell.macroId);
+                if (macro) {
+                   icon = `<span class="material-symbols-outlined text-sm" style="color: ${macro.accentColor}">adjust</span>`;
+                }
+              }
 
-            html += `
-              <button class="aspect-square rounded-[18px] sm:rounded-2xl border-2 flex items-center justify-center transition-all ${preset ? 'border-transparent text-white shadow-md' : 'border-transparent text-on-surface-variant'} shadow-sm" style="background-color: ${bgColor}; pointer-events: none;">
-                ${content}
-              </button>
-            `;
+              html += `
+                <div class="flex flex-col items-center gap-1 group relative">
+                  <div class="w-10 h-10 rounded-xl flex items-center justify-center border border-white/10 shadow-sm" style="background-color:${bgColor}">
+                    ${icon}
+                  </div>
+                  <span class="text-[9px] text-on-surface-variant">${format12Hour(i)}</span>
+                  ${cell.note ? `
+                    <div class="absolute bottom-full mb-1 w-32 bg-surface-container-highest text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 shadow-xl border border-surface-container">
+                      ${cell.note}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }
+            html += `</div>`;
           }
-          
-          html += `
-              </div>
-            </div>
-          `;
-        } else {
-          // Compact colored bar visualization when collapsed
-          html += `
-            <div class="flex gap-1 h-2 mt-4 opacity-70">
-              ${cells.map(c => {
-                if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
-                let preset = presets.find(p => p.id === c.status);
-                return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};"></div>`;
-              }).join('')}
-            </div>
-          `;
+          html += `</div>`;
         }
-
         html += `</div>`;
       });
-
       html += `</div></div>`;
       return html;
     }
@@ -586,17 +559,13 @@ window.LM.views.analysis = (function () {
 
   // ── AI Chat Interface ──
   function initChat() {
-    const chatId = `chat_${getTodayStr()}`;
-    activeChatId = chatId;
-    
-    // Auto render chat history if we are in today tab
-    const container = document.getElementById('analysis-chat-history');
-    if (container) renderChatHistory();
-
+    if (activeTab !== 'today') return;
     const input = document.getElementById('coach-input-text');
     const send = document.getElementById('btn-coach-send');
+    
+    renderChatHistory();
 
-    if (input) {
+    if (input && send) {
       input.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
@@ -726,7 +695,7 @@ window.LM.views.analysis = (function () {
       `USER'S 24-HOUR LOG TODAY:\n${logCtx}\n\n` +
       `USER'S STATISTIC PROGRESS TODAY:\n${statsCtx || 'No stats tracked today.'}\n\n` +
       `CONVERSATION HISTORY:\n${conversationContext}\n\n` +
-      `Respond directly to the user's latest message based on this data. Ask a probing question based on empty hours or missed metrics. Output ONLY plain text, no JSON.`;
+      `Respond directly to the user's latest message based on this data. Output JSON format as specified in instructions.`;
 
     const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
     removeLoadingMessage();
@@ -735,10 +704,31 @@ window.LM.views.analysis = (function () {
       pushMessage('fletcher', `API Error: ${response.error}`);
     } else {
       try {
-        const text = response.data.candidates[0].content.parts[0].text;
-        pushMessage('fletcher', text.replace(/```json|```/g, '').trim());
+        let text = response.data.candidates[0].content.parts[0].text;
+        text = text.replace(/```json|```/gi, '').trim();
+        const parsed = JSON.parse(text);
+        
+        if (parsed.message) {
+          pushMessage('fletcher', parsed.message);
+        }
+        
+        if (parsed.action === 'create_quest' && parsed.questData) {
+          const newQuest = {
+            id: 'quest_' + Date.now(),
+            name: parsed.questData.title || "New Quest",
+            description: parsed.questData.description || "",
+            type: "daily",
+            status: "active",
+            xpReward: parsed.questData.xp || 100,
+            macroSkillId: null,
+            createdAt: Date.now()
+          };
+          window.LM.store.upsertQuest(newQuest);
+          pushMessage('system', `SYSTEM: Quest '${newQuest.name}' has been added to your Dashboard.`);
+        }
       } catch (e) {
-        pushMessage('fletcher', "Data corrupted. Stop making excuses and fix it.");
+        console.error("Fletcher JSON Parse Error", e);
+        pushMessage('fletcher', "Data corrupted. Stop making excuses and fix the JSON parsing error.");
       }
     }
   }
