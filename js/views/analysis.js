@@ -337,26 +337,6 @@ window.LM.views.analysis = (function () {
 
     const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
 
-  function renderArchive() {
-    const logs = S.getDailyLogs();
-    const dates = Object.keys(logs).sort((a,b) => new Date(b) - new Date(a));
-    const statLogs = S.getStatLogs();
-    
-    if (dates.length === 0 && statLogs.length === 0) {
-      return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No archives found. Your data will appear here after midnight.</div>`;
-    }
-
-    const weeks = {};
-    const allDatesToGroup = new Set([...dates, ...statLogs.map(sl => sl.dateStr)]);
-    
-    allDatesToGroup.forEach(date => {
-      const ws = getWeekStart(date);
-      if (!weeks[ws]) weeks[ws] = new Set();
-      weeks[ws].add(date);
-    });
-
-    const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
-
     if (_archiveMode === 'list') {
       let html = `<div class="p-6 space-y-5">
         <h2 class="font-headline-sm text-primary mb-6">Archive Calendar</h2>`;
