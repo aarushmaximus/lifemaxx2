@@ -12,9 +12,17 @@ window.LM.views.analysis = (function () {
   
   let _archiveMode = 'list';
   let _activeWeekStart = null;
+  let _expandedArchiveDate = null;
   
-  function openWeek(weekStart) {
+  function openWeekDetails(weekStart, dateToExpand = null) {
     _archiveMode = 'week_details';
+    _activeWeekStart = weekStart;
+    _expandedArchiveDate = dateToExpand;
+    LM.router.render();
+  }
+
+  function openWeekStats(weekStart) {
+    _archiveMode = 'week_stats';
     _activeWeekStart = weekStart;
     LM.router.render();
   }
@@ -22,6 +30,16 @@ window.LM.views.analysis = (function () {
   function backToArchiveList() {
     _archiveMode = 'list';
     _activeWeekStart = null;
+    _expandedArchiveDate = null;
+    LM.router.render();
+  }
+
+  function toggleArchiveDayExpand(date) {
+    if (_expandedArchiveDate === date) {
+      _expandedArchiveDate = null;
+    } else {
+      _expandedArchiveDate = date;
+    }
     LM.router.render();
   }
 
@@ -319,14 +337,40 @@ window.LM.views.analysis = (function () {
 
     const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
 
+  function renderArchive() {
+    const logs = S.getDailyLogs();
+    const dates = Object.keys(logs).sort((a,b) => new Date(b) - new Date(a));
+    const statLogs = S.getStatLogs();
+    
+    if (dates.length === 0 && statLogs.length === 0) {
+      return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No archives found. Your data will appear here after midnight.</div>`;
+    }
+
+    const weeks = {};
+    const allDatesToGroup = new Set([...dates, ...statLogs.map(sl => sl.dateStr)]);
+    
+    allDatesToGroup.forEach(date => {
+      const ws = getWeekStart(date);
+      if (!weeks[ws]) weeks[ws] = new Set();
+      weeks[ws].add(date);
+    });
+
+    const sortedWeeks = Object.keys(weeks).sort((a,b) => new Date(b) - new Date(a));
+
     if (_archiveMode === 'list') {
-      let html = `<div class="p-6 space-y-4">
+      let html = `<div class="p-6 space-y-5">
         <h2 class="font-headline-sm text-primary mb-6">Archive Calendar</h2>`;
       
       sortedWeeks.forEach(weekStart => {
+        const weekDates = [];
         const wsDate = new Date(weekStart);
-        const weDate = new Date(wsDate);
-        weDate.setDate(wsDate.getDate() + 6);
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(wsDate);
+          d.setDate(wsDate.getDate() + i);
+          weekDates.push(d.toDateString());
+        }
+        
+        const weDate = new Date(weekDates[6]);
         const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
         
         let trackedHours = 0;
@@ -340,18 +384,78 @@ window.LM.views.analysis = (function () {
         });
 
         html += `
-          <div onclick="LM.views.analysis.openWeek('${weekStart}')" class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest cursor-pointer hover:border-primary transition-colors flex justify-between items-center group shadow-sm">
-            <div>
-              <h3 class="font-label-lg text-on-surface mb-1 group-hover:text-primary transition-colors">Week of ${weekLabel}</h3>
+          <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest chrome-accent shadow-lg mb-6">
+            <div class="mb-4">
+              <h3 class="font-headline-sm text-on-surface mb-1">Week of ${weekLabel}</h3>
               <p class="text-xs text-on-surface-variant">${daysWithData} Days Tracked • ${trackedHours} Total Hours</p>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+            
+            <!-- 7 Squares Heatmap -->
+            <div class="flex justify-between items-center gap-2 mb-6 w-full max-w-[320px]">
+              ${weekDates.map(dateStr => {
+                const isFuture = new Date(dateStr) > new Date();
+                const log = logs[dateStr];
+                let fillClass = 'bg-surface-container-highest border border-surface-container-highest opacity-50';
+                
+                if (log) {
+                  const cells = log.cells || Array(24).fill({ status: null });
+                  const c = cells.filter(x => x.status).length;
+                  if (c > 12) fillClass = 'bg-primary border-primary shadow-[0_0_8px_var(--primary)]';
+                  else if (c > 0) fillClass = 'bg-primary/50 border-primary/50';
+                }
+                
+                const dayLabel = new Date(dateStr).toLocaleDateString(undefined, {weekday:'narrow'});
+                
+                return `
+                  <div class="flex flex-col items-center gap-1">
+                    <span class="text-[0.6rem] text-on-surface-variant font-bold">${dayLabel}</span>
+                    <button onclick="${!isFuture ? `LM.views.analysis.openWeekDetails('${weekStart}', '${dateStr}')` : ''}" 
+                            class="w-8 h-8 rounded-lg ${fillClass} transition-transform hover:scale-110 cursor-pointer ${isFuture ? 'opacity-20 cursor-default' : ''}"
+                            title="${new Date(dateStr).toLocaleDateString()}"></button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <button onclick="LM.views.analysis.openWeekDetails('${weekStart}')" class="flex justify-between items-center w-full p-3 rounded-xl bg-surface-container-highest/40 hover:bg-surface-container-highest transition-colors border border-transparent hover:border-border text-sm font-bold text-on-surface">
+                Info and Details <span class="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+              <button onclick="LM.views.analysis.openWeekStats('${weekStart}')" class="flex justify-between items-center w-full p-3 rounded-xl bg-surface-container-highest/40 hover:bg-surface-container-highest transition-colors border border-transparent hover:border-border text-sm font-bold text-on-surface">
+                Statistics Review <span class="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
         `;
       });
       html += `</div>`;
       return html;
     } 
+    else if (_archiveMode === 'week_stats' && _activeWeekStart) {
+      const weekDates = [];
+      const wsDate = new Date(_activeWeekStart);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(wsDate);
+        d.setDate(wsDate.getDate() + i);
+        weekDates.push(d.toDateString());
+      }
+      const weDate = new Date(weekDates[6]);
+      const weekLabel = `${wsDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${weDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+
+      let html = `
+        <div class="p-6">
+          <button onclick="LM.views.analysis.backToArchiveList()" class="flex items-center gap-2 text-on-surface-variant hover:text-white transition-colors mb-6 font-bold text-sm">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Calendar
+          </button>
+          
+          <h2 class="font-headline-sm text-primary mb-2">Statistics Review</h2>
+          <p class="text-xs text-on-surface-variant mb-6">Week of ${weekLabel}</p>
+          
+          ${renderStatChartsForWeek(weekDates)}
+        </div>
+      `;
+      return html;
+    }
     else if (_archiveMode === 'week_details' && _activeWeekStart) {
       const weekDates = [];
       const wsDate = new Date(_activeWeekStart);
@@ -369,27 +473,27 @@ window.LM.views.analysis = (function () {
             <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Calendar
           </button>
           
-          <h2 class="font-headline-sm text-primary mb-6">${weekLabel}</h2>
+          <h2 class="font-headline-sm text-primary mb-2">Info & Details</h2>
+          <p class="text-xs text-on-surface-variant mb-8">Week of ${weekLabel}</p>
           
-          <h3 class="font-label-lg text-on-surface mb-4">Weekly Statistic Trends</h3>
-          ${renderStatChartsForWeek(weekDates)}
-          
-          <h3 class="font-label-lg text-on-surface mb-4 mt-8">Daily RPG Logs</h3>
           <div class="space-y-4">
       `;
       
       const reverseDates = [...weekDates].reverse();
+      const presets = S.getCellPresets();
+
       reverseDates.forEach(date => {
         const log = logs[date];
         const isFuture = new Date(date) > new Date();
+        const isExpanded = _expandedArchiveDate === date;
         
         if (!log) {
           if (!isFuture) {
             html += `
-              <div class="bg-surface-container-highest/50 rounded-2xl p-4 border border-surface-container-highest opacity-60">
+              <div class="bg-surface-container-highest/30 rounded-2xl p-4 border border-surface-container-highest opacity-50">
                 <div class="flex justify-between items-center">
                   <h3 class="font-label-md text-on-surface-variant">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
-                  <span class="text-xs text-on-surface-variant">No data</span>
+                  <span class="text-xs text-on-surface-variant">No log data</span>
                 </div>
               </div>
             `;
@@ -400,42 +504,54 @@ window.LM.views.analysis = (function () {
         const cells = log.cells || Array(24).fill({ status: null });
         const loggedHours = cells.filter(c => c.status).length;
         html += `
-          <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest shadow-sm">
-            <div class="flex justify-between items-center mb-3">
+          <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest shadow-sm transition-all">
+            <div class="flex justify-between items-center cursor-pointer" onclick="LM.views.analysis.toggleArchiveDayExpand('${date}')">
               <h3 class="font-label-lg text-on-surface">${new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
-              <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours</span>
-            </div>
-            <div class="flex gap-1 h-6 mb-3">
-              ${cells.map(c => {
-                if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
-                let preset = S.getCellPresets().find(p => p.id === c.status);
-                return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};" title="${c.status}"></div>`;
-              }).join('')}
-            </div>
-            
-            <!-- Hourly Details Section -->
-            <div class="mt-4 border-t border-surface-container-highest pt-4">
-              <h4 class="text-xs text-on-surface-variant font-bold mb-2 uppercase tracking-wider">Hourly Breakdown</h4>
-              <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                ${cells.map((c, i) => {
-                  if (!c.status) return '';
-                  let preset = S.getCellPresets().find(p => p.id === c.status);
-                  const ampm = i >= 12 ? 'PM' : 'AM';
-                  const h = i % 12 || 12;
-                  return `
-                    <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-surface-container-highest/30">
-                      <span class="font-mono text-xs text-on-surface-variant w-12">${h} ${ampm}</span>
-                      <div class="w-2 h-2 rounded-full" style="background-color: ${preset ? preset.color : '#1D3557'};"></div>
-                      <span class="text-on-surface font-medium">${c.status}</span>
-                      ${c.note ? `<span class="text-xs text-on-surface-variant italic ml-auto max-w-[50%] truncate" title="${c.note}">"${c.note}"</span>` : ''}
-                    </div>
-                  `;
-                }).join('')}
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-primary font-bold">${loggedHours}/24 Hours</span>
+                <span class="material-symbols-outlined text-on-surface-variant transition-transform ${isExpanded ? 'rotate-90' : ''}">chevron_right</span>
               </div>
             </div>
-
-          </div>
         `;
+        
+        if (isExpanded) {
+          html += `
+            <div class="mt-6 pt-6 border-t border-surface-container-highest">
+              <h4 class="text-xs text-on-surface-variant font-bold mb-4 uppercase tracking-wider">Hourly Tracker Grid</h4>
+              <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3">
+          `;
+          
+          for (let i = 0; i < 24; i++) {
+            const cell = cells[i] || { status: null };
+            const preset = presets.find(p => p.id === cell.status);
+            const bgColor = preset ? preset.color : (cell.status ? 'var(--primary)' : 'var(--surface-container-highest)');
+            const content = preset ? `<span class="material-symbols-outlined text-xl sm:text-2xl">${preset.icon}</span>` : `<span class="text-xs font-bold text-on-surface-variant">${i % 12 || 12} ${i >= 12 ? 'PM' : 'AM'}</span>`;
+
+            html += `
+              <button class="aspect-square rounded-[18px] sm:rounded-2xl border-2 flex items-center justify-center transition-all ${preset ? 'border-transparent text-white shadow-md' : 'border-transparent text-on-surface-variant'} shadow-sm" style="background-color: ${bgColor}; pointer-events: none;">
+                ${content}
+              </button>
+            `;
+          }
+          
+          html += `
+              </div>
+            </div>
+          `;
+        } else {
+          // Compact colored bar visualization when collapsed
+          html += `
+            <div class="flex gap-1 h-2 mt-4 opacity-70">
+              ${cells.map(c => {
+                if (!c.status) return `<div class="flex-1 bg-surface-container-highest rounded-sm opacity-50"></div>`;
+                let preset = presets.find(p => p.id === c.status);
+                return `<div class="flex-1 rounded-sm" style="background-color: ${preset ? preset.color : '#1D3557'};"></div>`;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        html += `</div>`;
       });
 
       html += `</div></div>`;
@@ -645,5 +761,5 @@ window.LM.views.analysis = (function () {
     `;
   }
 
-  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeek, backToArchiveList };
+  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand };
 })();
