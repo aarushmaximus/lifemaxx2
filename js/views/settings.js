@@ -256,13 +256,179 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
+        <!-- Activity Presets Administration Section -->
+        <div class="section-block">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Activity Presets</h2>
+            <button class="btn btn-primary btn-sm" id="btn-create-activity-preset">+ Create Preset</button>
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Manage the activity status presets available in your Hourly Tracker grid.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;" id="activity-presets-container">
+            ${S.getCellPresets().map(p => `
+              <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-raised);padding:10px 14px;border-radius:10px;border:1px solid var(--border);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:32px;height:32px;border-radius:8px;background:${p.color};display:flex;align-items:center;justify-content:center;color:white;box-shadow:0 0 10px ${p.color}40;">
+                    <span class="material-symbols-outlined text-sm">${p.icon}</span>
+                  </div>
+                  <strong style="font-size:0.95rem;color:var(--text-1);">${p.label}</strong>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn-icon btn-edit-activity-preset" data-id="${p.id}" title="Edit Preset">✎</button>
+                  <button class="btn-icon danger btn-delete-activity-preset" data-id="${p.id}" title="Delete Preset">✕</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
       </div>
       
       <!-- App Version Info -->
       <div style="text-align:center; padding: 10px 20px 40px; font-size: 0.75rem; color: var(--text-3); font-family: var(--font-mono); letter-spacing: 0.1em; opacity: 0.7;">
         LIFEMAXX SYSTEM VERSION: v${localStorage.getItem('lm_app_version') || 'UNKNOWN'}
       </div>
+
+      <!-- Activity Preset Modal Container -->
+      <div id="activity-preset-modal-root"></div>
     `;
+  }
+
+  const PRESET_ICONS = [
+    'bedtime', 'work', 'fitness_center', 'coffee', 'laptop_mac', 'menu_book', 
+    'directions_run', 'restaurant', 'self_improvement', 'local_cafe', 'brush', 
+    'music_note', 'movie', 'shopping_cart', 'airplanemode_active', 'favorite', 
+    'water_drop', 'medication', 'group', 'school', 'pets', 'home', 'code', 
+    'sports_esports', 'palette', 'edit_document', 'local_laundry_service',
+    'directions_car', 'train', 'pedal_bike', 'park', 'stadium', 'forest',
+    'spa', 'bathtub', 'shower', 'cleaning_services', 'iron', 'kitchen',
+    'volunteer_activism', 'handshake', 'child_care', 'diversity_1',
+    'mosque', 'church', 'synagogue', 'temple_buddhist', 'temple_hindu',
+    'shopping_bag', 'storefront', 'wallet', 'savings', 'account_balance',
+    'monitor_heart', 'healing', 'psychology', 'dentistry', 'pill',
+    'local_bar', 'local_pizza', 'cake', 'icecream', 'liquor',
+    'headset', 'mic', 'piano', 'videogame_asset', 'tv', 'radio'
+  ];
+
+  function openActivityPresetModal(presetId = null) {
+    const root = document.getElementById('activity-preset-modal-root');
+    if (!root) return;
+
+    let preset = presetId ? S.getCellPresets().find(p => p.id === presetId) : null;
+    let currentIcon = preset ? preset.icon : 'star';
+    let currentColor = preset ? preset.color : '#00ADB5';
+    let currentLabel = preset ? preset.label : '';
+
+    function renderModal() {
+      root.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" id="apm-overlay">
+          <div class="bg-surface-container border border-surface-container-highest rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-6 border-b border-surface-container-highest flex justify-between items-center bg-surface-container-low">
+              <h3 class="font-headline-sm text-primary">${presetId ? 'Edit Preset' : 'Create Preset+'}</h3>
+              <button class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:text-white transition-colors" id="apm-close">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              
+              <!-- Preview -->
+              <div class="flex flex-col items-center gap-2">
+                <span class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Preview</span>
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg transition-colors" style="background-color: ${currentColor};">
+                  <span class="material-symbols-outlined text-3xl" id="apm-preview-icon">${currentIcon}</span>
+                </div>
+                <span class="font-label-lg text-on-surface mt-1" id="apm-preview-label">${currentLabel || 'New Preset'}</span>
+              </div>
+
+              <!-- Name Input -->
+              <div>
+                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Preset Name</label>
+                <input type="text" id="apm-input-name" class="w-full bg-surface-container-highest border border-surface-container-highest rounded-xl px-4 py-3 text-on-surface font-body-md focus:outline-none focus:border-primary transition-colors" placeholder="e.g. Reading" value="${currentLabel}">
+              </div>
+
+              <!-- Color Picker -->
+              <div>
+                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Color Picker</label>
+                <div class="flex items-center gap-4">
+                  <input type="color" id="apm-input-color" value="${currentColor}" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border-none p-0 outline-none">
+                  <span class="font-mono text-sm text-on-surface-variant" id="apm-color-hex">${currentColor}</span>
+                </div>
+              </div>
+
+              <!-- Icon Gallery -->
+              <div>
+                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Icon Gallery</label>
+                <div class="grid grid-cols-5 sm:grid-cols-6 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar p-2 bg-surface-container-low rounded-xl border border-surface-container-highest">
+                  ${PRESET_ICONS.map(icon => `
+                    <button class="aspect-square rounded-xl flex items-center justify-center transition-all ${icon === currentIcon ? 'bg-primary text-black shadow-md scale-110' : 'bg-surface-container-highest text-on-surface-variant hover:text-white hover:bg-surface-container-highest/80'} apm-icon-btn" data-icon="${icon}">
+                      <span class="material-symbols-outlined">${icon}</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+            </div>
+            
+            <div class="p-6 border-t border-surface-container-highest bg-surface-container-low flex justify-end gap-3">
+              <button class="px-5 py-2.5 rounded-xl font-bold text-sm text-on-surface bg-surface-container-highest hover:bg-surface-container-highest/80 transition-colors" id="apm-cancel">Cancel</button>
+              <button class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-primary hover:scale-105 transition-transform" id="apm-save">Save Preset</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Bindings for modal
+      document.getElementById('apm-close').addEventListener('click', () => root.innerHTML = '');
+      document.getElementById('apm-cancel').addEventListener('click', () => root.innerHTML = '');
+      
+      const inputName = document.getElementById('apm-input-name');
+      const inputColor = document.getElementById('apm-input-color');
+      const hexLabel = document.getElementById('apm-color-hex');
+      const previewIcon = document.getElementById('apm-preview-icon');
+      const previewLabel = document.getElementById('apm-preview-label');
+
+      inputName.addEventListener('input', (e) => {
+        currentLabel = e.target.value;
+        previewLabel.textContent = currentLabel || 'New Preset';
+      });
+
+      inputColor.addEventListener('input', (e) => {
+        currentColor = e.target.value;
+        hexLabel.textContent = currentColor;
+        previewIcon.parentElement.style.backgroundColor = currentColor;
+      });
+
+      document.querySelectorAll('.apm-icon-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentIcon = e.currentTarget.dataset.icon;
+          renderModal(); // re-render to update selected state
+        });
+      });
+
+      document.getElementById('apm-save').addEventListener('click', () => {
+        const finalLabel = inputName.value.trim();
+        if (!finalLabel) {
+          alert('Please provide a name for the preset.');
+          return;
+        }
+
+        const newPreset = {
+          id: presetId || 'preset_' + Date.now() + Math.random().toString(36).substring(2, 6),
+          label: finalLabel,
+          color: currentColor,
+          icon: currentIcon
+        };
+
+        S.upsertCellPreset(newPreset);
+        root.innerHTML = '';
+        window.LM.components.notifications.show('Preset Saved!', 'success');
+        window.LM.router.render(); // Redraw settings to show new list
+      });
+    }
+
+    renderModal();
   }
 
   function buildSyncStatusHTML(settings) {
@@ -309,6 +475,31 @@ window.LM.views.settings = (function () {
   }
 
   function init() {
+    
+    // Activity Presets bindings
+    const createActivityPresetBtn = document.getElementById('btn-create-activity-preset');
+    if (createActivityPresetBtn) {
+      createActivityPresetBtn.addEventListener('click', () => {
+        openActivityPresetModal(null);
+      });
+    }
+
+    document.querySelectorAll('.btn-edit-activity-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        if (id) openActivityPresetModal(id);
+      });
+    });
+
+    document.querySelectorAll('.btn-delete-activity-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        if (id && confirm('Are you sure you want to delete this Activity Preset?')) {
+          S.deleteCellPreset(id);
+          window.LM.router.render();
+        }
+      });
+    });
 
     // Create preset click handler
     const createPresetBtn = document.getElementById('btn-create-preset-settings');

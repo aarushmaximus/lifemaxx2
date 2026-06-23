@@ -404,35 +404,36 @@ window.LM.views.analysis = (function () {
               <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors bg-surface-container-highest rounded-full p-1">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
             </div>
             
+            <!-- 7 Squares Heatmap (Always visible) -->
+            <div class="flex justify-between items-center gap-2 mb-6 w-full max-w-[320px]">
+              ${weekDates.map(dateStr => {
+                const isFuture = new Date(dateStr) > new Date() || new Date(dateStr).getTime() < CUTOFF_DATE;
+                const log = logs[dateStr];
+                let fillClass = 'bg-surface-container-highest border border-surface-container-highest opacity-50 text-on-surface-variant';
+                
+                if (log) {
+                  const cells = log.cells || Array(24).fill({ status: null });
+                  const c = cells.filter(x => x.status).length;
+                  if (c > 12) fillClass = 'bg-primary border-primary shadow-[0_0_8px_var(--primary)] text-black';
+                  else if (c > 0) fillClass = 'bg-primary/50 border-primary/50 text-white';
+                }
+                
+                const dayLabel = new Date(dateStr).toLocaleDateString(undefined, {weekday:'narrow'});
+                const dateNum = new Date(dateStr).getDate();
+                
+                return `
+                  <div class="flex flex-col items-center gap-1">
+                    <span class="text-[0.6rem] text-on-surface-variant font-bold">${dayLabel}</span>
+                    <button onclick="${!isFuture ? `LM.views.analysis.openWeekDetails('${weekStart}', '${dateStr}')` : ''}" 
+                            class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[0.65rem] ${fillClass} transition-transform hover:scale-110 cursor-pointer ${isFuture ? 'opacity-20 cursor-default' : ''}"
+                            title="${new Date(dateStr).toLocaleDateString()}">${dateNum}</button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            
             ${!isCollapsed ? `
             <div class="animate-fade-in">
-              <!-- 7 Squares Heatmap -->
-              <div class="flex justify-between items-center gap-2 mb-6 w-full max-w-[320px]">
-                ${weekDates.map(dateStr => {
-                  const isFuture = new Date(dateStr) > new Date() || new Date(dateStr).getTime() < CUTOFF_DATE;
-                  const log = logs[dateStr];
-                  let fillClass = 'bg-surface-container-highest border border-surface-container-highest opacity-50';
-                  
-                  if (log) {
-                    const cells = log.cells || Array(24).fill({ status: null });
-                    const c = cells.filter(x => x.status).length;
-                    if (c > 12) fillClass = 'bg-primary border-primary shadow-[0_0_8px_var(--primary)]';
-                    else if (c > 0) fillClass = 'bg-primary/50 border-primary/50';
-                  }
-                  
-                  const dayLabel = new Date(dateStr).toLocaleDateString(undefined, {weekday:'narrow'});
-                  
-                  return `
-                    <div class="flex flex-col items-center gap-1">
-                      <span class="text-[0.6rem] text-on-surface-variant font-bold">${dayLabel}</span>
-                      <button onclick="${!isFuture ? `LM.views.analysis.openWeekDetails('${weekStart}', '${dateStr}')` : ''}" 
-                              class="w-8 h-8 rounded-lg ${fillClass} transition-transform hover:scale-110 cursor-pointer ${isFuture ? 'opacity-20 cursor-default' : ''}"
-                              title="${new Date(dateStr).toLocaleDateString()}"></button>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-              
               <div class="flex flex-col gap-2">
                 <button onclick="LM.views.analysis.openWeekDetails('${weekStart}')" class="flex justify-between items-center w-full p-3 rounded-xl bg-surface-container-highest/40 hover:bg-surface-container-highest transition-colors border border-transparent hover:border-border text-sm font-bold text-on-surface">
                   Info and Details <span class="material-symbols-outlined text-sm">chevron_right</span>

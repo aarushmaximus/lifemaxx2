@@ -740,6 +740,17 @@ Please analyze my performance and output a JSON response matching the following 
   }
   function saveCellPresets(list) { save(KEYS.cellPresets, list); emit('change'); }
 
+  function upsertCellPreset(preset) {
+    const list = getCellPresets();
+    const idx = list.findIndex(p => p.id === preset.id);
+    if (idx >= 0) list[idx] = preset; else list.push(preset);
+    saveCellPresets(list);
+  }
+
+  function deleteCellPreset(id) {
+    saveCellPresets(getCellPresets().filter(p => p.id !== id));
+  }
+
   function exportBackup() {
     return {
       macros: getMacros(),
@@ -932,7 +943,7 @@ Please analyze my performance and output a JSON response matching the following 
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     getDailyLogs, getDailyLog, upsertDailyLog,
-    getCellPresets, saveCellPresets,
+    getCellPresets, saveCellPresets, upsertCellPreset, deleteCellPreset,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, triggerMidnightReview, getCachedReview, checkMidnightReview,
     getHistory, addHistoryEntry, clearHistory,
