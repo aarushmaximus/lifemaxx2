@@ -1,9 +1,10 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-cache-v98';
+const CACHE_NAME = 'lifemaxx-cache-v99';
 const ASSETS = [
   './',
   './index.html',
   './css/main.css',
+  './css/tailwind-build.css',
   './js/formulas.js',
   './js/store.js',
   './js/ai-engine.js',

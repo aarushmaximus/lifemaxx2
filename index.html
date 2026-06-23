@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+<head>
   <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -18,32 +19,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
   <link rel="stylesheet" href="css/main.css">
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script id="tailwind-config">
+  <link rel="stylesheet" href="css/tailwind-build.css">
 
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          "colors": {
-            "primary": "#e8e8e8", "background": "#000000", "surface": "#060606",
-            "surface-dim": "#060606", "surface-container-lowest": "#050505",
-            "surface-container": "#121212", "surface-container-highest": "#1a1a1a",
-            "on-surface": "#e8e8f0", "on-surface-variant": "#7a7a85",
-            "secondary": "#e0e0e8", "on-secondary": "#0a0a0a",
-            "error": "#ef4444", "on-error": "#ffffff"
-          },
-          "fontFamily": {
-            "headline-md": ["Geist", "sans-serif"], "label-sm": ["Geist", "sans-serif"],
-            "display-xl": ["Geist", "sans-serif"], "headline-lg": ["Geist", "sans-serif"],
-            "body-md": ["Geist", "sans-serif"], "headline-lg-mobile": ["Geist", "sans-serif"],
-            "body-lg": ["Geist", "sans-serif"], "mono": ["Geist", "sans-serif"]
-          }
-        }
-      }
-    }
-  </script>
-</head>
 
 <body>
 
@@ -180,7 +157,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '98';
+    const APP_VERSION = '99';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
