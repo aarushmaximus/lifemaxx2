@@ -398,14 +398,14 @@ window.LM.views.analysis = (function () {
           <div class="bg-surface-container rounded-2xl p-5 border border-surface-container-highest chrome-accent shadow-lg mb-6 transition-all duration-300">
             <div class="flex justify-between items-start mb-4 cursor-pointer group" onclick="LM.views.analysis.toggleWeekCollapse('${weekStart}')">
               <div>
-                <h3 class="font-headline-sm text-on-surface mb-1 group-hover:text-primary transition-colors">Week of ${weekLabel}</h3>
-                <p class="text-xs text-on-surface-variant">${daysWithData} Days Tracked • ${trackedHours} Total Hours</p>
+                <h3 class="font-headline-sm text-on-surface ${!isCollapsed ? 'mb-1' : ''} group-hover:text-primary transition-colors">Week of ${weekLabel}</h3>
+                ${!isCollapsed ? `<p class="text-xs text-on-surface-variant">${daysWithData} Days Tracked • ${trackedHours} Total Hours</p>` : ''}
               </div>
               <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors bg-surface-container-highest rounded-full p-1">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
             </div>
             
             <!-- 7 Squares Heatmap (Always visible) -->
-            <div class="flex justify-between items-center gap-2 mb-6 w-full max-w-[320px]">
+            <div class="flex justify-between items-center gap-2 ${!isCollapsed ? 'mb-6' : ''} w-full max-w-[320px]">
               ${weekDates.map(dateStr => {
                 const isFuture = new Date(dateStr) > new Date() || new Date(dateStr).getTime() < CUTOFF_DATE;
                 const log = logs[dateStr];
