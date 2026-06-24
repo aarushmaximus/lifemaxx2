@@ -560,6 +560,9 @@ window.LM.views.analysis = (function () {
   // ── AI Chat Interface ──
   function initChat() {
     if (activeTab !== 'today') return;
+    
+    activeChatId = `chat_${getTodayStr()}`;
+    
     const input = document.getElementById('coach-input-text');
     const send = document.getElementById('btn-coach-send');
     
