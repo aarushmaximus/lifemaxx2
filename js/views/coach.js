@@ -8,12 +8,21 @@ window.LM.views.coach = (function () {
   let isReviewLoading = false;
   let isSidebarOpen = false;
 
-  const FLETCHER_SYSTEM_INSTRUCTION =
-    `You are Fletcher, the brutal, demanding, uncompromising AI productivity coach inspired by the character Fletcher in Whiplash. ` +
-    `You have ZERO tolerance for slacking, excuses, or mediocrity. You never validate, soothe, or pamper the user. ` +
-    `You speak in a commanding, intense tone, treating the user like a recruit who needs to be broken down and rebuilt into an elite operator. ` +
-    `You use sharp, direct critiques, high-intensity demands, and occasional dark humor. ` +
-    `Keep your answers concise, impactful, and action-oriented. Never break character.`;
+  const FLETCHER_SYSTEM_INSTRUCTION = 
+    `You are Fletcher, an elite, data-obsessed productivity analyst and harsh coach. ` +
+    `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
+    `You read the user's 24-hour log grid and statistic metrics. You point out exactly where they slacked off, and you demand efficiency. ` +
+    `You keep your answers highly analytical, concise (3 sentences max). Never break character.\n` +
+    `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest). ` +
+    `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not deny quests, just demand clarity. ` +
+    `Once you have concrete details, ASK FOR CONFIRMATION to add it. ` +
+    `If they explicitly confirm (e.g. "yes", "do it"), set "action" to "create_quest" and provide "questData". Otherwise, "action" MUST be null.\n` +
+    `YOU MUST ALWAYS RESPOND IN STRICT JSON FORMAT:\n` +
+    `{\n` +
+    `  "message": "Your actual chat response to the user",\n` +
+    `  "action": null | "create_quest",\n` +
+    `  "questData": { "title": "...", "description": "...", "xp": 100 }\n` +
+    `}`;
 
   function getActiveChat() {
     if (!activeChatId) return null;
@@ -190,61 +199,73 @@ window.LM.views.coach = (function () {
     // Auto render to show message immediately before API call
     window.LM.router.render();
     
-    pushMessage('system', "Fletcher is typing...", true);
+    pushMessage('system', "Analyzing data...", true);
 
-    const macros = S.getMacros();
-    const skillsListStr = macros.map(m => `ID: ${m.id}, Name: ${m.name}`).join(' | ');
+    const todayStr = new Date().toDateString();
+    const log = S.getDailyLog(todayStr);
+    const stats = S.getStatistics();
+    
+    // Build context string
+    const cells = log.cells || Array(24).fill({ status: null, note: '' });
+    const logCtx = cells.map((c, i) => `Hour ${i}: ${c.status || 'EMPTY'} (Note: ${c.note || 'none'})`).join('\\n');
+    
+    const statsCtx = stats.map(s => {
+      const sLogs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+      sLogs.sort((a,b) => b.timestamp - a.timestamp);
+      const val = sLogs.length ? sLogs[0].value : 0;
+      return `${s.name}: ${val}/${s.goalValue} ${s.unit||''}`;
+    }).join('\\n');
     
     const chat = getActiveChat();
-    const contextMessages = chat.messages.slice(-8).filter(m => m.sender !== 'system');
-    const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\n');
+    const contextMessages = chat.messages.slice(-6).filter(m => m.sender !== 'system');
+    const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\\n');
 
-    const prompt =
-      `You are Fletcher. The user has these skill modules available: [${skillsListStr}].\n\n` +
-      `Conversation so far:\n${conversationContext}\n\n` +
-      `Respond to the user's latest message in character — brutal, concise, no more than 4 sentences.\n\n` +
-      `If the user is asking you to CREATE a quest, objective, task, or challenge for them (explicitly or implicitly), ` +
-      `you MUST also include a "quests" array in your response. Otherwise omit it.\n\n` +
-      `You MUST respond ONLY with valid JSON in this exact format:\n` +
-      `{"message":"Your brutal Fletcher reply here","quests":[{"name":"Quest Title","description":"Actionable steps","type":"project","targetSkills":[{"macroSkillId":"VALID_ID_FROM_LIST","microSkillId":null,"xpAmount":50}],"status":"active"}]}\n\n` +
-      `If no quests are needed, respond: {"message":"Your reply here"}\n` +
-      `Use ONLY valid macroSkillIds from the provided list. xpAmount between 20 and 200.`;
+    const prompt = 
+      `USER'S 24-HOUR LOG TODAY:\\n${logCtx}\\n\\n` +
+      `USER'S STATISTIC PROGRESS TODAY:\\n${statsCtx || 'No stats tracked today.'}\\n\\n` +
+      `CONVERSATION HISTORY:\\n${conversationContext}\\n\\n` +
+      `Respond directly to the user's latest message based on this data. Output JSON format as specified in instructions.`;
 
     const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
     removeLoadingMessage();
 
     if (response.error) {
-      pushMessage('fletcher', `SYSTEM ERROR: ${response.error}`);
+      pushMessage('fletcher', `API Error: ${response.error}`);
     } else {
       try {
-        const raw = response.data.candidates[0].content.parts[0].text;
-        let parsed;
-        try {
-          parsed = JSON.parse(cleanJSONString(raw));
-        } catch (_) {
-          parsed = { message: raw };
+        let text = response.data.candidates[0].content.parts[0].text;
+        text = text.replace(/```json|```/gi, '').trim();
+        const parsed = JSON.parse(text);
+        
+        if (parsed.message) {
+          pushMessage('fletcher', parsed.message);
         }
-
-        pushMessage('fletcher', parsed.message || raw);
-
-        if (Array.isArray(parsed.quests) && parsed.quests.length > 0) {
-          parsed.quests.forEach(q => {
-            S.upsertQuest({
-              id: S.uid(), name: q.name, description: q.description || '',
-              type: q.type || 'project', status: 'active',
-              isNegativeOnMiss: q.type === 'habit', isNegativeOnComplete: false,
-              targetSkills: q.targetSkills || [], isCustom: true,
-              createdAt: Date.now(), completedAt: null,
-              streak: q.type === 'habit' ? 0 : null,
-              lastCompletedDate: null, lastResetDate: null,
-              subTasks: null, timedResearch: { enabled: false }
-            });
-          });
-          N.show(`Fletcher created ${parsed.quests.length} quest${parsed.quests.length > 1 ? 's' : ''}!`, 'xp');
-          pushMessage('system', `⚡ Quest${parsed.quests.length > 1 ? 's' : ''} spawned: ${parsed.quests.map(q=>q.name).join(', ')}`);
+        
+        if (parsed.action === 'create_quest' && parsed.questData) {
+          const newQuest = {
+            id: 'quest_' + Date.now(),
+            name: parsed.questData.title || "New Quest",
+            description: parsed.questData.description || "",
+            type: "daily",
+            status: "active",
+            xpReward: parsed.questData.xp || 100,
+            macroSkillId: null,
+            createdAt: Date.now(),
+            streak: 0,
+            lastCompletedDate: null,
+            lastResetDate: null,
+            subTasks: null,
+            timedResearch: { enabled: false },
+            isNegativeOnComplete: false,
+            isNegativeOnMiss: false,
+            isCustom: true
+          };
+          window.LM.store.upsertQuest(newQuest);
+          pushMessage('system', `SYSTEM: Quest '${newQuest.name}' has been added to your Dashboard.`);
         }
       } catch (e) {
-        pushMessage('fletcher', "Stop muttering. Speak clearly.");
+        console.error("Fletcher JSON Parse Error", e);
+        pushMessage('fletcher', "Data corrupted. Stop making excuses and fix the JSON parsing error.");
       }
     }
     // Re-render to update chat titles in sidebar

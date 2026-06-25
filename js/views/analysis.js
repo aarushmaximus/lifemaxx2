@@ -753,31 +753,10 @@ window.LM.views.analysis = (function () {
         <!-- Main Content -->
         <div>
           ${activeTab === 'today' ? renderToday() : renderArchive()}
-          
-          <!-- Embedded AI Coach for Today -->
-          ${activeTab === 'today' ? `
-          <div class="mt-8">
-             <div class="border-t border-surface-container pt-6 mb-4">
-               <h3 class="font-label-lg text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-primary text-lg">psychology</span> Coach Fletcher</h3>
-               <p class="text-xs text-on-surface-variant mt-1">Fletcher is actively monitoring your log grid and stats.</p>
-             </div>
-             
-             <div id="analysis-chat-history" class="w-full flex flex-col mb-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></div>
-             
-             <div class="bg-surface-container border border-surface-container-highest rounded-[2rem] p-1.5 flex items-end shadow-lg">
-                <textarea id="coach-input-text" rows="1"
-                  class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-body-sm text-on-surface placeholder:text-on-surface-variant/50 py-3 px-5 resize-none max-h-32"
-                  placeholder="Ask for analysis..."></textarea>
-                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-primary text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
-                  <span class="material-symbols-outlined text-lg">send</span>
-                </button>
-              </div>
-          </div>
-          ` : ''}
         </div>
       </div>
     `;
   }
 
-  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand, toggleArchiveSort, toggleWeekCollapse };
+  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand, toggleArchiveSort, toggleWeekCollapse, setCellMacro };
 })();

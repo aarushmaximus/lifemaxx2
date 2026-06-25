@@ -7,7 +7,8 @@ window.LM.router = (function () {
     settings: window.LM.views.settings,
     skills: window.LM.views.skills,
     me: window.LM.views.me,
-    analysis: window.LM.views.analysis
+    analysis: window.LM.views.analysis,
+    coach: window.LM.views.coach
   };
 
   let currentView = null;
@@ -20,7 +21,7 @@ window.LM.router = (function () {
     if (hash.startsWith('#skill-widgets/')) return { view: 'skillWidgets', skillId: hash.split('/')[1] };
     if (hash.startsWith('#skill/'))         return { view: 'skillDetail',  skillId: hash.split('/')[1] };
     const v = hash.replace('#','');
-    return { view: ['dashboard','quests','settings','skills','me','analysis'].includes(v) ? v : 'dashboard' };
+    return { view: ['dashboard','quests','settings','skills','me','analysis','coach'].includes(v) ? v : 'dashboard' };
   }
 
   function navigate(hash) {
@@ -68,10 +69,10 @@ window.LM.router = (function () {
         el.classList.toggle('text-on-surface-variant', !isActive);
       });
 
-      // Hide FAB on analysis view to avoid overlapping the input bar
+      // Hide FAB on analysis and coach views to avoid overlapping the input bar
       const fab = document.getElementById('fab');
       if (fab) {
-        fab.style.display = route.view === 'analysis' ? 'none' : 'flex';
+        fab.style.display = (route.view === 'analysis' || route.view === 'coach') ? 'none' : 'flex';
       }
 
       // Animate in via CSS class
