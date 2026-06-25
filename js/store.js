@@ -530,7 +530,11 @@ Please analyze my performance and output a JSON response matching the following 
       logs[lastReview] = yesterdayLog;
       saveDailyLogs(logs);
 
-      triggerMidnightReview(lastReview);
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        triggerMidnightReview(lastReview);
+      } else {
+        console.log("Localhost detected: Skipping automatic Midnight Review generation to save API quota.");
+      }
       save(KEYS.lastReviewDate, todayStr);
     }
   }
