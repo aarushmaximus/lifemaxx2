@@ -55,10 +55,6 @@ window.LM.router = (function () {
         window.LM.views.skillWidgets.init(route.skillId);
       } else {
         const view = views[route.view] || views.dashboard;
-        // Reset coach sidebar state on every navigation to coach
-        if (route.view === 'coach' && window.LM.views.coach._resetSidebar) {
-          window.LM.views.coach._resetSidebar();
-        }
         main.innerHTML = view.render();
         view.init();
       }

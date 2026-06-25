@@ -313,8 +313,7 @@ window.LM.views.coach = (function () {
         z-index: 20;
         overflow: hidden;
       ">
-        ${isSidebarOpen ? `<div onclick="LM.views.coach.toggleSidebar()" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:49;"></div>` : ''}
-
+        <!-- Sidebar: slides in from left, always fixed so it never takes layout space -->
         <aside style="
           position: fixed;
           top: 60px;
@@ -351,7 +350,7 @@ window.LM.views.coach = (function () {
           </div>
 
           <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:64px; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px;">
-            <div style="max-width:700px;margin:0 auto;height:100%;">
+            <div style="max-width:700px;margin:0 auto;">
               ${!activeChatId ? emptyStateHTML : ''}
               <div id="coach-chat-history" style="display:flex;flex-direction:column;padding-bottom:12px;${!activeChatId ? 'display:none;' : ''}"></div>
             </div>
@@ -373,7 +372,22 @@ window.LM.views.coach = (function () {
 
   function toggleSidebar() {
     isSidebarOpen = !isSidebarOpen;
-    window.LM.router.render();
+    // Directly manipulate DOM — no full re-render, which would reset isSidebarOpen
+    const aside = document.querySelector('#coach-shell > aside');
+    if (aside) {
+      aside.style.transform = isSidebarOpen ? 'translateX(0)' : 'translateX(-260px)';
+    }
+    // Add/remove the dark overlay
+    let overlay = document.getElementById('coach-sidebar-overlay');
+    if (isSidebarOpen && !overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'coach-sidebar-overlay';
+      overlay.onclick = toggleSidebar;
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:49;';
+      document.getElementById('coach-shell').prepend(overlay);
+    } else if (!isSidebarOpen && overlay) {
+      overlay.remove();
+    }
   }
 
   function _resetSidebar() {
