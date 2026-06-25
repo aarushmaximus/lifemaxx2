@@ -200,8 +200,8 @@ window.LM.views.settings = (function () {
                 <div style="font-size:0.8rem;color:var(--text-3);">Choose the Gemini model version. Flash is faster; Pro is smarter.</div>
               </div>
               <select class="form-input" id="select-gemini-model" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
-                <option value="gemini-2.5-flash" ${s.geminiModel === 'gemini-2.5-flash' || !s.geminiModel || (s.geminiModel && s.geminiModel.includes('1.5')) ? 'selected' : ''}>Gemini 2.5 Flash (Recommended/Fast)</option>
-                <option value="gemini-2.5-pro" ${s.geminiModel === 'gemini-2.5-pro' ? 'selected' : ''}>Gemini 2.5 Pro (Advanced/Smarter)</option>
+                <option value="gemini-2.0-flash" ${s.geminiModel === 'gemini-2.0-flash' || !s.geminiModel || (s.geminiModel && (s.geminiModel.includes('1.5') || s.geminiModel.includes('2.5'))) ? 'selected' : ''}>Gemini 2.0 Flash (Recommended/Free)</option>
+                <option value="gemini-2.0-pro-exp-02-05" ${s.geminiModel === 'gemini-2.0-pro-exp-02-05' ? 'selected' : ''}>Gemini 2.0 Pro (Advanced/Smarter)</option>
               </select>
             </div>
 
@@ -211,9 +211,10 @@ window.LM.views.settings = (function () {
                 <div style="font-size:0.8rem;color:var(--text-3);">Protect against excessive API calls. Set to a higher value for Pro/Paid tiers.</div>
               </div>
               <select class="form-input" id="select-gemini-quota" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
-                <option value="20" ${s.geminiQuotaLimit === 20 || !s.geminiQuotaLimit ? 'selected' : ''}>20 calls (Default/Free)</option>
+                <option value="20" ${s.geminiQuotaLimit === 20 ? 'selected' : ''}>20 calls (Old limit)</option>
                 <option value="100" ${s.geminiQuotaLimit === 100 ? 'selected' : ''}>100 calls</option>
                 <option value="500" ${s.geminiQuotaLimit === 500 ? 'selected' : ''}>500 calls</option>
+                <option value="1000" ${s.geminiQuotaLimit === 1000 || !s.geminiQuotaLimit ? 'selected' : ''}>1000 calls (Default/Free)</option>
                 <option value="99999" ${s.geminiQuotaLimit === 99999 ? 'selected' : ''}>Unlimited (Paid Tier)</option>
               </select>
             </div>
@@ -227,7 +228,7 @@ window.LM.views.settings = (function () {
             </div>
 
             <div style="font-size:0.85rem;color:var(--text-2);">
-              Daily Call Quota Usage: <span id="lbl-ai-quota" style="font-family:var(--font-mono);font-weight:bold;">${window.LM.aiEngine ? window.LM.aiEngine.getQuotaCount() : 0} / ${s.geminiQuotaLimit || 20}</span> calls today (rolling 24h)
+              Daily Call Quota Usage: <span id="lbl-ai-quota" style="font-family:var(--font-mono);font-weight:bold;">${window.LM.aiEngine ? window.LM.aiEngine.getQuotaCount() : 0} / ${s.geminiQuotaLimit || 1000}</span> calls today (rolling 24h)
             </div>
             <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
               <button class="btn btn-ghost btn-sm" id="btn-trigger-review" style="padding:4px 8px;font-size:0.7rem;border-color:var(--accent);color:var(--accent);">Trigger Test Midnight Review</button>
