@@ -431,7 +431,7 @@ window.LM.views.analysis = (function () {
                 
                 return `
                   <div class="flex flex-col items-center gap-1">
-                    <span class="text-[0.6rem] text-on-surface-variant font-bold">${dayLabel}</span>
+                    ${!isCollapsed ? `<span class="text-[0.6rem] text-on-surface-variant font-bold">${dayLabel}</span>` : ''}
                     <button onclick="${!isFuture ? `LM.views.analysis.openWeekDetails('${weekStart}', '${dateStr}')` : ''}" 
                             class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[0.65rem] ${fillClass} transition-transform hover:scale-110 cursor-pointer ${isFuture ? 'opacity-20 cursor-default' : ''}"
                             title="${new Date(dateStr).toLocaleDateString()}">${dateNum}</button>

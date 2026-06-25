@@ -70,6 +70,34 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
+        <!-- Grid Status Presets Administration Section -->
+        <div class="section-block">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Grid Status Presets</h2>
+            <button class="btn btn-primary btn-sm" id="btn-create-grid-preset-settings">+ Custom Preset+</button>
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Customize activity statuses for your 24-hour log grid in the Analysis tab.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;" id="grid-presets-list-container">
+            ${S.getCellPresets().map(p => `
+              <div style="display:flex;align-items:center;gap:12px;background:var(--bg-raised);padding:10px 16px;border-radius:12px;border:1px solid var(--border);flex:1;min-width:140px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:${p.color};display:flex;align-items:center;justify-content:center;">
+                  <span class="material-symbols-outlined text-white" style="font-size:14px;">${p.icon}</span>
+                </div>
+                <div style="flex:1;">
+                  <strong style="font-size:0.9rem;color:var(--text-1);">${p.label}</strong>
+                  <div style="font-size:0.7rem;color:var(--text-3); opacity: 0.7;">ID: ${p.id}</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn-icon btn-edit-grid-preset" data-id="${p.id}" title="Edit Grid Preset" style="padding:4px;">✎</button>
+                  <button class="btn-icon danger btn-delete-grid-preset" data-id="${p.id}" title="Delete Grid Preset" style="padding:4px;">✕</button>
+                </div>
+              </div>
+            `).join('') || `<div style="font-size:0.85rem;color:var(--text-3);text-align:center;padding:12px;width:100%;">No grid presets.</div>`}
+          </div>
+        </div>
+
         <div class="section-block">
           <h2>Gameplay Mechanics</h2>
           <div class="form-group" style="margin-top:16px;gap:12px">
@@ -477,24 +505,24 @@ window.LM.views.settings = (function () {
   function init() {
     
     // Activity Presets bindings
-    const createActivityPresetBtn = document.getElementById('btn-create-activity-preset');
+    const createActivityPresetBtn = document.getElementById('btn-create-grid-preset-settings');
     if (createActivityPresetBtn) {
       createActivityPresetBtn.addEventListener('click', () => {
         openActivityPresetModal(null);
       });
     }
 
-    document.querySelectorAll('.btn-edit-activity-preset').forEach(btn => {
+    document.querySelectorAll('.btn-edit-grid-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.dataset.id;
         if (id) openActivityPresetModal(id);
       });
     });
 
-    document.querySelectorAll('.btn-delete-activity-preset').forEach(btn => {
+    document.querySelectorAll('.btn-delete-grid-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.dataset.id;
-        if (id && confirm('Are you sure you want to delete this Activity Preset?')) {
+        if (id && confirm('Are you sure you want to delete this Grid Preset?')) {
           S.deleteCellPreset(id);
           window.LM.router.render();
         }

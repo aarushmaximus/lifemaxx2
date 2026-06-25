@@ -11,8 +11,9 @@ window.LM.views.coach = (function () {
   const FLETCHER_SYSTEM_INSTRUCTION = 
     `You are Fletcher, an elite, data-obsessed productivity analyst and harsh coach. ` +
     `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
-    `You read the user's 24-hour log grid and statistic metrics. You point out exactly where they slacked off, and you demand efficiency. ` +
-    `You keep your answers highly analytical, concise (3 sentences max). Never break character.\n` +
+    `You have full access to the user's past 7 days of log grid data and stats. ` +
+    `If the user asks you to analyze a day, a specific cell, or a weekly trend, YOU MUST provide a highly detailed, analytical breakdown of that data. Point out exact hours they slacked off, summarize their logged hours, and demand efficiency. ` +
+    `You keep your answers highly analytical, concise (4 sentences max). Never break character.\n` +
     `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest). ` +
     `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not deny quests, just demand clarity. ` +
     `Once you have concrete details, ASK FOR CONFIRMATION to add it. ` +
@@ -265,14 +266,14 @@ window.LM.views.coach = (function () {
     const headerAvatar = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
 
     return `
-      <div class="flex h-screen bg-background overflow-hidden relative">
+      <div class="flex h-screen bg-background overflow-hidden relative pt-[72px]">
         
         <!-- Sidebar Toggle Overlay (Mobile) -->
         ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
 
         <!-- Sidebar (Chat History) -->
-        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed md:relative z-50 w-72 h-full bg-surface-container-lowest border-r border-surface-container flex flex-col">
-          <div class="p-4 border-b border-surface-container">
+        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed md:relative z-50 w-72 h-full bg-surface-container-lowest border-r border-surface-container flex flex-col pt-4 md:pt-0">
+          <div class="p-4 border-b border-surface-container mt-14 md:mt-0">
             <button onclick="LM.views.coach.startNewChat()" class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-black font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
               <span class="material-symbols-outlined text-sm">add</span> New Chat
             </button>
