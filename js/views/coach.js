@@ -14,14 +14,15 @@ window.LM.views.coach = (function () {
     `You have full access to the user's past 7 days of log grid data and stats. ` +
     `If the user asks you to analyze a day, a specific cell, or a weekly trend, YOU MUST provide a highly detailed, analytical breakdown of that data. Point out exact hours they slacked off, summarize their logged hours, and demand efficiency. ` +
     `You keep your answers highly analytical, concise (4 sentences max). Never break character.\n` +
-    `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest). ` +
-    `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not deny quests, just demand clarity. ` +
-    `Once you have concrete details, ASK FOR CONFIRMATION to add it. ` +
-    `If they explicitly confirm (e.g. "yes", "do it"), set "action" to "create_quest" and provide "questData". Otherwise, "action" MUST be null.\n` +
+    `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest or /cquest). ` +
+    `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not propose anything yet, just demand clarity. ` +
+    `Once you have concrete details, DO NOT CREATE IT DIRECTLY. You must PROPOSE the quest to the user by setting "action" to "propose_quest" and providing the "questData". ` +
+    `The user will then see a UI card and can either Accept it or ask you to Modify it. ` +
+    `If the user asks you to modify a proposed quest, tweak the questData and propose it again.\n` +
     `YOU MUST ALWAYS RESPOND IN STRICT JSON FORMAT:\n` +
     `{\n` +
     `  "message": "Your actual chat response to the user",\n` +
-    `  "action": null | "create_quest",\n` +
+    `  "action": null | "propose_quest",\n` +
     `  "questData": { "title": "...", "description": "...", "xp": 100 }\n` +
     `}`;
 
@@ -142,27 +143,16 @@ window.LM.views.coach = (function () {
           pushMessage('fletcher', parsed.message);
         }
         
-        if (parsed.action === 'create_quest' && parsed.questData) {
-          const newQuest = {
-            id: 'quest_' + Date.now(),
-            name: parsed.questData.title || "New Quest",
-            description: parsed.questData.description || "",
-            type: "daily",
-            status: "active",
-            xpReward: parsed.questData.xp || 100,
-            macroSkillId: null,
-            createdAt: Date.now(),
-            streak: 0,
-            lastCompletedDate: null,
-            lastResetDate: null,
-            subTasks: null,
-            timedResearch: { enabled: false },
-            isNegativeOnComplete: false,
-            isNegativeOnMiss: false,
-            isCustom: true
-          };
-          window.LM.store.upsertQuest(newQuest);
-          pushMessage('system', `SYSTEM: Quest '${newQuest.name}' has been added to your Dashboard.`);
+        if (parsed.action === 'propose_quest' && parsed.questData) {
+          // Push a system message containing the proposal
+          let chat = getActiveChat();
+          chat.messages.push({
+            sender: 'fletcher_proposal',
+            text: '',
+            questData: parsed.questData,
+            timestamp: Date.now()
+          });
+          S.upsertCoachChat(chat);
         }
       } catch (e) {
         console.error("Fletcher JSON Parse Error", e);
@@ -212,6 +202,41 @@ window.LM.views.coach = (function () {
               <div class="bg-surface-container border border-surface-container-highest rounded-2xl rounded-bl-sm px-5 py-4 shadow-md">
                 <p class="font-body-md text-on-surface tracking-wide leading-relaxed">${textFmt}</p>
                 <span class="text-[10px] font-label-sm text-on-surface-variant mt-2 block opacity-60">${getTimeStr(m.timestamp)}</span>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      if (m.sender === 'fletcher_proposal') {
+        const q = m.questData;
+        const msgIndex = chat.messages.indexOf(m);
+        const avatarUrl = S.getSettings().coachAvatarUrl;
+        const avatarContent = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
+        
+        // If quest is already accepted, we hide the buttons or gray them out
+        const isAccepted = m.accepted;
+        const buttonsHtml = isAccepted 
+          ? `<div class="text-center font-bold text-xs text-primary/70 py-2 bg-surface-container border border-surface-container-highest rounded-xl">QUEST ACCEPTED</div>`
+          : `<div class="flex gap-2 w-full">
+               <button onclick="LM.views.coach.handleProposalAction('modify', ${msgIndex})" class="flex-1 py-2 rounded-xl bg-surface border border-surface-container-highest text-on-surface-variant font-bold text-xs hover:bg-surface-container transition-colors">MODIFY</button>
+               <button onclick="LM.views.coach.handleProposalAction('accept', ${msgIndex})" class="flex-1 py-2 rounded-xl bg-primary text-black font-bold text-xs hover:opacity-90 transition-opacity shadow-[0_0_10px_rgba(255,255,255,0.3)]">ACCEPT</button>
+             </div>`;
+
+        return `
+          <div class="flex justify-start mb-6 w-full px-4 md:px-0">
+            <div class="flex items-end gap-3 w-full md:max-w-[75%]">
+              <div class="w-8 h-8 rounded-full flex-shrink-0 bg-surface-container border border-surface-container-highest overflow-hidden flex items-center justify-center font-bold text-sm text-primary shadow-sm mb-1">
+                ${avatarContent}
+              </div>
+              <div class="bg-[#121212] border border-[#1a1a1a] rounded-2xl px-4 py-4 shadow-md w-full max-w-sm">
+                <div class="font-label-sm text-[#e8e8e8] mb-2 flex items-center gap-1 tracking-widest"><span class="material-symbols-outlined text-sm">assignment</span> PROPOSED QUEST</div>
+                <div class="font-body-lg font-bold text-[#e8e8f0] mb-1">${q.title}</div>
+                <div class="font-body-sm text-[#7a7a85] mb-3">${q.description}</div>
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="bg-[#1a1a1a] text-[#e8e8e8] px-2 py-1 rounded text-xs font-bold border border-[#2a2a2a]">+${q.xp} XP</span>
+                </div>
+                ${buttonsHtml}
+                <span class="text-[10px] font-label-sm text-[#7a7a85] mt-3 block text-right">${getTimeStr(m.timestamp)}</span>
               </div>
             </div>
           </div>`;
@@ -358,6 +383,24 @@ window.LM.views.coach = (function () {
 
               <!-- Sticky Input Bar -->
               <div style="position:sticky; bottom:0; padding:10px 16px 12px; background:#000000; z-index:10; border-top:1px solid #121212;">
+                <!-- Command Popup -->
+                <div id="coach-command-popup" style="display:none; position:absolute; bottom:100%; left:16px; right:16px; margin-bottom:8px; background:#121212; border:1px solid #1a1a1a; border-radius:12px; padding:8px; z-index:20; box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
+                  <div class="cmd-item" onclick="LM.views.coach.insertCommand('/quest ')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+                    <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">flag</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#fff;">/quest [goal]</div>
+                      <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Generate a single quest</div>
+                    </div>
+                  </div>
+                  <div class="cmd-item" onclick="LM.views.coach.insertCommand('/cquest ')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+                    <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">link</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#fff;">/cquest [goal]</div>
+                      <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Generate a multi-step chain quest</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div style="display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px;">
                   <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:#e8e8f0;max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
                   <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
@@ -414,13 +457,67 @@ window.LM.views.coach = (function () {
     else if (type === 'plan_tomorrow') sendChatMessage("Help me plan my day for tomorrow.");
   }
 
+  function insertCommand(cmd) {
+    const input = document.getElementById('coach-input-text');
+    if (input) {
+      input.value = cmd;
+      input.focus();
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+
+  function handleProposalAction(action, msgIndex) {
+    let chat = getActiveChat();
+    if (!chat || !chat.messages[msgIndex]) return;
+    let msg = chat.messages[msgIndex];
+
+    if (action === 'modify') {
+      const input = document.getElementById('coach-input-text');
+      if (input) {
+        input.value = `I want to modify the "${msg.questData.title}" proposal. Change it so that: `;
+        input.focus();
+        input.dispatchEvent(new Event('input'));
+      }
+    } else if (action === 'accept') {
+      if (msg.accepted) return;
+      
+      const newQuest = {
+        id: 'quest_' + Date.now(),
+        name: msg.questData.title || "New Quest",
+        description: msg.questData.description || "",
+        type: "daily",
+        status: "active",
+        xpReward: msg.questData.xp || 100,
+        macroSkillId: null,
+        createdAt: Date.now(),
+        streak: 0,
+        lastCompletedDate: null,
+        lastResetDate: null,
+        subTasks: null,
+        timedResearch: { enabled: false },
+        isNegativeOnComplete: false,
+        isNegativeOnMiss: false,
+        isCustom: true
+      };
+      S.upsertQuest(newQuest);
+      
+      msg.accepted = true;
+      S.upsertCoachChat(chat);
+      renderHistory();
+      
+      if (window.LM.components.notifications) {
+        window.LM.components.notifications.show(`Quest added to dashboard!`);
+      }
+    }
+  }
+
   function init() {
     if (activeChatId) renderHistory();
 
     const input = document.getElementById('coach-input-text');
     const send = document.getElementById('btn-coach-send');
 
-    // Auto-resize textarea
+    // Auto-resize textarea and command popup
     if (input) {
       input.addEventListener('input', function() {
         this.style.height = 'auto';
@@ -429,6 +526,16 @@ window.LM.views.coach = (function () {
         if (send) {
           send.disabled = !hasText;
           send.style.opacity = hasText ? '1' : '.5';
+        }
+
+        // Command Popup Logic
+        const popup = document.getElementById('coach-command-popup');
+        if (popup) {
+          if (this.value === '/' || (this.value.startsWith('/') && !this.value.includes(' '))) {
+            popup.style.display = 'block';
+          } else {
+            popup.style.display = 'none';
+          }
         }
       });
       if (send) {
@@ -465,6 +572,8 @@ window.LM.views.coach = (function () {
     toggleSidebar,
     changeAvatar,
     triggerAction,
-    _resetSidebar
+    _resetSidebar,
+    insertCommand,
+    handleProposalAction
   };
 })();
