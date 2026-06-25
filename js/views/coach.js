@@ -229,125 +229,145 @@ window.LM.views.coach = (function () {
         </div>`;
     }).join('');
 
-    // Auto scroll to bottom
+    // Auto scroll to bottom of the fixed scroll area
     setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
+      const area = document.getElementById('coach-scroll-area');
+      if (area) area.scrollTop = area.scrollHeight;
     }, 10);
   }
 
   function render() {
     const chats = S.getCoachChats().sort((a,b) => b.createdAt - a.createdAt);
     const hasChats = chats.length > 0;
-    
-    // Sidebar Chat List
-    const chatListHTML = chats.map(c => `
-      <div class="group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors mb-1 ${activeChatId === c.id ? 'bg-surface-container-highest' : 'hover:bg-surface-container'}" onclick="LM.views.coach.loadChat('${c.id}')">
-        <div class="flex flex-col truncate pr-2">
-          <span class="font-label-md text-on-surface truncate">${c.title}</span>
-          <span class="text-xs text-on-surface-variant">${new Date(c.createdAt).toLocaleDateString()}</span>
+
+    // Group chats by date for ChatGPT-style sidebar
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const groups = { Today: [], Yesterday: [], Older: [] };
+    chats.forEach(c => {
+      const d = new Date(c.createdAt).toDateString();
+      if (d === today) groups.Today.push(c);
+      else if (d === yesterday) groups.Yesterday.push(c);
+      else groups.Older.push(c);
+    });
+
+    const renderGroup = (label, list) => {
+      if (!list.length) return '';
+      return `
+        <div class="px-2 pt-3 pb-1">
+          <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-on-surface-variant);opacity:.6;">${label}</span>
         </div>
-        <button class="text-error opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 p-1" onclick="LM.views.coach.deleteChat('${c.id}', event)">
-          <span class="material-symbols-outlined text-sm">delete</span>
-        </button>
-      </div>
-    `).join('');
-
-    // Empty State (New Chat) - ChatGPT Style
-    const emptyStateHTML = !activeChatId ? `
-      <div class="flex flex-col items-center justify-center h-full text-center px-4 max-w-lg mx-auto pb-32 pt-16">
-        <div class="w-16 h-16 rounded-full border border-surface-container-highest mb-4 flex items-center justify-center bg-surface-container shadow-sm">
-           <span class="font-bold text-2xl text-on-surface">F</span>
-        </div>
-        <h2 class="font-label-lg text-on-surface mb-8 tracking-tight opacity-80">Coach Fletcher</h2>
-        
-        <div class="flex flex-col gap-3 w-full max-w-md">
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('analyze_today')">
-            <span class="material-symbols-outlined text-primary text-xl">today</span>
-            <span class="font-bold text-sm text-on-surface flex-1">Analyze my logging for today</span>
-            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
-          </button>
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('analyze_week')">
-            <span class="material-symbols-outlined text-primary text-xl">date_range</span>
-            <span class="font-bold text-sm text-on-surface flex-1">Review my performance this week</span>
-            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
-          </button>
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('plan_tomorrow')">
-            <span class="material-symbols-outlined text-primary text-xl">event_upcoming</span>
-            <span class="font-bold text-sm text-on-surface flex-1">Help me plan tomorrow's schedule</span>
-            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
-          </button>
-        </div>
-      </div>
-    ` : '';
-
-    const avatarUrl = S.getSettings().coachAvatarUrl;
-    const headerAvatar = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
-
-    return `
-      <div class="w-full relative pb-40 pt-4">
-        
-        <!-- Sidebar Toggle Overlay (Mobile) -->
-        ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" style="top: 0; bottom: 0; left: 0; right: 0;" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
-
-        <!-- Sidebar (Chat History) -->
-        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed z-50 w-72 bg-surface-container-lowest border-r border-surface-container flex flex-col" style="top: 70px; bottom: 80px; left: 0;">
-          <div class="p-4 border-b border-surface-container">
-            <button onclick="LM.views.coach.startNewChat()" class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-black font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-sm">
-              <span class="material-symbols-outlined text-sm">edit_square</span> New Chat
+        ${list.map(c => `
+          <div onclick="LM.views.coach.loadChat('${c.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;background:${activeChatId === c.id ? 'var(--color-surface-container-highest)' : 'transparent'};transition:background .15s;">
+            <span style="font-size:13px;font-weight:500;color:var(--color-on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;">${c.title}</span>
+            <button onclick="LM.views.coach.deleteChat('${c.id}', event)" style="background:none;border:none;color:var(--color-error);opacity:0;padding:2px 4px;border-radius:6px;cursor:pointer;flex-shrink:0;font-size:16px;line-height:1;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0'">
+              <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto p-3 scroll-smooth">
-            <div class="text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-widest pl-1">History</div>
-            ${hasChats ? chatListHTML : '<div class="text-on-surface-variant text-xs mt-4 pl-1">No past conversations.</div>'}
+        `).join('')}
+      `;
+    };
+
+    const chatListHTML = renderGroup('Today', groups.Today) + renderGroup('Yesterday', groups.Yesterday) + renderGroup('Older', groups.Older);
+
+    const avatarUrl = S.getSettings().coachAvatarUrl;
+    const headerAvatar = avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `F`;
+
+    // Empty state — shown when no active chat
+    const emptyStateHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:16px 16px 80px;text-align:center;">
+        <div style="width:48px;height:48px;border-radius:50%;border:1px solid var(--color-surface-container-highest);background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+          <span style="font-size:20px;font-weight:700;color:var(--color-on-surface);">F</span>
+        </div>
+        <h2 style="font-size:16px;font-weight:600;color:var(--color-on-surface);margin:0 0 4px;">Coach Fletcher</h2>
+        <p style="font-size:13px;color:var(--color-on-surface-variant);margin:0 0 28px;">What do you need today?</p>
+        <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:360px;">
+          <button onclick="LM.views.coach.triggerAction('analyze_today')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid var(--color-surface-container-highest);background:var(--color-surface-container);cursor:pointer;text-align:left;width:100%;transition:background .15s;" onmouseenter="this.style.background='var(--color-surface-container-highest)'" onmouseleave="this.style.background='var(--color-surface-container)'">
+            <span class="material-symbols-outlined" style="color:var(--color-primary);font-size:20px;">today</span>
+            <span style="font-size:13px;font-weight:500;color:var(--color-on-surface);flex:1;">Analyze my logging for today</span>
+            <span class="material-symbols-outlined" style="color:var(--color-on-surface-variant);font-size:16px;">arrow_forward_ios</span>
+          </button>
+          <button onclick="LM.views.coach.triggerAction('analyze_week')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid var(--color-surface-container-highest);background:var(--color-surface-container);cursor:pointer;text-align:left;width:100%;transition:background .15s;" onmouseenter="this.style.background='var(--color-surface-container-highest)'" onmouseleave="this.style.background='var(--color-surface-container)'">
+            <span class="material-symbols-outlined" style="color:var(--color-primary);font-size:20px;">date_range</span>
+            <span style="font-size:13px;font-weight:500;color:var(--color-on-surface);flex:1;">Review my performance this week</span>
+            <span class="material-symbols-outlined" style="color:var(--color-on-surface-variant);font-size:16px;">arrow_forward_ios</span>
+          </button>
+          <button onclick="LM.views.coach.triggerAction('plan_tomorrow')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid var(--color-surface-container-highest);background:var(--color-surface-container);cursor:pointer;text-align:left;width:100%;transition:background .15s;" onmouseenter="this.style.background='var(--color-surface-container-highest)'" onmouseleave="this.style.background='var(--color-surface-container)'">
+            <span class="material-symbols-outlined" style="color:var(--color-primary);font-size:20px;">event_upcoming</span>
+            <span style="font-size:13px;font-weight:500;color:var(--color-on-surface);flex:1;">Help me plan tomorrow's schedule</span>
+            <span class="material-symbols-outlined" style="color:var(--color-on-surface-variant);font-size:16px;">arrow_forward_ios</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    // The entire coach UI lives in a fixed overlay between the two navbars.
+    // This prevents it from being part of the page scroll — exactly like ChatGPT.
+    return `
+      <div id="coach-shell" style="
+        position: fixed;
+        top: 60px;
+        bottom: 80px;
+        left: 0;
+        right: 0;
+        display: flex;
+        background: var(--color-background);
+        z-index: 20;
+        overflow: hidden;
+      ">
+        <!-- Overlay for mobile sidebar -->
+        ${isSidebarOpen ? `<div onclick="LM.views.coach.toggleSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;"></div>` : ''}
+
+        <!-- Sidebar -->
+        <aside style="
+          position: ${isSidebarOpen ? 'fixed' : 'relative'};
+          ${isSidebarOpen ? 'top:60px;bottom:80px;left:0;z-index:50;' : ''}
+          width: 260px;
+          flex-shrink: 0;
+          background: var(--color-surface-container-lowest);
+          border-right: 1px solid var(--color-surface-container);
+          display: flex;
+          flex-direction: column;
+          transform: ${isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)'};
+          transition: transform .25s ease;
+        " class="coach-sidebar">
+          <div style="padding:12px;border-bottom:1px solid var(--color-surface-container);">
+            <button onclick="LM.views.coach.startNewChat()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;background:var(--color-primary);color:#000;font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;">
+              <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span> New Chat
+            </button>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:4px 8px 12px;">
+            ${hasChats ? chatListHTML : '<div style="font-size:12px;color:var(--color-on-surface-variant);padding:16px 8px;">No conversations yet.</div>'}
           </div>
         </aside>
 
-        <!-- Main Chat Area -->
-        <main class="w-full flex flex-col relative min-h-full" style="padding-left: 0;">
-          <style>
-            @media (min-width: 768px) {
-              main { padding-left: 18rem !important; }
-              .input-pill-container { padding-left: 18rem !important; }
-            }
-          </style>
-          
-          <!-- Sleek Header (Normal flow, scrolls up) -->
-          <header class="h-16 flex items-center px-4 md:px-8 justify-between z-30 mb-4">
-            <div class="flex items-center gap-3">
-              <button class="md:hidden p-2 -ml-2 text-on-surface hover:text-primary transition-colors" onclick="LM.views.coach.toggleSidebar()">
-                <span class="material-symbols-outlined text-2xl">menu</span>
+        <!-- Main area -->
+        <main style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+
+          <!-- Coach top bar -->
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--color-surface-container);flex-shrink:0;">
+            <button onclick="LM.views.coach.toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--color-on-surface);display:flex;align-items:center;">
+              <span class="material-symbols-outlined" style="font-size:24px;">menu</span>
+            </button>
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--color-surface-container);border:1px solid var(--color-surface-container-highest);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--color-on-surface);overflow:hidden;cursor:pointer;" onclick="LM.views.coach.changeAvatar()">${headerAvatar}</div>
+            <span style="font-size:14px;font-weight:600;color:var(--color-on-surface);">Coach Fletcher</span>
+          </div>
+
+          <!-- Messages scroll area -->
+          <div id="coach-scroll-area" style="flex:1;overflow-y:auto;padding:16px;">
+            <div style="max-width:700px;margin:0 auto;height:100%;">
+              ${!activeChatId ? emptyStateHTML : ''}
+              <div id="coach-chat-history" style="display:flex;flex-direction:column;padding-bottom:12px;${!activeChatId ? 'display:none;' : ''}"></div>
+            </div>
+          </div>
+
+          <!-- Input bar -->
+          <div style="padding:10px 16px 12px;border-top:1px solid var(--color-surface-container);flex-shrink:0;">
+            <div style="max-width:700px;margin:0 auto;display:flex;align-items:flex-end;gap:8px;background:var(--color-surface-container);border:1px solid var(--color-surface-container-highest);border-radius:16px;padding:8px 8px 8px 16px;">
+              <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:var(--color-on-surface);max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
+              <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
+                <span class="material-symbols-outlined" style="font-size:18px;color:#000;">arrow_upward</span>
               </button>
-              <div class="w-8 h-8 rounded-full bg-surface-container border border-surface-container-highest flex items-center justify-center text-on-surface font-bold overflow-hidden cursor-pointer" onclick="LM.views.coach.changeAvatar()" title="Change Avatar">
-                ${headerAvatar}
-              </div>
-              <div class="flex flex-col">
-                <h2 class="font-label-lg text-on-surface leading-tight">Coach Fletcher</h2>
-              </div>
-            </div>
-          </header>
-
-          <!-- Chat Content -->
-          <section class="w-full" id="coach-scroll-area">
-            <div class="max-w-3xl mx-auto w-full relative px-4 md:px-8">
-              ${emptyStateHTML}
-              <div id="coach-chat-history" class="w-full flex flex-col pb-10 ${!activeChatId ? 'hidden' : ''}"></div>
-            </div>
-          </section>
-
-          <!-- Floating Input Pill (Fixed to screen bottom) -->
-          <div class="fixed left-0 w-full px-4 md:pr-8 flex justify-center pointer-events-none z-30 input-pill-container" style="bottom: 90px;">
-            <div class="w-full max-w-3xl pointer-events-auto">
-              <div class="bg-surface-container border border-surface-container-highest rounded-[1.5rem] p-1.5 flex items-end shadow-2xl backdrop-blur-xl">
-                <textarea id="coach-input-text" rows="1"
-                  class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-body-md text-on-surface placeholder:text-on-surface-variant py-3 px-5 resize-none max-h-32"
-                  placeholder="Message Fletcher..."></textarea>
-                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-white text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
-                  <span class="material-symbols-outlined text-lg">arrow_upward</span>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -387,14 +407,17 @@ window.LM.views.coach = (function () {
     if (input) {
       input.addEventListener('input', function() {
         this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-        if (this.value.trim()) {
-          send.disabled = false;
-        } else {
-          send.disabled = true;
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        const hasText = this.value.trim().length > 0;
+        if (send) {
+          send.disabled = !hasText;
+          send.style.opacity = hasText ? '1' : '.5';
         }
       });
-      send.disabled = !input.value.trim();
+      if (send) {
+        send.disabled = true;
+        send.style.opacity = '.5';
+      }
     }
 
     const submitMsg = () => {
