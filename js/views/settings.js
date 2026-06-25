@@ -200,6 +200,7 @@ window.LM.views.settings = (function () {
                 <div style="font-size:0.8rem;color:var(--text-3);">Choose the Gemini model version. Flash is faster; Pro is smarter.</div>
               </div>
               <select class="form-input" id="select-gemini-model" style="width:250px;padding:8px 12px;font-size:0.85rem;cursor:pointer;">
+                <option value="gemini-3.5-flash" ${s.geminiModel === 'gemini-3.5-flash' ? 'selected' : ''}>Gemini 3.5 Flash (Latest)</option>
                 <option value="gemini-2.0-flash" ${s.geminiModel === 'gemini-2.0-flash' || !s.geminiModel || (s.geminiModel && (s.geminiModel.includes('1.5') || s.geminiModel.includes('2.5'))) ? 'selected' : ''}>Gemini 2.0 Flash (Recommended/Free)</option>
                 <option value="gemini-2.0-pro-exp-02-05" ${s.geminiModel === 'gemini-2.0-pro-exp-02-05' ? 'selected' : ''}>Gemini 2.0 Pro (Advanced/Smarter)</option>
               </select>
