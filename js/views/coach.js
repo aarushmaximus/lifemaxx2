@@ -131,7 +131,7 @@ window.LM.views.coach = (function () {
       if (errStr.includes('503') || errStr.includes('UNAVAILABLE')) {
         pushMessage('fletcher', "The AI network is currently experiencing high demand (Error 503). Try again in a few minutes.");
       } else if (errStr.includes('429') || errStr.includes('RESOURCE_EXHAUSTED')) {
-        pushMessage('fletcher', "You are talking too fast. We hit the Gemini API rate limit. Wait about a minute and try again.");
+        pushMessage('fletcher', `You are talking too fast. We hit the Gemini API rate limit. Wait about a minute and try again.\n\n[Debug Info: ${errStr}]`);
       } else {
         pushMessage('fletcher', `API Error: ${response.error}`);
       }
