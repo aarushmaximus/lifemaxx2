@@ -126,7 +126,12 @@ window.LM.views.coach = (function () {
     removeLoadingMessage();
 
     if (response.error) {
-      pushMessage('fletcher', `API Error: ${response.error}`);
+      let errStr = response.error.toString();
+      if (errStr.includes('503') || errStr.includes('UNAVAILABLE')) {
+        pushMessage('fletcher', "The AI network is currently experiencing high demand (Error 503). Try again in a few minutes.");
+      } else {
+        pushMessage('fletcher', `API Error: ${response.error}`);
+      }
     } else {
       try {
         let text = response.data.candidates[0].content.parts[0].text;
@@ -249,7 +254,7 @@ window.LM.views.coach = (function () {
 
     // Empty State (New Chat)
     const emptyStateHTML = !activeChatId ? `
-      <div class="flex flex-col items-center justify-center h-full text-center px-4 max-w-lg mx-auto pb-32 pt-20">
+      <div class="flex flex-col items-center justify-center h-full text-center px-4 max-w-lg mx-auto pb-32 pt-10">
         <div class="w-24 h-24 rounded-full border border-primary mb-6 flex items-center justify-center bg-surface-container shadow-[0_0_30px_rgba(255,255,255,0.05)]">
            <span class="material-symbols-outlined text-4xl text-primary">local_fire_department</span>
         </div>
@@ -257,7 +262,18 @@ window.LM.views.coach = (function () {
         <p class="text-on-surface-variant text-sm mb-10">Start a new conversation or select a quick action below.</p>
         
         <div class="flex gap-4 flex-wrap justify-center w-full">
-          <!-- Quick actions removed per user request -->
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('analyze_today')">
+            <span class="material-symbols-outlined text-primary text-2xl">today</span>
+            <span class="font-bold text-sm text-on-surface">Analyze Today</span>
+          </button>
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('analyze_week')">
+            <span class="material-symbols-outlined text-primary text-2xl">date_range</span>
+            <span class="font-bold text-sm text-on-surface">Analyze Week</span>
+          </button>
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('plan_tomorrow')">
+            <span class="material-symbols-outlined text-primary text-2xl">event_upcoming</span>
+            <span class="font-bold text-sm text-on-surface">Plan Tomorrow</span>
+          </button>
         </div>
       </div>
     ` : '';
@@ -266,7 +282,7 @@ window.LM.views.coach = (function () {
     const headerAvatar = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
 
     return `
-      <div class="flex h-screen bg-background overflow-hidden relative pt-[72px]">
+      <div class="flex flex-col bg-background overflow-hidden relative" style="height: calc(100dvh - 160px); margin-top: 80px;">
         
         <!-- Sidebar Toggle Overlay (Mobile) -->
         ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
@@ -349,8 +365,9 @@ window.LM.views.coach = (function () {
   }
 
   function triggerAction(type) {
-    if (type === 'brief') generateMorningBrief();
-    else if (type === 'review') generatePerformanceReview();
+    if (type === 'analyze_today') sendChatMessage("Analyze my grid for today.");
+    else if (type === 'analyze_week') sendChatMessage("Analyze my weekly trend.");
+    else if (type === 'plan_tomorrow') sendChatMessage("Help me plan my day for tomorrow.");
   }
 
   function init() {
