@@ -4,25 +4,25 @@
   "description": "Level Up Your Life",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#030305",
-  "theme_color": "#e040a0",
+  "background_color": "#000000",
+  "theme_color": "#030305",
   "icons": [
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     },
     {
-      "src": "icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
