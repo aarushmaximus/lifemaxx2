@@ -305,7 +305,7 @@ window.LM.views.coach = (function () {
       <div id="coach-shell" style="
         position: fixed;
         top: 60px;
-        bottom: 80px;
+        bottom: 96px;
         left: 0;
         right: 0;
         display: flex;
@@ -316,7 +316,7 @@ window.LM.views.coach = (function () {
         <aside style="
           position: fixed;
           top: 60px;
-          bottom: 80px;
+          bottom: 96px;
           left: 0;
           z-index: 50;
           width: 260px;
@@ -349,7 +349,7 @@ window.LM.views.coach = (function () {
           </div>
 
           <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:64px; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px;">
-            <div style="max-width:700px;margin:0 auto;">
+            <div style="max-width:700px;margin:0 auto;min-height:calc(100% + 1px);display:flex;flex-direction:column;">
               ${!activeChatId ? emptyStateHTML : ''}
               <div id="coach-chat-history" style="display:flex;flex-direction:column;padding-bottom:12px;${!activeChatId ? 'display:none;' : ''}"></div>
             </div>

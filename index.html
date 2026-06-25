@@ -163,7 +163,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '114';
+    const APP_VERSION = '115';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
@@ -173,7 +173,7 @@
       }
       // 2. Delete every cache entry
       if ('caches' in window) {
-        const CACHE_NAME = 'lifemaxx-cache-v114';
+        const CACHE_NAME = 'lifemaxx-cache-v115';
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
