@@ -255,27 +255,29 @@ window.LM.views.coach = (function () {
       </div>
     `).join('');
 
-    // Empty State (New Chat)
+    // Empty State (New Chat) - ChatGPT Style
     const emptyStateHTML = !activeChatId ? `
-      <div class="flex flex-col items-center justify-center h-full text-center px-4 max-w-lg mx-auto pb-32 pt-10">
-        <div class="w-24 h-24 rounded-full border border-primary mb-6 flex items-center justify-center bg-surface-container shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-           <span class="material-symbols-outlined text-4xl text-primary">local_fire_department</span>
+      <div class="flex flex-col items-center justify-center h-full text-center px-4 max-w-lg mx-auto pb-32 pt-16">
+        <div class="w-16 h-16 rounded-full border border-surface-container-highest mb-4 flex items-center justify-center bg-surface-container shadow-sm">
+           <span class="font-bold text-2xl text-on-surface">F</span>
         </div>
-        <h2 class="font-headline-md text-on-surface mb-2 tracking-tight">How can I push you today?</h2>
-        <p class="text-on-surface-variant text-sm mb-10">Start a new conversation or select a quick action below.</p>
+        <h2 class="font-label-lg text-on-surface mb-8 tracking-tight opacity-80">Coach Fletcher</h2>
         
-        <div class="flex gap-4 flex-wrap justify-center w-full">
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('analyze_today')">
-            <span class="material-symbols-outlined text-primary text-2xl">today</span>
-            <span class="font-bold text-sm text-on-surface">Analyze Today</span>
+        <div class="flex flex-col gap-3 w-full max-w-md">
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('analyze_today')">
+            <span class="material-symbols-outlined text-primary text-xl">today</span>
+            <span class="font-bold text-sm text-on-surface flex-1">Analyze my logging for today</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
           </button>
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('analyze_week')">
-            <span class="material-symbols-outlined text-primary text-2xl">date_range</span>
-            <span class="font-bold text-sm text-on-surface">Analyze Week</span>
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('analyze_week')">
+            <span class="material-symbols-outlined text-primary text-xl">date_range</span>
+            <span class="font-bold text-sm text-on-surface flex-1">Review my performance this week</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
           </button>
-          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-5 py-4 flex flex-col items-center gap-2 border border-surface-container-highest shadow-sm min-w-[120px]" onclick="LM.views.coach.triggerAction('plan_tomorrow')">
-            <span class="material-symbols-outlined text-primary text-2xl">event_upcoming</span>
-            <span class="font-bold text-sm text-on-surface">Plan Tomorrow</span>
+          <button class="bg-surface-container hover:bg-surface-container-highest transition-colors rounded-xl px-4 py-3 flex items-center gap-3 border border-surface-container-highest shadow-sm w-full text-left" onclick="LM.views.coach.triggerAction('plan_tomorrow')">
+            <span class="material-symbols-outlined text-primary text-xl">event_upcoming</span>
+            <span class="font-bold text-sm text-on-surface flex-1">Help me plan tomorrow's schedule</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_forward</span>
           </button>
         </div>
       </div>
@@ -288,35 +290,41 @@ window.LM.views.coach = (function () {
       <div class="w-full relative pb-40 pt-4">
         
         <!-- Sidebar Toggle Overlay (Mobile) -->
-        ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
+        ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" style="top: 0; bottom: 0; left: 0; right: 0;" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
 
         <!-- Sidebar (Chat History) -->
-        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed top-[70px] left-0 bottom-[80px] z-50 w-72 bg-surface-container-lowest border-r border-surface-container flex flex-col">
+        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed z-50 w-72 bg-surface-container-lowest border-r border-surface-container flex flex-col" style="top: 70px; bottom: 80px; left: 0;">
           <div class="p-4 border-b border-surface-container">
-            <button onclick="LM.views.coach.startNewChat()" class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-black font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
-              <span class="material-symbols-outlined text-sm">add</span> New Chat
+            <button onclick="LM.views.coach.startNewChat()" class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-black font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-sm">
+              <span class="material-symbols-outlined text-sm">edit_square</span> New Chat
             </button>
           </div>
           <div class="flex-1 overflow-y-auto p-3 scroll-smooth">
-            ${hasChats ? chatListHTML : '<div class="text-center text-on-surface-variant text-sm mt-10">No past conversations.</div>'}
+            <div class="text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-widest pl-1">History</div>
+            ${hasChats ? chatListHTML : '<div class="text-on-surface-variant text-xs mt-4 pl-1">No past conversations.</div>'}
           </div>
         </aside>
 
         <!-- Main Chat Area -->
-        <main class="w-full md:pl-72 flex flex-col relative min-h-full">
+        <main class="w-full flex flex-col relative min-h-full" style="padding-left: 0;">
+          <style>
+            @media (min-width: 768px) {
+              main { padding-left: 18rem !important; }
+              .input-pill-container { padding-left: 18rem !important; }
+            }
+          </style>
           
           <!-- Sleek Header (Normal flow, scrolls up) -->
           <header class="h-16 flex items-center px-4 md:px-8 justify-between z-30 mb-4">
             <div class="flex items-center gap-3">
-              <button class="md:hidden p-2 text-on-surface-variant hover:text-on-surface" onclick="LM.views.coach.toggleSidebar()">
-                <span class="material-symbols-outlined">menu</span>
+              <button class="md:hidden p-2 -ml-2 text-on-surface hover:text-primary transition-colors" onclick="LM.views.coach.toggleSidebar()">
+                <span class="material-symbols-outlined text-2xl">menu</span>
               </button>
-              <div class="w-8 h-8 rounded-full bg-surface-container border border-primary flex items-center justify-center text-primary font-bold overflow-hidden cursor-pointer" onclick="LM.views.coach.changeAvatar()" title="Change Avatar">
+              <div class="w-8 h-8 rounded-full bg-surface-container border border-surface-container-highest flex items-center justify-center text-on-surface font-bold overflow-hidden cursor-pointer" onclick="LM.views.coach.changeAvatar()" title="Change Avatar">
                 ${headerAvatar}
               </div>
               <div class="flex flex-col">
                 <h2 class="font-label-lg text-on-surface leading-tight">Coach Fletcher</h2>
-                <span class="text-[10px] text-primary tracking-widest uppercase font-bold">Active</span>
               </div>
             </div>
           </header>
@@ -330,13 +338,13 @@ window.LM.views.coach = (function () {
           </section>
 
           <!-- Floating Input Pill (Fixed to screen bottom) -->
-          <div class="fixed bottom-[90px] left-0 w-full px-4 md:pl-[19rem] md:pr-8 flex justify-center pointer-events-none z-30">
+          <div class="fixed left-0 w-full px-4 md:pr-8 flex justify-center pointer-events-none z-30 input-pill-container" style="bottom: 90px;">
             <div class="w-full max-w-3xl pointer-events-auto">
-              <div class="bg-surface-container border border-surface-container-highest rounded-[2rem] p-1.5 flex items-end shadow-2xl backdrop-blur-xl">
+              <div class="bg-surface-container border border-surface-container-highest rounded-[1.5rem] p-1.5 flex items-end shadow-2xl backdrop-blur-xl">
                 <textarea id="coach-input-text" rows="1"
-                  class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-body-md text-on-surface placeholder:text-on-surface-variant/50 py-3 px-5 resize-none max-h-32"
+                  class="bg-transparent border-none outline-none focus:ring-0 flex-grow font-body-md text-on-surface placeholder:text-on-surface-variant py-3 px-5 resize-none max-h-32"
                   placeholder="Message Fletcher..."></textarea>
-                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#d0d0d0] to-[#ffffff] border border-[#ffffff] shadow-[0_2px_10px_rgba(0,0,0,0.5),inset_0_-2px_0_#ffffff] text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
+                <button id="btn-coach-send" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-white text-black hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 mb-1 mr-1">
                   <span class="material-symbols-outlined text-lg">arrow_upward</span>
                 </button>
               </div>
