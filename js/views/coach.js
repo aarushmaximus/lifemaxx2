@@ -318,19 +318,21 @@ window.LM.views.coach = (function () {
         <!-- Overlay for mobile sidebar -->
         ${isSidebarOpen ? `<div onclick="LM.views.coach.toggleSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;"></div>` : ''}
 
-        <!-- Sidebar -->
+        <!-- Sidebar: always position:fixed so it never takes layout space on mobile -->
         <aside style="
-          position: ${isSidebarOpen ? 'fixed' : 'relative'};
-          ${isSidebarOpen ? 'top:60px;bottom:80px;left:0;z-index:50;' : ''}
+          position: fixed;
+          top: 60px;
+          bottom: 80px;
+          left: 0;
+          z-index: 50;
           width: 260px;
-          flex-shrink: 0;
           background: var(--color-surface-container-lowest);
           border-right: 1px solid var(--color-surface-container);
           display: flex;
           flex-direction: column;
-          transform: ${isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)'};
+          transform: ${isSidebarOpen ? 'translateX(0)' : 'translateX(-260px)'};
           transition: transform .25s ease;
-        " class="coach-sidebar">
+        ">
           <div style="padding:12px;border-bottom:1px solid var(--color-surface-container);">
             <button onclick="LM.views.coach.startNewChat()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;background:var(--color-primary);color:#000;font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;">
               <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span> New Chat
@@ -361,11 +363,10 @@ window.LM.views.coach = (function () {
             </div>
           </div>
 
-          <!-- Input bar -->
           <div style="padding:10px 16px 12px;border-top:1px solid var(--color-surface-container);flex-shrink:0;">
             <div style="max-width:700px;margin:0 auto;display:flex;align-items:flex-end;gap:8px;background:var(--color-surface-container);border:1px solid var(--color-surface-container-highest);border-radius:16px;padding:8px 8px 8px 16px;">
               <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:var(--color-on-surface);max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
-              <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
+              <button id="btn-coach-send" style="width:34px;height:34px;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
                 <span class="material-symbols-outlined" style="font-size:18px;color:#000;">arrow_upward</span>
               </button>
             </div>

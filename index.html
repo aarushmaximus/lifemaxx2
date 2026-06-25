@@ -31,7 +31,7 @@
     <nav class="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-surface-container-highest" style="padding-top: max(env(safe-area-inset-top), 0px);">
       <div class="flex justify-between items-center px-6 py-4 md:px-12 w-full">
         <div class="flex items-center gap-4">
-          <img src="icons/logo.jpg" alt="Lifemaxx" style="height: 36px; width: 36px; object-fit: contain; border-radius: 6px;">
+          <h1 class="font-headline-md tracking-tighter text-on-surface" style="font-size:1.2rem;">Lifemaxx</h1>
         </div>
         <div class="flex items-center gap-6">
           <div class="hidden md:flex gap-4 font-headline-md text-sm">
@@ -163,7 +163,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '108';
+    const APP_VERSION = '109';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
