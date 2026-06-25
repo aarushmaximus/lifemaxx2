@@ -315,8 +315,8 @@ window.LM.views.coach = (function () {
         z-index: 20;
         overflow: hidden;
       ">
-        <!-- Overlay for mobile sidebar -->
-        ${isSidebarOpen ? `<div onclick="LM.views.coach.toggleSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;"></div>` : ''}
+        <!-- Overlay for mobile sidebar: dark enough to actually cover main content -->
+        ${isSidebarOpen ? `<div onclick="LM.views.coach.toggleSidebar()" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:49;"></div>` : ''}
 
         <!-- Sidebar: always position:fixed so it never takes layout space on mobile -->
         <aside style="
@@ -343,8 +343,8 @@ window.LM.views.coach = (function () {
           </div>
         </aside>
 
-        <!-- Main area -->
-        <main style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+        <!-- Main area (pointer-events disabled while sidebar is open so overlay captures clicks) -->
+        <main style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;${isSidebarOpen ? 'pointer-events:none;' : ''}">
 
           <!-- Coach top bar -->
           <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--color-surface-container);flex-shrink:0;">
@@ -380,6 +380,10 @@ window.LM.views.coach = (function () {
   function toggleSidebar() {
     isSidebarOpen = !isSidebarOpen;
     window.LM.router.render();
+  }
+
+  function _resetSidebar() {
+    isSidebarOpen = false;
   }
 
   function changeAvatar() {
@@ -448,6 +452,7 @@ window.LM.views.coach = (function () {
     startNewChat, 
     toggleSidebar,
     changeAvatar,
-    triggerAction
+    triggerAction,
+    _resetSidebar
   };
 })();
