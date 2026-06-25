@@ -231,7 +231,10 @@ window.LM.views.coach = (function () {
 
     // Auto scroll to bottom
     setTimeout(() => {
-      container.scrollTop = container.scrollHeight;
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
     }, 10);
   }
 
@@ -282,14 +285,14 @@ window.LM.views.coach = (function () {
     const headerAvatar = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
 
     return `
-      <div class="flex flex-col bg-background overflow-hidden relative" style="height: calc(100dvh - 160px); margin-top: 80px;">
+      <div class="w-full relative pb-40 pt-4">
         
         <!-- Sidebar Toggle Overlay (Mobile) -->
         ${isSidebarOpen ? `<div class="fixed inset-0 bg-black/60 z-40 md:hidden" onclick="LM.views.coach.toggleSidebar()"></div>` : ''}
 
         <!-- Sidebar (Chat History) -->
-        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed md:relative z-50 w-72 h-full bg-surface-container-lowest border-r border-surface-container flex flex-col pt-4 md:pt-0">
-          <div class="p-4 border-b border-surface-container mt-14 md:mt-0">
+        <aside class="${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transform transition-transform duration-300 fixed top-[70px] left-0 bottom-[80px] z-50 w-72 bg-surface-container-lowest border-r border-surface-container flex flex-col">
+          <div class="p-4 border-b border-surface-container">
             <button onclick="LM.views.coach.startNewChat()" class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-black font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
               <span class="material-symbols-outlined text-sm">add</span> New Chat
             </button>
@@ -300,10 +303,10 @@ window.LM.views.coach = (function () {
         </aside>
 
         <!-- Main Chat Area -->
-        <main class="flex-1 flex flex-col relative h-full max-w-full">
+        <main class="w-full md:pl-72 flex flex-col relative min-h-full">
           
-          <!-- Sleek Fixed Header -->
-          <header class="flex-shrink-0 h-16 border-b border-surface-container bg-surface-container-lowest/80 backdrop-blur-md flex items-center px-4 justify-between z-30">
+          <!-- Sleek Header (Normal flow, scrolls up) -->
+          <header class="h-16 flex items-center px-4 md:px-8 justify-between z-30 mb-4">
             <div class="flex items-center gap-3">
               <button class="md:hidden p-2 text-on-surface-variant hover:text-on-surface" onclick="LM.views.coach.toggleSidebar()">
                 <span class="material-symbols-outlined">menu</span>
@@ -316,22 +319,18 @@ window.LM.views.coach = (function () {
                 <span class="text-[10px] text-primary tracking-widest uppercase font-bold">Active</span>
               </div>
             </div>
-            ${activeChatId ? `
-              <div class="flex gap-2 hidden sm:flex">
-              </div>
-            ` : ''}
           </header>
 
-          <!-- Chat Content Scroll Area -->
-          <section class="flex-1 overflow-y-auto w-full pt-6 pb-40" id="coach-scroll-area">
-            <div class="max-w-3xl mx-auto w-full h-full relative">
+          <!-- Chat Content -->
+          <section class="w-full" id="coach-scroll-area">
+            <div class="max-w-3xl mx-auto w-full relative px-4 md:px-8">
               ${emptyStateHTML}
               <div id="coach-chat-history" class="w-full flex flex-col pb-10 ${!activeChatId ? 'hidden' : ''}"></div>
             </div>
           </section>
 
-          <!-- Floating Input Pill -->
-          <div class="absolute bottom-6 left-0 w-full px-4 md:px-8 flex justify-center pointer-events-none z-30">
+          <!-- Floating Input Pill (Fixed to screen bottom) -->
+          <div class="fixed bottom-[90px] left-0 w-full px-4 md:pl-[19rem] md:pr-8 flex justify-center pointer-events-none z-30">
             <div class="w-full max-w-3xl pointer-events-auto">
               <div class="bg-surface-container border border-surface-container-highest rounded-[2rem] p-1.5 flex items-end shadow-2xl backdrop-blur-xl">
                 <textarea id="coach-input-text" rows="1"
