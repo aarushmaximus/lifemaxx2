@@ -11,7 +11,7 @@
   <meta name="description"
     content="RPG-style personal development tracker. Level up real-life skills with quests, XP, and live progress tracking.">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#030305">
+  <meta name="theme-color" content="#e040a0">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,7 +30,8 @@
     <!-- TopAppBar -->
     <nav class="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-surface-container-highest" style="padding-top: max(env(safe-area-inset-top), 0px);">
       <div class="flex justify-between items-center px-6 py-4 md:px-12 w-full">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <img src="icons/icon-512.png" alt="Lifemaxx Logo" style="height:32px;width:32px;object-fit:contain;">
           <h1 class="font-headline-md text-headline-lg-mobile md:text-headline-md tracking-tighter text-on-surface">Lifemaxx</h1>
         </div>
         <div class="flex items-center gap-6">
@@ -163,7 +164,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '107';
+    const APP_VERSION = '108';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
