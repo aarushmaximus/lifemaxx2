@@ -6,7 +6,7 @@ window.LM.aiEngine = (function () {
   // Checks and updates daily rolling local quota
   function checkAndUpdateQuota() {
     const settings = S.getSettings();
-    const limit = settings.geminiQuotaLimit || 20;
+    const limit = settings.geminiQuotaLimit || 1000;
     const now = Date.now();
     let quotaData = { count: 0, lastReset: now };
     try {
@@ -55,10 +55,10 @@ window.LM.aiEngine = (function () {
 
     const settings = S.getSettings();
     const apiKey = settings.geminiApiKey;
-    let model = settings.geminiModel || 'gemini-2.5-flash';
-    // Fallback for older saved settings (1.5 models are deprecated/404ing)
-    if (model.includes('1.5')) model = 'gemini-2.5-flash';
-    const limit = settings.geminiQuotaLimit || 20;
+    let model = settings.geminiModel || 'gemini-2.0-flash';
+    // Fallback for older saved settings
+    if (model.includes('1.5') || model.includes('2.5')) model = 'gemini-2.0-flash';
+    const limit = settings.geminiQuotaLimit || 1000;
     if (!apiKey) {
       return { error: "Gemini API key is not configured in Settings." };
     }
