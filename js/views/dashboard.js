@@ -474,7 +474,6 @@ window.LM.views.dashboard = (function () {
     const macros = S.getMacros();
     const settings = S.getSettings();
     const wheelSkillId = settings.wheelSkillId || 'overall';
-    const cachedReview = S.getCachedReview ? S.getCachedReview() : null;
     const activeEffects = S.getActiveStatusEffects ? S.getActiveStatusEffects() : [];
     let barData = getBarData(wheelSkillId, macros);
     const historyBarEnabled = settings.historyBarEnabled === true;

@@ -371,118 +371,9 @@ window.LM.store = (function () {
     }
   }
 
-  function getCachedReview() {
-    return load(KEYS.cachedReview);
-  }
 
-  async function triggerMidnightReview(yesterdayStr) {
-    const settings = getSettings();
-    if (!settings.geminiApiKey) {
-      console.warn("Midnight Review skipped: No Gemini API key configured.");
-      return;
-    }
 
-    const quests = getQuests();
-    const log = load(KEYS.xplog) || [];
-
-    const completedQuests = quests.filter(q => q.scheduledDate === yesterdayStr && q.status === 'completed');
-    const missedQuests = quests.filter(q => q.scheduledDate === yesterdayStr && q.status === 'missed');
-    
-    // Focus time in minutes
-    const focusTimerMins = log.filter(e => 
-      new Date(e.timestamp).toDateString() === yesterdayStr && 
-      (e.reason.includes('Timer') || e.reason.includes('Tracker'))
-    ).length * 20;
-
-    const skillSpreads = {};
-    const yesterdayLog = log.filter(e => new Date(e.timestamp).toDateString() === yesterdayStr);
-    yesterdayLog.forEach(e => {
-      skillSpreads[e.macroId] = (skillSpreads[e.macroId] || 0) + e.delta;
-    });
-
-    const prompt = `Yesterday's RPG Tracker stats:
-- Completed Quests: ${completedQuests.length}
-- Missed Quests: ${missedQuests.length}
-- Focus Time: ${focusTimerMins} minutes
-- Skill XP Gains: ${JSON.stringify(skillSpreads)}
-
-Please analyze my performance and output a JSON response matching the following structure:
-{
-  "review": "Two-sentence max dynamic analytical review of my performance, highlighting strengths or calling out focus gaps.",
-  "statusAdjustment": {
-    "name": "Pumped", 
-    "type": "buff", 
-    "multiplier": 1.15, 
-    "durationHours": 12, 
-    "reason": "Outstanding completion rate yesterday!"
-  },
-  "recommendedQuest": {
-    "title": "Double Down on Mind", 
-    "macroCategory": "Mind", 
-    "timeLimitHours": 24
-  }
-}`;
-
-    const systemInstruction = `You are a strict but encouraging RPG game master. Analyze the player's performance yesterday and output a JSON object containing a dynamic review, a status adjustment, and a recommended quest. Ensure the response format is strictly JSON.`;
-
-    try {
-      const response = await window.LM.aiEngine.generateContent(prompt, systemInstruction);
-      if (response.error) throw new Error(response.error);
-
-      let jsonText = response.data.candidates[0].content.parts[0].text;
-      jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(jsonText);
-
-      // 1. Cache the review
-      save(KEYS.cachedReview, {
-        date: new Date().toDateString(),
-        text: parsed.review || "Yesterday is history, today is a clean slate."
-      });
-
-      // 2. Add Status Adjustment
-      if (parsed.statusAdjustment) {
-        addStatusEffect({
-          id: parsed.statusAdjustment.name.toLowerCase().replace(/\s+/g, '-'),
-          name: parsed.statusAdjustment.name,
-          type: parsed.statusAdjustment.type || 'buff',
-          multiplier: parsed.statusAdjustment.multiplier || 1.0,
-          expiresAt: Date.now() + (parsed.statusAdjustment.durationHours || 24) * 3600000
-        });
-      }
-
-      // 3. Add Recommended Quest
-      if (parsed.recommendedQuest) {
-        const macros = getMacros();
-        let macroId = macros[0]?.id || 'overall';
-        const cat = parsed.recommendedQuest.macroCategory;
-        if (cat) {
-          const match = macros.find(m => m.name.toLowerCase() === cat.toLowerCase());
-          if (match) macroId = match.id;
-        }
-
-        const currentQuests = getQuests();
-        currentQuests.push({
-          id: uid(),
-          name: parsed.recommendedQuest.title || 'AI Recommended Task',
-          description: `AI recommended: ${parsed.statusAdjustment?.reason || 'Keep up the grind!'}`,
-          status: 'active',
-          scheduledDate: new Date().toDateString(),
-          createdAt: Date.now(),
-          timeLimitHours: parsed.recommendedQuest.timeLimitHours || 24,
-          expiresAt: parsed.recommendedQuest.timeLimitHours ? (Date.now() + parsed.recommendedQuest.timeLimitHours * 3600000) : null,
-          targetSkills: [{ macroSkillId: macroId, microSkillId: null, xpAmount: 30 }]
-        });
-        save(KEYS.quests, currentQuests);
-      }
-
-      emit('change');
-    } catch (err) {
-      console.error("Midnight Review AI analysis failed:", err);
-      throw err;
-    }
-  }
-
-  function checkMidnightReview() {
+  function checkMidnightResets() {
     const todayStr = new Date().toDateString();
     const lastReview = load(KEYS.lastReviewDate);
     if (!lastReview) {
@@ -530,18 +421,13 @@ Please analyze my performance and output a JSON response matching the following 
       logs[lastReview] = yesterdayLog;
       saveDailyLogs(logs);
 
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        triggerMidnightReview(lastReview);
-      } else {
-        console.log("Localhost detected: Skipping automatic Midnight Review generation to save API quota.");
-      }
       save(KEYS.lastReviewDate, todayStr);
     }
   }
 
   function checkResets() {
     checkPresetSpawns();
-    checkMidnightReview();
+    checkMidnightResets();
   }
 
   // ── Expiration / Timer Check ──
@@ -949,7 +835,7 @@ Please analyze my performance and output a JSON response matching the following 
     getDailyLogs, getDailyLog, upsertDailyLog,
     getCellPresets, saveCellPresets, upsertCellPreset, deleteCellPreset,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
-    getActiveStatusEffects, addStatusEffect, registerMissedQuest, triggerMidnightReview, getCachedReview, checkMidnightReview,
+    getActiveStatusEffects, addStatusEffect, registerMissedQuest, checkMidnightResets,
     getHistory, addHistoryEntry, clearHistory,
     uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
   };

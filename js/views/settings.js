@@ -232,7 +232,7 @@ window.LM.views.settings = (function () {
               Daily Call Quota Usage: <span id="lbl-ai-quota" style="font-family:var(--font-mono);font-weight:bold;">${window.LM.aiEngine ? window.LM.aiEngine.getQuotaCount() : 0} / ${s.geminiQuotaLimit || 1000}</span> calls today (rolling 24h)
             </div>
             <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
-              <button class="btn btn-ghost btn-sm" id="btn-trigger-review" style="padding:4px 8px;font-size:0.7rem;border-color:var(--accent);color:var(--accent);">Trigger Test Midnight Review</button>
+
             </div>
           </div>
         </div>
@@ -624,29 +624,7 @@ window.LM.views.settings = (function () {
       });
     }
 
-    const triggerReviewBtn = document.getElementById('btn-trigger-review');
-    if (triggerReviewBtn) {
-      triggerReviewBtn.addEventListener('click', async () => {
-        const stSettings = S.getSettings();
-        if (!stSettings.geminiApiKey) {
-          alert("Please configure your Gemini API Key in Settings first.");
-          return;
-        }
-        if (!confirm("This will simulate yesterday's review using your Gemini API key. Proceed?")) return;
-        triggerReviewBtn.disabled = true;
-        triggerReviewBtn.textContent = 'Generating review...';
-        try {
-          const yesterdayStr = new Date(Date.now() - 86400000).toDateString();
-          await S.triggerMidnightReview(yesterdayStr);
-          alert("Midnight review generated! Go to Dashboard to view the Game Master's Review.");
-        } catch (err) {
-          alert(`Failed: ${err.message}`);
-        } finally {
-          triggerReviewBtn.disabled = false;
-          triggerReviewBtn.textContent = 'Trigger Test Midnight Review';
-        }
-      });
-    }
+
 
     const accentInput = document.getElementById('accent-color-input');
     if (accentInput) {
