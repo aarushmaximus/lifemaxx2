@@ -348,19 +348,24 @@ window.LM.views.coach = (function () {
             <span style="font-size:14px;font-weight:600;color:#e8e8f0;">Coach Fletcher</span>
           </div>
 
-          <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:64px; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px;">
+          <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:0; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch;">
             <div style="max-width:700px;margin:0 auto;min-height:calc(100% + 1px);display:flex;flex-direction:column;">
-              ${!activeChatId ? emptyStateHTML : ''}
-              <div id="coach-chat-history" style="display:flex;flex-direction:column;padding-bottom:12px;${!activeChatId ? 'display:none;' : ''}"></div>
-            </div>
-          </div>
+              
+              <div style="flex:1; padding:16px;">
+                ${!activeChatId ? emptyStateHTML : ''}
+                <div id="coach-chat-history" style="display:flex;flex-direction:column;padding-bottom:12px;${!activeChatId ? 'display:none;' : ''}"></div>
+              </div>
 
-          <div style="position:absolute; bottom:0; left:0; right:0; height:64px; padding:10px 16px 12px; border-top:1px solid #121212; background:#000000; z-index:10;">
-            <div style="max-width:700px;margin:0 auto;display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px;">
-              <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:#e8e8f0;max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
-              <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
-                <span class="material-symbols-outlined" style="font-size:18px;color:#000;">arrow_upward</span>
-              </button>
+              <!-- Sticky Input Bar -->
+              <div style="position:sticky; bottom:0; padding:10px 16px 12px; background:#000000; z-index:10; border-top:1px solid #121212;">
+                <div style="display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px;">
+                  <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:#e8e8f0;max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
+                  <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
+                    <span class="material-symbols-outlined" style="font-size:18px;color:#000;">arrow_upward</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
 
