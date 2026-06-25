@@ -77,120 +77,7 @@ window.LM.views.coach = (function () {
     }
   }
 
-  async function generateMorningBrief() {
-    if (isBriefLoading) return;
-    isBriefLoading = true;
-    
-    const macros = S.getMacros();
-    if (!macros.length) {
-      pushMessage('fletcher', "You have no skill modules configured. Set up your profile first.");
-      isBriefLoading = false; return;
-    }
-    
-    const skillsListStr = macros.map(m => `ID: ${m.id}, Name: ${m.name}`).join(', ');
-    const prompt =
-      `Generate today's morning briefing and 2 to 3 recommended quests. ` +
-      `Here is the list of available skills:\n${skillsListStr}\n\n` +
-      `You MUST respond in JSON format matching this schema EXACTLY:\n` +
-      `{"fletcher_message":"A harsh verbal lashing","quests":[{"name":"Short Quest Title","description":"Actionable instructions","type":"habit","targetSkills":[{"macroSkillId":"MATCHING_MACRO_ID","microSkillId":null,"xpAmount":50}],"status":"active"}]}\n\n` +
-      `Pick VALID IDs from the skill list. xpAmount should be 20-150.`;
-
-    // Ensure we have a chat context
-    if (!activeChatId) {
-      const chat = { id: S.uid(), title: "Morning Briefing", createdAt: Date.now(), messages: [] };
-      activeChatId = chat.id;
-      S.upsertCoachChat(chat);
-      window.LM.router.render(); // force render to show history container
-    }
-
-    pushMessage('system', "Fletcher is drafting your orders...", true);
-
-    const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
-    removeLoadingMessage();
-
-    if (response.error) {
-      pushMessage('fletcher', `SYSTEM ERROR: ${response.error}`);
-    } else {
-      try {
-        const text = response.data.candidates[0].content.parts[0].text;
-        const parsed = JSON.parse(cleanJSONString(text));
-        pushMessage('fletcher', parsed.fletcher_message || "Here are your orders. Don't waste my time.");
-        
-        if (Array.isArray(parsed.quests)) {
-          parsed.quests.forEach(q => {
-            S.upsertQuest({
-              id: S.uid(), name: q.name, description: q.description || '',
-              type: q.type || 'project', status: 'active',
-              isNegativeOnMiss: q.type === 'habit', isNegativeOnComplete: false,
-              targetSkills: q.targetSkills || [], isCustom: true,
-              createdAt: Date.now(), completedAt: null,
-              streak: q.type === 'habit' ? 0 : null,
-              lastCompletedDate: null, lastResetDate: null, subTasks: null,
-              timedResearch: { enabled: false }
-            });
-          });
-          N.show(`Fletcher spawned ${parsed.quests.length} quests!`, 'xp');
-        }
-      } catch (e) {
-        pushMessage('fletcher', "Data corrupted. Configure your profile and try again.");
-      }
-    }
-    isBriefLoading = false;
-    
-    // Auto title if this was the first action
-    let chat = getActiveChat();
-    if (chat && chat.title === "New Conversation") {
-      chat.title = "Morning Briefing";
-      S.upsertCoachChat(chat);
-    }
-    window.LM.router.render();
-  }
-
-  async function generatePerformanceReview() {
-    if (isReviewLoading) return;
-    isReviewLoading = true;
-    
-    const quests = S.getQuests();
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const completedSummary = quests.filter(q => q.status === 'completed' && q.completedAt >= sevenDaysAgo).map(q => q.name).join(', ') || 'None';
-    const missedSummary = quests.filter(q => q.status === 'missed' && q.updatedAt >= sevenDaysAgo).map(q => q.name).join(', ') || 'None';
-
-    const prompt =
-      `Analyze the user's progress log for the past 7 days.\n` +
-      `Completed quests: ${completedSummary}\nMissed/Failed quests: ${missedSummary}\n\n` +
-      `Provide a brutal, harsh critique of their performance. Address them as a recruit. ` +
-      `Highlight any slacking. Then, give exactly 3 concrete, high-intensity recommendations they must implement starting immediately.`;
-
-    if (!activeChatId) {
-      const chat = { id: S.uid(), title: "Performance Review", createdAt: Date.now(), messages: [] };
-      activeChatId = chat.id;
-      S.upsertCoachChat(chat);
-      window.LM.router.render();
-    }
-
-    pushMessage('system', "Fletcher is examining your log file...", true);
-
-    const response = await window.LM.aiEngine.generateContent(prompt, FLETCHER_SYSTEM_INSTRUCTION);
-    removeLoadingMessage();
-
-    if (response.error) {
-      pushMessage('fletcher', `SYSTEM ERROR: ${response.error}`);
-    } else {
-      try {
-        pushMessage('fletcher', response.data.candidates[0].content.parts[0].text);
-      } catch (e) {
-        pushMessage('fletcher', "I couldn't process your stats. Get back to work.");
-      }
-    }
-    isReviewLoading = false;
-    
-    let chat = getActiveChat();
-    if (chat && chat.title === "New Conversation") {
-      chat.title = "Performance Review";
-      S.upsertCoachChat(chat);
-    }
-    window.LM.router.render();
-  }
+  // Old generation functions removed
 
   async function sendChatMessage(userText) {
     if (!userText.trim()) return;
@@ -202,12 +89,20 @@ window.LM.views.coach = (function () {
     pushMessage('system', "Analyzing data...", true);
 
     const todayStr = new Date().toDateString();
-    const log = S.getDailyLog(todayStr);
     const stats = S.getStatistics();
     
-    // Build context string
-    const cells = log.cells || Array(24).fill({ status: null, note: '' });
-    const logCtx = cells.map((c, i) => `Hour ${i}: ${c.status || 'EMPTY'} (Note: ${c.note || 'none'})`).join('\\n');
+    // Build context string for the last 7 days
+    let logsCtx = '';
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toDateString();
+      const dailyLog = S.getDailyLog(dateStr);
+      const cells = dailyLog.cells || Array(24).fill({ status: null, note: '' });
+      
+      const dayLogStr = cells.map((c, idx) => `H${idx}:${c.status || 'E'}${c.note ? '('+c.note+')' : ''}`).join(', ');
+      logsCtx += `${dateStr}: [ ${dayLogStr} ]\\n`;
+    }
     
     const statsCtx = stats.map(s => {
       const sLogs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
@@ -217,12 +112,12 @@ window.LM.views.coach = (function () {
     }).join('\\n');
     
     const chat = getActiveChat();
-    const contextMessages = chat.messages.slice(-6).filter(m => m.sender !== 'system');
+    const contextMessages = chat.messages.slice(-10).filter(m => m.sender !== 'system');
     const conversationContext = contextMessages.map(m => `${m.sender === 'user' ? 'User' : 'Fletcher'}: ${m.text}`).join('\\n');
 
     const prompt = 
-      `USER'S 24-HOUR LOG TODAY:\\n${logCtx}\\n\\n` +
-      `USER'S STATISTIC PROGRESS TODAY:\\n${statsCtx || 'No stats tracked today.'}\\n\\n` +
+      `USER'S LAST 7 DAYS OF LOGS (H0-H23, E=Empty):\\n${logsCtx}\\n` +
+      `USER'S STATISTIC PROGRESS TODAY (${todayStr}):\\n${statsCtx || 'No stats tracked today.'}\\n\\n` +
       `CONVERSATION HISTORY:\\n${conversationContext}\\n\\n` +
       `Respond directly to the user's latest message based on this data. Output JSON format as specified in instructions.`;
 
@@ -361,14 +256,7 @@ window.LM.views.coach = (function () {
         <p class="text-on-surface-variant text-sm mb-10">Start a new conversation or select a quick action below.</p>
         
         <div class="flex gap-4 flex-wrap justify-center w-full">
-          <button id="btn-morning-brief" class="flex-1 min-w-[140px] flex flex-col items-center gap-3 p-5 rounded-2xl bg-surface-container border border-surface-container-highest hover:border-primary transition-colors group">
-            <span class="material-symbols-outlined text-2xl text-primary group-hover:scale-110 transition-transform">wb_sunny</span>
-            <span class="font-label-md text-on-surface">Morning Brief</span>
-          </button>
-          <button id="btn-perf-review" class="flex-1 min-w-[140px] flex flex-col items-center gap-3 p-5 rounded-2xl bg-surface-container border border-surface-container-highest hover:border-primary transition-colors group">
-            <span class="material-symbols-outlined text-2xl text-primary group-hover:scale-110 transition-transform">analytics</span>
-            <span class="font-label-md text-on-surface">Performance Review</span>
-          </button>
+          <!-- Quick actions removed per user request -->
         </div>
       </div>
     ` : '';
@@ -413,8 +301,6 @@ window.LM.views.coach = (function () {
             </div>
             ${activeChatId ? `
               <div class="flex gap-2 hidden sm:flex">
-                <button id="btn-quick-brief" class="px-3 py-1.5 rounded-lg border border-surface-container hover:bg-surface-container text-xs text-on-surface-variant transition-colors" onclick="LM.views.coach.triggerAction('brief')">Brief</button>
-                <button id="btn-quick-review" class="px-3 py-1.5 rounded-lg border border-surface-container hover:bg-surface-container text-xs text-on-surface-variant transition-colors" onclick="LM.views.coach.triggerAction('review')">Review</button>
               </div>
             ` : ''}
           </header>
@@ -502,11 +388,6 @@ window.LM.views.coach = (function () {
         submitMsg(); 
       }
     });
-
-    document.getElementById('btn-morning-brief')?.addEventListener('click', generateMorningBrief);
-    document.getElementById('btn-perf-review')?.addEventListener('click', generatePerformanceReview);
-    document.getElementById('btn-quick-brief')?.addEventListener('click', () => triggerAction('brief'));
-    document.getElementById('btn-quick-review')?.addEventListener('click', () => triggerAction('review'));
   }
 
   // Export internal methods needed by inline HTML onclick handlers
