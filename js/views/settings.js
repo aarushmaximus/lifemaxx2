@@ -189,6 +189,15 @@ window.LM.views.settings = (function () {
                 Fletcher will send you a browser notification at the top of every hour to log your cell. You'll be asked for permission when enabled.
               </p>
             </div>
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                <input type="checkbox" id="set-timer-notifications" ${s.timerNotificationsEnabled ? 'checked' : ''}>
+                Timer Notifications
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                Fletcher will fire a browser push notification when a /timer countdown finishes.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -706,6 +715,26 @@ window.LM.views.settings = (function () {
         } else {
           window.LM.cellNotifier.disable();
           window.LM.components.notifications.show("Cell notifications turned off.", 'info');
+        }
+      });
+    }
+
+    const timerNotifCheck = document.getElementById('set-timer-notifications');
+    if (timerNotifCheck) {
+      timerNotifCheck.addEventListener('change', async (e) => {
+        const st = S.getSettings();
+        st.timerNotificationsEnabled = e.target.checked;
+        S.saveSettings(st);
+        if (e.target.checked && Notification.permission !== 'granted') {
+          const result = await Notification.requestPermission();
+          if (result !== 'granted') {
+            st.timerNotificationsEnabled = false;
+            S.saveSettings(st);
+            timerNotifCheck.checked = false;
+            window.LM.components.notifications.show("Browser notification permission denied.", 'warning');
+          } else {
+            window.LM.components.notifications.show("Timer notifications enabled! Fletcher will ping you when a timer ends.", 'success');
+          }
         }
       });
     }

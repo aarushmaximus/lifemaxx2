@@ -8,6 +8,153 @@ window.LM.views.coach = (function () {
   let isReviewLoading = false;
   let isSidebarOpen = false;
 
+  // ── Timer System ─────────────────────────────────────────────────────────
+  // Timers are stored in localStorage keyed by a unique ID.
+  // Each timer: { id, label, durationMs, startedAt, endsAt, done }
+  const TIMER_KEY = 'lm_coach_timers';
+
+  function getTimers() {
+    try { return JSON.parse(localStorage.getItem(TIMER_KEY) || '[]'); } catch { return []; }
+  }
+  function saveTimers(arr) {
+    localStorage.setItem(TIMER_KEY, JSON.stringify(arr));
+  }
+  function addTimer(label, durationMs) {
+    const timers = getTimers();
+    const id = 'tmr_' + Date.now();
+    timers.push({ id, label, durationMs, startedAt: Date.now(), endsAt: Date.now() + durationMs, done: false });
+    saveTimers(timers);
+    startTimerWatcher();
+    return id;
+  }
+  function deleteTimer(id) {
+    saveTimers(getTimers().filter(t => t.id !== id));
+    renderTimerPanel();
+  }
+  function formatDuration(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+  function formatMs(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  let _timerWatcher = null;
+  function startTimerWatcher() {
+    if (_timerWatcher) return;
+    _timerWatcher = setInterval(() => {
+      const timers = getTimers();
+      let changed = false;
+      timers.forEach(t => {
+        if (!t.done && Date.now() >= t.endsAt) {
+          t.done = true;
+          changed = true;
+          fireTimerNotification(t);
+        }
+      });
+      if (changed) saveTimers(timers);
+      renderTimerPanel();
+    }, 1000);
+  }
+
+  function fireTimerNotification(timer) {
+    const settings = S.getSettings();
+    if (!settings.timerNotificationsEnabled) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification('⏱ Fletcher · Timer Done', {
+        body: `"${timer.label}" just finished. Get up. Move.`,
+        icon: '/icon-192.png',
+        tag: 'lifemaxx-timer-' + timer.id,
+        renotify: true,
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch(e) {}
+  }
+
+  function renderTimerPanel() {
+    const panel = document.getElementById('coach-timer-panel');
+    if (!panel) return;
+    const timers = getTimers();
+    if (!timers.length) { panel.innerHTML = ''; panel.style.display = 'none'; return; }
+    panel.style.display = 'flex';
+    panel.innerHTML = timers.map(t => {
+      const remaining = Math.max(0, t.endsAt - Date.now());
+      const pct = t.done ? 100 : Math.min(100, ((t.durationMs - remaining) / t.durationMs) * 100);
+      const radius = 22;
+      const circ = 2 * Math.PI * radius;
+      const dash = circ - (pct / 100) * circ;
+      const color = t.done ? '#10b981' : '#e8e8e8';
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;" title="${t.label}">
+          <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg);">
+            <circle cx="28" cy="28" r="${radius}" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+            <circle cx="28" cy="28" r="${radius}" fill="none" stroke="${color}" stroke-width="3"
+              stroke-dasharray="${circ.toFixed(2)}"
+              stroke-dashoffset="${dash.toFixed(2)}"
+              stroke-linecap="round"
+              style="transition:stroke-dashoffset 0.9s linear;"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);font-size:9px;font-weight:700;color:${color};font-family:var(--font-mono,monospace);white-space:nowrap;">${t.done ? 'DONE' : formatMs(remaining)}</div>
+          <div style="font-size:9px;color:#7a7a85;max-width:56px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.label}</div>
+          <button onclick="LM.views.coach.deleteTimer('${t.id}')" style="background:none;border:none;color:#444;cursor:pointer;font-size:10px;padding:0;line-height:1;">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Timer command handler — no API call ─────────────────────────────────
+  function handleTimerCommand() {
+    // Push a special timer-setter card into chat
+    let chat = getActiveChat();
+    if (!chat) {
+      chat = { id: S.uid(), title: 'Timer', createdAt: Date.now(), messages: [] };
+      activeChatId = chat.id;
+      S.upsertCoachChat(chat);
+    }
+    chat.messages.push({ sender: 'fletcher', text: 'How long should the timer run? Use the picker below.' , timestamp: Date.now() });
+    chat.messages.push({ sender: 'timer_setter', text: '', timestamp: Date.now() });
+    S.upsertCoachChat(chat);
+    renderHistory();
+    window.LM.router.render();
+  }
+
+  function startTimerFromCard() {
+    const h = parseInt(document.getElementById('timer-h')?.value || 0);
+    const m = parseInt(document.getElementById('timer-m')?.value || 0);
+    const s = parseInt(document.getElementById('timer-s')?.value || 0);
+    const label = document.getElementById('timer-label')?.value?.trim() || 'Focus';
+    const totalMs = (h * 3600 + m * 60 + s) * 1000;
+    if (totalMs <= 0) { N.show('Set a duration first!', 'warning'); return; }
+    addTimer(label, totalMs);
+    // Replace the setter card message with a confirmation
+    let chat = getActiveChat();
+    if (chat) {
+      const idx = chat.messages.findLastIndex(msg => msg.sender === 'timer_setter');
+      if (idx !== -1) {
+        chat.messages[idx] = { sender: 'fletcher', text: `Timer set: "${label}" for ${formatDuration(totalMs)}. Clock is ticking. Don't waste it.`, timestamp: Date.now() };
+        S.upsertCoachChat(chat);
+      }
+    }
+    renderHistory();
+    renderTimerPanel();
+    N.show(`⏱ Timer started: ${formatDuration(totalMs)}`, 'success');
+    // Request notification permission if needed
+    const settings = S.getSettings();
+    if (settings.timerNotificationsEnabled && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
   const FLETCHER_SYSTEM_INSTRUCTION = 
     `You are Fletcher, an elite, data-obsessed productivity analyst and harsh coach. ` +
     `You have ZERO tolerance for wasted hours or generic motivational speeches. ` +
@@ -82,6 +229,11 @@ window.LM.views.coach = (function () {
   // Old generation functions removed
 
   async function sendChatMessage(userText) {
+    // Intercept /timer before any API call
+    if (userText.trim().toLowerCase() === '/timer') {
+      handleTimerCommand();
+      return;
+    }
     if (!userText.trim()) return;
     pushMessage('user', userText);
     
@@ -185,7 +337,52 @@ window.LM.views.coach = (function () {
 
     const getTimeStr = (ts) => new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // timer_setter card render
+    const renderTimerSetterCard = () => {
+      const avatarUrl = S.getSettings().coachAvatarUrl;
+      const avatarContent = avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `F`;
+      return `
+        <div class="flex justify-start mb-6 w-full px-4 md:px-0">
+          <div class="flex items-end gap-3 w-full md:max-w-[75%]">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 bg-surface-container border border-surface-container-highest overflow-hidden flex items-center justify-center font-bold text-sm text-primary shadow-sm mb-1">${avatarContent}</div>
+            <div style="background:#0e0e0e;border:1px solid #1a1a1a;border-radius:18px;border-bottom-left-radius:4px;padding:16px;width:100%;max-width:340px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#7a7a85;margin-bottom:12px;">⏱ SET TIMER</div>
+              <div style="margin-bottom:10px;">
+                <input id="timer-label" type="text" placeholder="Label (e.g. Focus, Cooldown)" maxlength="30"
+                  style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px 12px;font-size:13px;color:#e8e8f0;outline:none;box-sizing:border-box;">
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                  <div style="font-size:10px;color:#555;margin-bottom:4px;">HH</div>
+                  <input id="timer-h" type="number" min="0" max="23" value="0"
+                    style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px;font-size:18px;font-weight:700;color:#e8e8f0;text-align:center;outline:none;-moz-appearance:textfield;">
+                </div>
+                <div style="color:#444;font-size:20px;padding-top:14px;">:</div>
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                  <div style="font-size:10px;color:#555;margin-bottom:4px;">MM</div>
+                  <input id="timer-m" type="number" min="0" max="59" value="25"
+                    style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px;font-size:18px;font-weight:700;color:#e8e8f0;text-align:center;outline:none;-moz-appearance:textfield;">
+                </div>
+                <div style="color:#444;font-size:20px;padding-top:14px;">:</div>
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                  <div style="font-size:10px;color:#555;margin-bottom:4px;">SS</div>
+                  <input id="timer-s" type="number" min="0" max="59" value="0"
+                    style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px;font-size:18px;font-weight:700;color:#e8e8f0;text-align:center;outline:none;-moz-appearance:textfield;">
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+                ${[['5m',0,5,0],['10m',0,10,0],['15m',0,15,0],['25m',0,25,0],['45m',0,45,0],['1h',1,0,0]].map(([lbl,h,m,s]) =>
+                  `<button onclick="document.getElementById('timer-h').value=${h};document.getElementById('timer-m').value=${m};document.getElementById('timer-s').value=${s};document.getElementById('timer-label').value='${lbl} Focus';" style="padding:5px 10px;border-radius:20px;border:1px solid #222;background:#121212;color:#aaa;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='#e8e8e8';this.style.color='#e8e8e8'" onmouseleave="this.style.borderColor='#222';this.style.color='#aaa'">${lbl}</button>`
+                ).join('')}
+              </div>
+              <button onclick="LM.views.coach.startTimerFromCard()" style="width:100%;padding:10px;border-radius:10px;background:#e8e8e8;border:none;color:#000;font-weight:700;font-size:13px;letter-spacing:.06em;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">START TIMER</button>
+            </div>
+          </div>
+        </div>`;
+    };
+
     container.innerHTML = chat.messages.map(m => {
+      if (m.sender === 'timer_setter') return renderTimerSetterCard();
       if (m.sender === 'system') {
         return `<div class="text-center font-mono text-xs text-primary/50 my-4 ${m.isLoading ? 'animate-pulse' : ''} tracking-widest">${m.text}</div>`;
       }
@@ -367,15 +564,19 @@ window.LM.views.coach = (function () {
         <!-- Main area -->
         <main style="flex:1; position:relative;">
 
-          <div style="position:absolute; top:0; left:0; right:0; height:54px; display:flex; align-items:center; gap:12px; padding:0 16px; border-bottom:1px solid #121212; background:#000000; z-index:10;">
-            <button onclick="LM.views.coach.toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;color:#e8e8f0;display:flex;align-items:center;pointer-events:auto;">
-              <span class="material-symbols-outlined" style="font-size:24px;">menu</span>
-            </button>
-            <div style="width:30px;height:30px;border-radius:50%;background:#121212;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#e8e8f0;overflow:hidden;cursor:pointer;" onclick="LM.views.coach.changeAvatar()">${headerAvatar}</div>
-            <span style="font-size:14px;font-weight:600;color:#e8e8f0;">Coach Fletcher</span>
+          <div style="position:absolute; top:0; left:0; right:0; display:flex; flex-direction:column; background:#000000; z-index:10; border-bottom:1px solid #121212;">
+            <div style="display:flex; align-items:center; gap:12px; padding:0 16px; height:54px;">
+              <button onclick="LM.views.coach.toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;color:#e8e8f0;display:flex;align-items:center;pointer-events:auto;">
+                <span class="material-symbols-outlined" style="font-size:24px;">menu</span>
+              </button>
+              <div style="width:30px;height:30px;border-radius:50%;background:#121212;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#e8e8f0;overflow:hidden;cursor:pointer;" onclick="LM.views.coach.changeAvatar()">${headerAvatar}</div>
+              <span style="font-size:14px;font-weight:600;color:#e8e8f0;">Coach Fletcher</span>
+            </div>
+            <!-- Active Timers Panel -->
+            <div id="coach-timer-panel" style="display:none;flex-direction:row;gap:16px;padding:8px 16px 10px;overflow-x:auto;border-top:1px solid #111;"></div>
           </div>
 
-          <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:0; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+          <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:0; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch;" id="coach-scroll-area-js">
             <div style="max-width:700px;margin:0 auto;min-height:calc(100% + 1px);display:flex;flex-direction:column;">
               
               <div style="flex:1; padding:16px;">
@@ -399,6 +600,13 @@ window.LM.views.coach = (function () {
                     <div>
                       <div style="font-size:13px;font-weight:600;color:#fff;">/cquest [goal]</div>
                       <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Generate a multi-step chain quest</div>
+                    </div>
+                  </div>
+                  <div class="cmd-item" onclick="LM.views.coach.insertCommand('/timer')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+                    <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">timer</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#fff;">/timer</div>
+                      <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Set a countdown timer (no AI call)</div>
                     </div>
                   </div>
                 </div>
@@ -515,6 +723,8 @@ window.LM.views.coach = (function () {
 
   function init() {
     if (activeChatId) renderHistory();
+    startTimerWatcher();
+    renderTimerPanel();
 
     const input = document.getElementById('coach-input-text');
     const send = document.getElementById('btn-coach-send');
@@ -576,6 +786,9 @@ window.LM.views.coach = (function () {
     triggerAction,
     _resetSidebar,
     insertCommand,
-    handleProposalAction
+    handleProposalAction,
+    startTimerFromCard,
+    deleteTimer,
+    renderTimerPanel
   };
 })();
