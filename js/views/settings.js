@@ -180,6 +180,15 @@ window.LM.views.settings = (function () {
               </div>
               <button class="btn btn-ghost btn-sm" id="btn-reset-accent" style="padding:4px 8px;font-size:0.7rem;">Reset to Theme Default</button>
             </div>
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                <input type="checkbox" id="set-cell-notifications" ${s.cellNotificationsEnabled ? 'checked' : ''}>
+                Cell Notifications
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                Fletcher will send you a browser notification at the top of every hour to log your cell. You'll be asked for permission when enabled.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -674,6 +683,30 @@ window.LM.views.settings = (function () {
         st.chromeAccentsEnabled = e.target.checked;
         S.saveSettings(st);
         window.LM.components.theme.applyTheme('chrome');
+      });
+    }
+
+    const cellNotifCheck = document.getElementById('set-cell-notifications');
+    if (cellNotifCheck) {
+      cellNotifCheck.addEventListener('change', async (e) => {
+        const st = S.getSettings();
+        st.cellNotificationsEnabled = e.target.checked;
+        S.saveSettings(st);
+        if (e.target.checked) {
+          const granted = await window.LM.cellNotifier.requestPermission();
+          if (granted) {
+            window.LM.cellNotifier.enable();
+            window.LM.components.notifications.show("Fletcher will ping you every hour to log your cell!", 'success');
+          } else {
+            st.cellNotificationsEnabled = false;
+            S.saveSettings(st);
+            cellNotifCheck.checked = false;
+            window.LM.components.notifications.show("Browser notification permission was denied. Enable it in your browser settings.", 'warning');
+          }
+        } else {
+          window.LM.cellNotifier.disable();
+          window.LM.components.notifications.show("Cell notifications turned off.", 'info');
+        }
       });
     }
 

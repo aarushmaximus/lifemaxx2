@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
   LM.store.checkResets();
   LM.store.checkTimers();
   LM.store.checkHabitualReset(); // IST midnight habitual reset
+  if (window.LM.cellNotifier) LM.cellNotifier.init();
   setInterval(() => {
     LM.store.checkTimers();
   }, 10000); // Check every 10 seconds

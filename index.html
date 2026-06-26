@@ -136,6 +136,7 @@
   <script src="js/formulas.js"></script>
   <script src="js/store.js"></script>
   <script src="js/ai-engine.js"></script>
+  <script src="js/cell-notifier.js"></script>
   <script src="js/quest-progress.js"></script>
   <script src="js/seed.js"></script>
   <script src="js/components/notifications.js"></script>
@@ -163,7 +164,7 @@
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
     // When the version changes, we nuke all SW caches & reload.
-    const APP_VERSION = '124';
+    const APP_VERSION = '125';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
@@ -173,7 +174,7 @@
       }
       // 2. Delete every cache entry
       if ('caches' in window) {
-        const CACHE_NAME = 'lifemaxx-cache-v124';
+        const CACHE_NAME = 'lifemaxx-cache-v125';
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
