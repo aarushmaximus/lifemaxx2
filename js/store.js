@@ -12,13 +12,15 @@ window.LM.store = (function () {
     woTemplates: 'lm_workout_templates',
     lastUpdated: 'lm_last_updated',
     lastReviewDate: 'lm_last_review_date',
+    lastWorkoutGenDate: 'lm_last_workout_gen_date',
     cachedReview: 'lm_cached_review',
     coachChats: 'lm_coach_chats',
     history: 'lm_history',
     dailyLogs: 'lm_daily_logs',
     cellPresets: 'lm_cell_presets',
     statistics: 'lm_statistics',
-    statLogs: 'lm_stat_logs'
+    statLogs: 'lm_stat_logs',
+    weeklySplit: 'lm_weekly_split'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -425,9 +427,71 @@ window.LM.store = (function () {
     }
   }
 
+  // ── Weekly Split ──
+  function getWeeklySplit() {
+    let split = load(KEYS.weeklySplit);
+    if (!split || !Array.isArray(split) || split.length !== 7) {
+      split = Array(7).fill(null).map(() => ({ isActive: false, name: '', muscleGroups: [], exercises: [], xpReward: 500 }));
+      save(KEYS.weeklySplit, split);
+    }
+    return split;
+  }
+  function upsertWeeklySplit(split) {
+    save(KEYS.weeklySplit, split);
+  }
+
+  function checkWeeklyWorkoutGen() {
+    const todayStr = new Date().toDateString();
+    const lastGen = load(KEYS.lastWorkoutGenDate);
+    if (lastGen === todayStr) return; // Already generated today
+
+    const split = getWeeklySplit();
+    const dayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon...
+    const todayConfig = split[dayIndex];
+
+    if (todayConfig && todayConfig.isActive) {
+      // Find the titan macro to link it
+      const macros = getMacros();
+      let titanMacro = macros.find(m => m.name.toLowerCase() === 'titan');
+      if (!titanMacro) {
+        // Fallback to searching for other physique names if 'titan' was renamed
+        const PHYSIQUE_NAMES = ['physique', 'corpus', 'forge', 'brawn', 'titan'];
+        titanMacro = macros.find(m => PHYSIQUE_NAMES.includes(m.name.toLowerCase()) || m.accentColor === '#ef4444');
+      }
+
+      if (titanMacro) {
+        const quest = {
+          id: uid(),
+          name: todayConfig.name || "Workout",
+          description: "Auto-generated daily workout.",
+          type: "daily",
+          status: "active",
+          isWorkoutQuest: true,
+          workout: { exercises: JSON.parse(JSON.stringify(todayConfig.exercises || [])) },
+          targetSkills: [{ macroSkillId: titanMacro.id, microSkillId: null, xpAmount: todayConfig.xpReward || 500 }],
+          createdAt: Date.now(),
+          streak: 0,
+          isCustom: true
+        };
+        
+        // Reset sets
+        if (quest.workout.exercises) {
+          quest.workout.exercises.forEach(ex => {
+            ex.completedSets = Array(ex.sets || 3).fill(false);
+          });
+        }
+
+        upsertQuest(quest);
+      }
+    }
+    
+    save(KEYS.lastWorkoutGenDate, todayStr);
+  }
+
   function checkResets() {
     checkPresetSpawns();
     checkMidnightResets();
+    checkWeeklyWorkoutGen();
   }
 
   // ── Expiration / Timer Check ──
@@ -655,6 +719,7 @@ window.LM.store = (function () {
       history: getHistory(),
       dailyLogs: getDailyLogs(),
       cellPresets: getCellPresets(),
+      weeklySplit: getWeeklySplit(),
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
@@ -673,6 +738,7 @@ window.LM.store = (function () {
     if (data.history) save(KEYS.history, data.history);
     if (data.dailyLogs) save(KEYS.dailyLogs, data.dailyLogs);
     if (data.cellPresets) save(KEYS.cellPresets, data.cellPresets);
+    if (data.weeklySplit) save(KEYS.weeklySplit, data.weeklySplit);
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
     emit('change');
@@ -827,6 +893,7 @@ window.LM.store = (function () {
     getQuests, getQuest, upsertQuest, deleteQuest,
     getChains, getAllChains, getChain, upsertChain, deleteChain, completeChainStep,
     getHabituals, getHabitual, upsertHabitual, deleteHabitual, checkHabitualReset,
+    getWeeklySplit, upsertWeeklySplit,
     getOverall, saveOverall,
     getSettings, saveSettings,
     getXPLog, saveXPLog,

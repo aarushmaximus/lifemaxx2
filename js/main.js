@@ -20,6 +20,7 @@ window.LM.router = (function () {
     if (hash.startsWith('#skill-chains/'))  return { view: 'skillChains',  skillId: hash.split('/')[1] };
     if (hash.startsWith('#skill-widgets/')) return { view: 'skillWidgets', skillId: hash.split('/')[1] };
     if (hash.startsWith('#skill/'))         return { view: 'skillDetail',  skillId: hash.split('/')[1] };
+    if (hash.startsWith('#workout/'))       return { view: 'workout',      questId: hash.split('/')[1] };
     const v = hash.replace('#','');
     return { view: ['dashboard','quests','settings','skills','me','analysis','coach'].includes(v) ? v : 'dashboard' };
   }
@@ -53,6 +54,9 @@ window.LM.router = (function () {
       } else if (route.view === 'skillWidgets') {
         main.innerHTML = window.LM.views.skillWidgets.render(route.skillId);
         window.LM.views.skillWidgets.init(route.skillId);
+      } else if (route.view === 'workout') {
+        main.innerHTML = window.LM.views.workout.render(route.questId);
+        window.LM.views.workout.init(route.questId);
       } else {
         const view = views[route.view] || views.dashboard;
         main.innerHTML = view.render();
