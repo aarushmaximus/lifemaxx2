@@ -73,10 +73,10 @@ window.LM.router = (function () {
         el.classList.toggle('text-on-surface-variant', !isActive);
       });
 
-      // Hide FAB on analysis and coach views to avoid overlapping the input bar
+      // Hide FAB on widgets view and others
       const fab = document.getElementById('fab');
       if (fab) {
-        fab.style.display = (route.view === 'analysis' || route.view === 'coach') ? 'none' : 'flex';
+        fab.style.display = (route.view === 'skillWidgets' || route.view === 'workout' || route.view === 'analysis' || route.view === 'coach') ? 'none' : 'flex';
       }
 
       // Animate in via CSS class

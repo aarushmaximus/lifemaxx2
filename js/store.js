@@ -440,16 +440,21 @@ window.LM.store = (function () {
     save(KEYS.weeklySplit, split);
   }
 
-  function checkWeeklyWorkoutGen() {
+  function checkWeeklyWorkoutGen(force) {
     const todayStr = new Date().toDateString();
     const lastGen = load(KEYS.lastWorkoutGenDate);
-    if (lastGen === todayStr) return; // Already generated today
+    if (lastGen === todayStr && !force) return; // Already generated today
 
     const split = getWeeklySplit();
     const dayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon...
     const todayConfig = split[dayIndex];
 
     if (todayConfig && todayConfig.isActive) {
+      // If forcing, check if we already have an active workout quest today to avoid duplicates
+      if (force) {
+        const existingWorkout = getQuests().find(q => q.isWorkoutQuest && q.status === 'active' && new Date(q.createdAt).toDateString() === todayStr);
+        if (existingWorkout) return; // Don't duplicate if one is already active today
+      }
       // Find the titan macro to link it
       const macros = getMacros();
       let titanMacro = macros.find(m => m.name.toLowerCase() === 'titan');
@@ -893,7 +898,7 @@ window.LM.store = (function () {
     getQuests, getQuest, upsertQuest, deleteQuest,
     getChains, getAllChains, getChain, upsertChain, deleteChain, completeChainStep,
     getHabituals, getHabitual, upsertHabitual, deleteHabitual, checkHabitualReset,
-    getWeeklySplit, upsertWeeklySplit,
+    getWeeklySplit, upsertWeeklySplit, checkWeeklyWorkoutGen,
     getOverall, saveOverall,
     getSettings, saveSettings,
     getXPLog, saveXPLog,

@@ -118,6 +118,17 @@ window.LM.cellNotifier = (function () {
     }
 
     scheduleNextHour();
+
+    // Listen for the app waking up / becoming visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // App just woke up, check if we missed the hour
+        fireNotification();
+        // Reset the schedule since the previous setTimeout might be corrupted
+        if (_intervalId) clearInterval(_intervalId);
+        scheduleNextHour();
+      }
+    });
   }
 
   function enable() {
