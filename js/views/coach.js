@@ -82,12 +82,35 @@ window.LM.views.coach = (function () {
     } catch(e) {}
   }
 
+  let _timerPanelOpen = false;
+
   function renderTimerPanel() {
     const panel = document.getElementById('coach-timer-panel');
     if (!panel) return;
     const timers = getTimers();
-    if (!timers.length) { panel.innerHTML = ''; panel.style.display = 'none'; return; }
-    panel.style.display = 'flex';
+
+    // Update the timer count badge in the header
+    const badge = document.getElementById('coach-timer-badge');
+    if (badge) {
+      const active = timers.filter(t => !t.done).length;
+      if (active > 0) {
+        badge.textContent = active;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (!timers.length) {
+      panel.innerHTML = '';
+      panel.style.display = 'none';
+      _timerPanelOpen = false;
+      return;
+    }
+
+    // Only show if toggled open
+    panel.style.display = _timerPanelOpen ? 'flex' : 'none';
+
     panel.innerHTML = timers.map(t => {
       const remaining = Math.max(0, t.endsAt - Date.now());
       const pct = t.done ? 100 : Math.min(100, ((t.durationMs - remaining) / t.durationMs) * 100);
@@ -95,21 +118,31 @@ window.LM.views.coach = (function () {
       const circ = 2 * Math.PI * radius;
       const dash = circ - (pct / 100) * circ;
       const color = t.done ? '#10b981' : '#e8e8e8';
+      const timeText = t.done ? 'DONE' : formatMs(remaining);
       return `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;" title="${t.label}">
-          <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg);">
-            <circle cx="28" cy="28" r="${radius}" fill="none" stroke="#1a1a1a" stroke-width="3"/>
-            <circle cx="28" cy="28" r="${radius}" fill="none" stroke="${color}" stroke-width="3"
-              stroke-dasharray="${circ.toFixed(2)}"
-              stroke-dashoffset="${dash.toFixed(2)}"
-              stroke-linecap="round"
-              style="transition:stroke-dashoffset 0.9s linear;"/>
-          </svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);font-size:9px;font-weight:700;color:${color};font-family:var(--font-mono,monospace);white-space:nowrap;">${t.done ? 'DONE' : formatMs(remaining)}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;" title="${t.label}">
+          <div style="position:relative;width:56px;height:56px;">
+            <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg);position:absolute;top:0;left:0;">
+              <circle cx="28" cy="28" r="${radius}" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+              <circle cx="28" cy="28" r="${radius}" fill="none" stroke="${color}" stroke-width="3"
+                stroke-dasharray="${circ.toFixed(2)}"
+                stroke-dashoffset="${dash.toFixed(2)}"
+                stroke-linecap="round"
+                style="transition:stroke-dashoffset 0.9s linear;"/>
+            </svg>
+            <div style="position:absolute;top:0;left:0;width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:9px;font-weight:700;color:${color};font-family:var(--font-mono,monospace);white-space:nowrap;letter-spacing:-.3px;">${timeText}</span>
+            </div>
+          </div>
           <div style="font-size:9px;color:#7a7a85;max-width:56px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.label}</div>
-          <button onclick="LM.views.coach.deleteTimer('${t.id}')" style="background:none;border:none;color:#444;cursor:pointer;font-size:10px;padding:0;line-height:1;">✕</button>
+          <button onclick="LM.views.coach.deleteTimer('${t.id}')" style="background:none;border:none;color:#3a3a3a;cursor:pointer;font-size:10px;padding:0;line-height:1;transition:color .15s;" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#3a3a3a'">✕</button>
         </div>`;
     }).join('');
+  }
+
+  function toggleTimerPanel() {
+    _timerPanelOpen = !_timerPanelOpen;
+    renderTimerPanel();
   }
 
   // ── Timer command handler — no API call ─────────────────────────────────
@@ -570,10 +603,15 @@ window.LM.views.coach = (function () {
                 <span class="material-symbols-outlined" style="font-size:24px;">menu</span>
               </button>
               <div style="width:30px;height:30px;border-radius:50%;background:#121212;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#e8e8f0;overflow:hidden;cursor:pointer;" onclick="LM.views.coach.changeAvatar()">${headerAvatar}</div>
-              <span style="font-size:14px;font-weight:600;color:#e8e8f0;">Coach Fletcher</span>
+              <span style="font-size:14px;font-weight:600;color:#e8e8f0;flex:1;">Coach Fletcher</span>
+              <!-- Timer toggle button -->
+              <button onclick="LM.views.coach.toggleTimerPanel()" title="Active Timers" style="position:relative;background:none;border:none;cursor:pointer;padding:4px;color:#7a7a85;display:flex;align-items:center;transition:color .15s;" onmouseenter="this.style.color='#e8e8e8'" onmouseleave="this.style.color='#7a7a85'">
+                <span class="material-symbols-outlined" style="font-size:22px;">timer</span>
+                <span id="coach-timer-badge" style="display:none;position:absolute;top:0;right:0;background:#e8e8e8;color:#000;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;align-items:center;justify-content:center;"></span>
+              </button>
             </div>
-            <!-- Active Timers Panel -->
-            <div id="coach-timer-panel" style="display:none;flex-direction:row;gap:16px;padding:8px 16px 10px;overflow-x:auto;border-top:1px solid #111;"></div>
+            <!-- Active Timers Panel (hidden by default, toggle via timer button) -->
+            <div id="coach-timer-panel" style="display:none;flex-direction:row;gap:16px;padding:10px 16px 12px;overflow-x:auto;border-top:1px solid #111;"></div>
           </div>
 
           <div id="coach-scroll-area" style="position:absolute; top:54px; bottom:0; left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch;" id="coach-scroll-area-js">
@@ -789,6 +827,7 @@ window.LM.views.coach = (function () {
     handleProposalAction,
     startTimerFromCard,
     deleteTimer,
-    renderTimerPanel
+    renderTimerPanel,
+    toggleTimerPanel
   };
 })();
