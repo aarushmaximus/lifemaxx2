@@ -199,7 +199,7 @@ window.LM.views.skillWidgets = (function () {
     }
 
     return '<div class="workout-selector" style="padding-bottom:100px;">' +
-      '<div style="display:flex; overflow-x:auto; gap:12px; padding:4px 0 16px; border-bottom:1px solid rgba(255,255,255,0.05); -webkit-overflow-scrolling:touch; margin:0 -20px; padding-left:20px; padding-right:20px;">' +
+      '<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:4px 0 16px; border-bottom:1px solid rgba(255,255,255,0.05); margin:0 -20px; padding-left:20px; padding-right:20px;">' +
         dayTabs +
       '</div>' +
       '<h2 style="font-size:1.4rem;font-weight:700;margin-top:20px;">' + DAYS[selectedDay] + '</h2>' +

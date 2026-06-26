@@ -461,7 +461,10 @@ window.LM.store = (function () {
       if (!titanMacro) {
         // Fallback to searching for other physique names if 'titan' was renamed
         const PHYSIQUE_NAMES = ['physique', 'corpus', 'forge', 'brawn', 'titan'];
-        titanMacro = macros.find(m => PHYSIQUE_NAMES.includes(m.name.toLowerCase()) || m.accentColor === '#ef4444');
+        titanMacro = macros.find(m => PHYSIQUE_NAMES.some(n => m.name.toLowerCase().includes(n)) || m.accentColor === '#ef4444');
+      }
+      if (!titanMacro && macros.length > 0) {
+        titanMacro = macros[0]; // Ultimate fallback: just pick the first skill so it doesn't fail silently
       }
 
       if (titanMacro) {
