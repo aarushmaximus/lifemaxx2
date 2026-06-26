@@ -287,7 +287,7 @@ window.LM.views.skillWidgets = (function () {
   function init(mId) {
     macroId = mId;
     selectedDay = new Date().getDay();
-    tempSplit = null;
+    tempSplit = JSON.parse(JSON.stringify(S.getWeeklySplit()));
     isAddingExercise = false;
   }
 
