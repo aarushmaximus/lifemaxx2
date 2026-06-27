@@ -520,7 +520,7 @@ window.LM.views.dashboard = (function () {
               }
 
               return `
-              <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
+              <div class="quest-card" style="flex-direction:row; border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
                 <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                   <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                   <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
@@ -783,7 +783,7 @@ window.LM.views.dashboard = (function () {
                     }
 
                     return `
-                    <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; width: 100%; box-sizing: border-box;">
+                    <div class="quest-card" style="flex-direction:row; border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; width: 100%; box-sizing: border-box;">
                       <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                         <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                         <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
