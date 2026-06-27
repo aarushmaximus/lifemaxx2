@@ -450,30 +450,36 @@ window.LM.store = (function () {
     const todayConfig = split[dayIndex];
 
     if (todayConfig && todayConfig.isActive) {
-      // If forcing, check if we already have an active workout quest today to avoid duplicates
+      // If forcing, remove any existing incomplete workout quest for today so we can replace it with the updated split
       if (force) {
-        const existingWorkout = getQuests().find(q => q.isWorkoutQuest && q.status === 'active' && new Date(q.createdAt).toDateString() === todayStr);
-        if (existingWorkout) return; // Don't duplicate if one is already active today
+        const allQuests = getQuests();
+        const updatedQuests = allQuests.filter(q => {
+          if (q.isWorkoutQuest && q.status === 'active' && new Date(q.createdAt).toDateString() === todayStr) {
+            return false; // Remove it so we can re-create with updated exercises
+          }
+          return true;
+        });
+        saveQuests(updatedQuests);
+        emit('change');
       }
-      // Find the titan macro to link it
+      // Find the physique macro to link it
       const macros = getMacros();
       let titanMacro = macros.find(m => m.name.toLowerCase() === 'titan');
       if (!titanMacro) {
-        // Fallback to searching for other physique names if 'titan' was renamed
         const PHYSIQUE_NAMES = ['physique', 'corpus', 'forge', 'brawn', 'titan'];
         titanMacro = macros.find(m => PHYSIQUE_NAMES.some(n => m.name.toLowerCase().includes(n)) || m.accentColor === '#ef4444');
       }
       if (!titanMacro && macros.length > 0) {
-        titanMacro = macros[0]; // Ultimate fallback: just pick the first skill so it doesn't fail silently
+        titanMacro = macros[0];
       }
 
       if (titanMacro) {
         const quest = {
           id: uid(),
-          name: todayConfig.name || "Workout",
-          description: "Auto-generated daily workout.",
-          type: "daily",
-          status: "active",
+          name: todayConfig.name || 'Workout',
+          description: 'Auto-generated daily workout.',
+          type: 'daily',
+          status: 'active',
           isWorkoutQuest: true,
           workout: { exercises: JSON.parse(JSON.stringify(todayConfig.exercises || [])) },
           targetSkills: [{ macroSkillId: titanMacro.id, microSkillId: null, xpAmount: todayConfig.xpReward || 500 }],
@@ -481,18 +487,16 @@ window.LM.store = (function () {
           streak: 0,
           isCustom: true
         };
-        
-        // Reset sets
         if (quest.workout.exercises) {
           quest.workout.exercises.forEach(ex => {
             ex.completedSets = Array(ex.sets || 3).fill(false);
           });
         }
-
         upsertQuest(quest);
+        emit('change');
       }
     }
-    
+
     save(KEYS.lastWorkoutGenDate, todayStr);
   }
 

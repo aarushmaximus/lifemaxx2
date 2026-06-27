@@ -89,8 +89,8 @@ window.LM.views.skillWidgets = (function () {
       var hasWorkout = config.isActive && config.exercises.length > 0;
       var dotColor = hasWorkout ? 'var(--sk-accent)' : 'transparent';
       return '<div class="planner-day-tab ' + activeCls + '" onclick="LM.views.skillWidgets.selectDay(' + i + ')">' +
-        '<span style="font-weight:600;font-size:0.85rem;">' + d + '</span>' +
-        '<div style="width:4px;height:4px;border-radius:50%;background:' + dotColor + ';margin-top:4px;"></div>' +
+        '<span style="font-weight:600;font-size:0.8rem;">' + d + '</span>' +
+        '<div style="width:4px;height:4px;border-radius:50%;background:' + dotColor + ';margin-top:3px;"></div>' +
       '</div>';
     }).join('');
 
@@ -198,8 +198,8 @@ window.LM.views.skillWidgets = (function () {
       '</div>';
     }
 
-    return '<div class="workout-selector" style="padding-bottom:100px;">' +
-      '<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:4px 0 16px; border-bottom:1px solid rgba(255,255,255,0.05); margin:0 -20px; padding-left:20px; padding-right:20px;">' +
+    return '<div class="workout-selector" style="padding-bottom:100px;overflow-x:hidden;">' +
+      '<div style="display:flex; flex-wrap:wrap; justify-content:space-around; gap:4px; padding:4px 0 16px; border-bottom:1px solid rgba(255,255,255,0.05);">' +
         dayTabs +
       '</div>' +
       '<h2 style="font-size:1.4rem;font-weight:700;margin-top:20px;">' + DAYS[selectedDay] + '</h2>' +
@@ -323,12 +323,13 @@ window.LM.views.skillWidgets = (function () {
       el.style.flexDirection = 'column';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
-      el.style.padding = '12px 16px';
-      el.style.borderRadius = '16px';
+      el.style.padding = '8px 10px';
+      el.style.borderRadius = '12px';
       el.style.background = el.classList.contains('active') ? 'rgba(255,255,255,0.1)' : 'transparent';
       el.style.color = el.classList.contains('active') ? '#fff' : 'var(--text-3)';
       el.style.cursor = 'pointer';
-      el.style.minWidth = '60px';
+      el.style.flex = '1';
+      el.style.maxWidth = '52px';
     });
   }
 
