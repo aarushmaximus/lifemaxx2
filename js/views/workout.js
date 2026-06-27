@@ -186,23 +186,8 @@ window.LM.views.workout = (function () {
     var result = S.completeQuest(questId);
     if (result) {
       LM.components.notifications.show('Workout complete! +' + F.formatXP(result.adjustedTargets.reduce(function(s,t){ return s + t.xpAmount; }, 0)) + ' XP', 'xp');
-      var overlay = document.getElementById('boss-overlay');
-      var nameEl = document.getElementById('boss-quest-name');
-      var xpList = document.getElementById('boss-xp-list');
-      if (overlay && nameEl) {
-        nameEl.textContent = result.quest.name;
-        if (xpList) {
-          var macros = S.getMacros();
-          xpList.innerHTML = result.adjustedTargets.map(function(t) {
-            var m = macros.find(function(x){ return x.id === t.macroSkillId; });
-            return '<div class="boss-xp-row" style="color:' + (m ? m.accentColor : 'var(--accent)') + ';">+' + t.xpAmount + ' XP → ' + (m ? m.name : '???') + '</div>';
-          }).join('');
-        }
-        overlay.classList.add('active');
-        LM.components.wheel.spawnParticles();
-      }
       stopRestTimer();
-      setTimeout(function() { LM.router.navigate('#dashboard'); }, 300);
+      LM.router.navigate('#dashboard');
     }
   }
 
