@@ -194,16 +194,18 @@ window.LM.views.coach = (function () {
     `You have full access to the user's past 7 days of log grid data and stats. ` +
     `If the user asks you to analyze a day, a specific cell, or a weekly trend, YOU MUST provide a highly detailed, analytical breakdown of that data. Point out exact hours they slacked off, summarize their logged hours, and demand efficiency. ` +
     `You keep your answers highly analytical, concise (4 sentences max). Never break character.\n` +
-    `QUEST CREATION PROTOCOL: The user can ask you to create a quest (e.g. using /quest or /cquest). ` +
-    `If the request is vague, INTERROGATE them for specifics (what exactly, how long, etc). Do not propose anything yet, just demand clarity. ` +
-    `Once you have concrete details, DO NOT CREATE IT DIRECTLY. You must PROPOSE the quest to the user by setting "action" to "propose_quest" and providing the "questData". ` +
+    `QUEST CREATION PROTOCOL: The user can ask you to create a regular quest (using /quest) OR a chain quest (using /cquest).\n` +
+    `- For /quest: ask for specifics, then set "action" to "propose_quest" and provide "questData": { "title": "...", "description": "...", "xp": 100 }.\n` +
+    `- For /cquest: a chain quest is a multi-step project. Ask for specifics, break it down into steps, then set "action" to "propose_chain" and provide "chainData": { "title": "...", "description": "...", "steps": [ { "name": "...", "xp": 50 }, ... ] }.\n` +
+    `Once you have concrete details, DO NOT CREATE IT DIRECTLY. You must PROPOSE it to the user. ` +
     `The user will then see a UI card and can either Accept it or ask you to Modify it. ` +
-    `If the user asks you to modify a proposed quest, tweak the questData and propose it again.\n` +
+    `If the user asks you to modify a proposed quest/chain, tweak the data and propose it again.\n` +
     `YOU MUST ALWAYS RESPOND IN STRICT JSON FORMAT:\n` +
     `{\n` +
     `  "message": "Your actual chat response to the user",\n` +
-    `  "action": null | "propose_quest",\n` +
-    `  "questData": { "title": "...", "description": "...", "xp": 100 }\n` +
+    `  "action": null | "propose_quest" | "propose_chain",\n` +
+    `  "questData": { ... },\n` +
+    `  "chainData": { ... }\n` +
     `}`;
 
   function getActiveChat() {
@@ -440,19 +442,26 @@ window.LM.views.coach = (function () {
       }
 
       if (m.sender === 'fletcher_proposal') {
-        const q = m.questData;
+        const isChain = m.chainData ? true : false;
+        const q = isChain ? m.chainData : m.questData;
         const msgIndex = chat.messages.indexOf(m);
         const avatarUrl = S.getSettings().coachAvatarUrl;
         const avatarContent = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
         
-        // If quest is already accepted, we hide the buttons or gray them out
         const isAccepted = m.accepted;
         const buttonsHtml = isAccepted 
-          ? `<div class="text-center font-bold text-xs text-primary/70 py-2 bg-surface-container border border-surface-container-highest rounded-xl">QUEST ACCEPTED</div>`
+          ? `<div class="text-center font-bold text-xs text-primary/70 py-2 bg-surface-container border border-surface-container-highest rounded-xl">${isChain ? 'CHAIN' : 'QUEST'} ACCEPTED</div>`
           : `<div class="flex gap-2 w-full">
                <button onclick="LM.views.coach.handleProposalAction('modify', ${msgIndex})" class="flex-1 py-2 rounded-xl bg-surface border border-surface-container-highest text-on-surface-variant font-bold text-xs hover:bg-surface-container transition-colors">MODIFY</button>
                <button onclick="LM.views.coach.handleProposalAction('accept', ${msgIndex})" class="flex-1 py-2 rounded-xl bg-primary text-black font-bold text-xs hover:opacity-90 transition-opacity shadow-[0_0_10px_rgba(255,255,255,0.3)]">ACCEPT</button>
              </div>`;
+
+        let extraHtml = '';
+        if (isChain && q.steps) {
+          extraHtml = `<div class="mt-3 space-y-1 mb-3">` + 
+            q.steps.map((s, idx) => `<div class="text-xs text-[#a0a0a8] flex justify-between bg-[#1a1a1a] p-1.5 rounded border border-[#2a2a2a]"><span class="truncate pr-2">${idx+1}. ${s.name}</span><span class="text-primary whitespace-nowrap">+${s.xp} XP</span></div>`).join('') +
+          `</div>`;
+        }
 
         return `
           <div class="flex justify-start mb-6 w-full px-4 md:px-0">
@@ -461,12 +470,11 @@ window.LM.views.coach = (function () {
                 ${avatarContent}
               </div>
               <div class="bg-[#121212] border border-[#1a1a1a] rounded-2xl px-4 py-4 shadow-md w-full max-w-sm">
-                <div class="font-label-sm text-[#e8e8e8] mb-2 flex items-center gap-1 tracking-widest"><span class="material-symbols-outlined text-sm">assignment</span> PROPOSED QUEST</div>
+                <div class="font-label-sm text-[#e8e8e8] mb-2 flex items-center gap-1 tracking-widest"><span class="material-symbols-outlined text-sm">${isChain ? 'link' : 'assignment'}</span> PROPOSED ${isChain ? 'CHAIN' : 'QUEST'}</div>
                 <div class="font-body-lg font-bold text-[#e8e8f0] mb-1">${q.title}</div>
-                <div class="font-body-sm text-[#7a7a85] mb-3">${q.description}</div>
-                <div class="flex items-center gap-2 mb-4">
-                  <span class="bg-[#1a1a1a] text-[#e8e8e8] px-2 py-1 rounded text-xs font-bold border border-[#2a2a2a]">+${q.xp} XP</span>
-                </div>
+                <div class="font-body-sm text-[#7a7a85] mb-3">${q.description || ''}</div>
+                ${extraHtml}
+                ${!isChain ? `<div class="flex items-center gap-2 mb-4"><span class="bg-[#1a1a1a] text-[#e8e8e8] px-2 py-1 rounded text-xs font-bold border border-[#2a2a2a]">+${q.xp} XP</span></div>` : ''}
                 ${buttonsHtml}
                 <span class="text-[10px] font-label-sm text-[#7a7a85] mt-3 block text-right">${getTimeStr(m.timestamp)}</span>
               </div>
@@ -722,32 +730,54 @@ window.LM.views.coach = (function () {
     if (action === 'modify') {
       const input = document.getElementById('coach-input-text');
       if (input) {
-        input.value = `I want to modify the "${msg.questData.title}" proposal. Change it so that: `;
+        const title = msg.chainData ? msg.chainData.title : msg.questData.title;
+        input.value = `I want to modify the "${title}" proposal. Change it so that: `;
         input.focus();
         input.dispatchEvent(new Event('input'));
       }
     } else if (action === 'accept') {
       if (msg.accepted) return;
       
-      const newQuest = {
-        id: 'quest_' + Date.now(),
-        name: msg.questData.title || "New Quest",
-        description: msg.questData.description || "",
-        type: "daily",
-        status: "active",
-        xpReward: msg.questData.xp || 100,
-        macroSkillId: null,
-        createdAt: Date.now(),
-        streak: 0,
-        lastCompletedDate: null,
-        lastResetDate: null,
-        subTasks: null,
-        timedResearch: { enabled: false },
-        isNegativeOnComplete: false,
-        isNegativeOnMiss: false,
-        isCustom: true
-      };
-      S.upsertQuest(newQuest);
+      if (msg.chainData) {
+        // It's a chain
+        const macros = S.getMacros();
+        const macroId = macros.length > 0 ? macros[0].id : 'overall';
+        const newChain = {
+          id: S.uid(),
+          name: msg.chainData.title || "New Chain",
+          description: msg.chainData.description || "",
+          macroId: macroId,
+          steps: (msg.chainData.steps || []).map(s => ({
+            id: S.uid(),
+            name: s.name || "Step",
+            targetSkills: [{ macroSkillId: macroId, microSkillId: null, xpAmount: s.xp || 50 }],
+            completedAt: null
+          })),
+          createdAt: Date.now()
+        };
+        S.upsertChain(newChain);
+      } else {
+        // Regular quest
+        const newQuest = {
+          id: 'quest_' + Date.now(),
+          name: msg.questData.title || "New Quest",
+          description: msg.questData.description || "",
+          type: "daily",
+          status: "active",
+          xpReward: msg.questData.xp || 100,
+          macroSkillId: null,
+          createdAt: Date.now(),
+          streak: 0,
+          lastCompletedDate: null,
+          lastResetDate: null,
+          subTasks: null,
+          timedResearch: { enabled: false },
+          isNegativeOnComplete: false,
+          isNegativeOnMiss: false,
+          isCustom: true
+        };
+        S.upsertQuest(newQuest);
+      }
       
       msg.accepted = true;
       S.upsertCoachChat(chat);
