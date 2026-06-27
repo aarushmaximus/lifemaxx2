@@ -97,11 +97,29 @@ window.LM.views.workout = (function () {
     var doneCount = sets.filter(function(s){ return s; }).length;
     var allSetsDone = sets.length > 0 && doneCount === sets.length;
 
-    var setBubbles = sets.map(function(done, si) {
-      var cls = done ? 'wo-set-bubble wo-set-done' : 'wo-set-bubble';
-      return '<button class="' + cls + '" onclick="LM.views.workout.toggleSet(' + idx + ',' + si + ')">' +
-        (done ? '✓' : (si + 1)) +
-      '</button>';
+    var lastLog = S.getLastWorkoutLog(ex.name);
+    var lastLogHtml = lastLog 
+      ? '<div style="font-size:0.75rem; color:var(--text-2); margin-top:4px; font-weight:500;">Last: ' + lastLog.sets.map(function(s){ return s.weight + 'x' + s.reps; }).join(', ') + '</div>'
+      : '';
+
+    if (!ex.loggedSets) {
+      ex.loggedSets = [];
+      for(var i=0; i<sets.length; i++) ex.loggedSets.push({ reps: '', weight: '' });
+    }
+
+    var setRows = sets.map(function(done, si) {
+      var log = ex.loggedSets[si] || { reps: '', weight: '' };
+      var cls = done ? 'wo-set-row-item done' : 'wo-set-row-item';
+      var checkColor = done ? 'var(--sk-accent)' : 'var(--bg-3)';
+      var checkIconColor = done ? '#000' : 'var(--text-2)';
+      return '<div class="' + cls + '" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">' +
+        '<div style="width: 24px; text-align:center; color:var(--text-3); font-weight:bold; font-size:0.85rem;">' + (si+1) + '</div>' +
+        '<input type="number" class="form-input" placeholder="Reps" value="' + log.reps + '" style="flex:1; padding:6px; text-align:center; height:36px; font-size:0.9rem;" onchange="LM.views.workout.updateSetLog(' + idx + ', ' + si + ', \'reps\', this.value)" ' + (done?'disabled':'') + '>' +
+        '<input type="number" class="form-input" placeholder="Lbs/Kg" value="' + log.weight + '" style="flex:1; padding:6px; text-align:center; height:36px; font-size:0.9rem;" onchange="LM.views.workout.updateSetLog(' + idx + ', ' + si + ', \'weight\', this.value)" ' + (done?'disabled':'') + '>' +
+        '<button style="padding:0; width:40px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:none; background:' + checkColor + '; color:' + checkIconColor + '; cursor:pointer; transition:0.2s;" onclick="LM.views.workout.toggleSet(' + idx + ', ' + si + ')">' +
+          '<span class="material-symbols-outlined" style="font-size:1.2rem;">' + (done ? 'check_circle' : 'check') + '</span>' +
+        '</button>' +
+      '</div>';
     }).join('');
 
     var cardClass = 'wo-exercise-card' + (allSetsDone ? ' wo-exercise-done' : '');
@@ -113,12 +131,14 @@ window.LM.views.workout = (function () {
           '<span class="wo-muscle-badge" style="background:' + m.color + '22;color:' + m.color + ';border-color:' + m.color + '44;">' + m.label + '</span>' +
         '</div>' +
       '</div>' +
-      '<div class="wo-ex-meta">' +
-        '<span class="wo-meta-tag">' + sets.length + ' × ' + (ex.repRange || '?') + '</span>' +
-        '<span class="wo-meta-tag">Rest: ' + formatRestTime(ex.restSeconds || 60) + '</span>' +
-        '<span class="wo-meta-tag">' + doneCount + '/' + sets.length + ' sets</span>' +
+      '<div class="wo-ex-meta" style="flex-direction:column; align-items:flex-start; gap:2px;">' +
+        '<div style="display:flex; gap:8px;">' +
+          '<span class="wo-meta-tag">' + sets.length + ' × ' + (ex.repRange || '?') + '</span>' +
+          '<span class="wo-meta-tag">Rest: ' + formatRestTime(ex.restSeconds || 60) + '</span>' +
+        '</div>' +
+        lastLogHtml + 
       '</div>' +
-      '<div class="wo-set-row">' + setBubbles + '</div>' +
+      '<div class="wo-set-list" style="margin-top:16px;">' + setRows + '</div>' +
     '</div>';
   }
 
@@ -183,12 +203,44 @@ window.LM.views.workout = (function () {
 
   function finishWorkout() {
     if (!questId) return;
+    var quest = S.getQuest(questId);
+    if (!quest || !quest.workout) return;
+
+    // Log the workout history!
+    quest.workout.exercises.forEach(function(ex) {
+      var completedLogs = [];
+      ex.completedSets.forEach(function(done, i) {
+        if (done && ex.loggedSets && ex.loggedSets[i]) {
+          completedLogs.push({
+            reps: Number(ex.loggedSets[i].reps) || 0,
+            weight: Number(ex.loggedSets[i].weight) || 0
+          });
+        }
+      });
+      if (completedLogs.length > 0) {
+        S.addWorkoutLog(ex.name, completedLogs);
+      }
+    });
+
     var result = S.completeQuest(questId);
     if (result) {
       LM.components.notifications.show('Workout complete! +' + F.formatXP(result.adjustedTargets.reduce(function(s,t){ return s + t.xpAmount; }, 0)) + ' XP', 'xp');
       stopRestTimer();
       LM.router.navigate('#dashboard');
     }
+  }
+
+  function updateSetLog(exIdx, setIdx, field, value) {
+    var quest = S.getQuest(questId);
+    if (!quest || !quest.workout) return;
+    var ex = quest.workout.exercises[exIdx];
+    if (!ex) return;
+    if (!ex.loggedSets) {
+      ex.loggedSets = [];
+      for(var i=0; i<ex.completedSets.length; i++) ex.loggedSets.push({ reps: '', weight: '' });
+    }
+    ex.loggedSets[setIdx][field] = value;
+    S.upsertQuest(quest);
   }
 
   // ══════════════════════════════════════
@@ -260,6 +312,7 @@ window.LM.views.workout = (function () {
     render: render,
     init: init,
     toggleSet: toggleSet,
+    updateSetLog: updateSetLog,
     finishWorkout: finishWorkout,
     skipRest: skipRest
   };

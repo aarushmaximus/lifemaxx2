@@ -3,7 +3,7 @@ window.LM.views.analysis = (function () {
   const F = window.LM.formulas;
   const N = window.LM.components.notifications;
 
-  let activeTab = 'today'; // 'today' or 'archive'
+  let activeTab = 'today'; // 'today' or 'archive' or 'progression'
   let activeCellIdx = null; // Currently selected hour cell (0-23)
   
   // AI Chat State
@@ -747,15 +747,79 @@ window.LM.views.analysis = (function () {
           <div class="flex gap-2 bg-surface-container p-1 rounded-xl">
             <button onclick="LM.views.analysis.toggleTab('today')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'today' ? 'bg-primary text-black shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}">Today</button>
             <button onclick="LM.views.analysis.toggleTab('archive')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'archive' ? 'bg-primary text-black shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}">Archive</button>
+            <button onclick="LM.views.analysis.toggleTab('progression')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'progression' ? 'bg-primary text-black shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}">Progression</button>
           </div>
         </header>
 
         <!-- Main Content -->
         <div>
-          ${activeTab === 'today' ? renderToday() : renderArchive()}
+          ${activeTab === 'today' ? renderToday() : activeTab === 'archive' ? renderArchive() : renderProgression()}
         </div>
       </div>
     `;
+  }
+
+  function renderProgression() {
+    const history = S.getWorkoutHistory();
+    if (history.length === 0) {
+      return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No workout history logged yet. Complete a workout with weights to see progressive overload!</div>`;
+    }
+
+    const seriesData = {};
+    // Extract max Estimated 1RM per exercise per date
+    history.forEach(log => {
+      const max1RM = log.sets.reduce((max, s) => {
+        const est1RM = s.weight * (1 + s.reps / 30);
+        return est1RM > max ? est1RM : max;
+      }, 0);
+      
+      if (max1RM > 0) {
+        if (!seriesData[log.exerciseName]) seriesData[log.exerciseName] = [];
+        seriesData[log.exerciseName].push({ date: log.date, y: Math.round(max1RM) });
+      }
+    });
+
+    const exNames = Object.keys(seriesData);
+    if (exNames.length === 0) {
+      return `<div class="p-10 text-center text-on-surface-variant text-sm mt-10">No weight/reps data found.</div>`;
+    }
+
+    let html = `<div class="mb-6"><h2 class="font-headline-sm text-primary mb-2">Workout Progressive Overload</h2><p class="text-xs text-on-surface-variant mb-6">Graphs show your Estimated 1 Rep Max over time using the Epley formula.</p><div class="flex flex-col gap-6">`;
+
+    exNames.forEach(exName => {
+      const data = seriesData[exName];
+      data.sort((a,b) => a.date - b.date); // chronological
+
+      const w = 320;
+      const h = 100;
+      const maxValY = Math.max(...data.map(d => d.y), 1) * 1.1; // 10% headroom
+
+      const points = data.map((d, i) => {
+        const px = (i / Math.max(1, data.length - 1)) * w;
+        const py = h - ((d.y / maxValY) * h);
+        return `${px},${py}`;
+      }).join(' ');
+
+      html += `
+        <div class="w-full bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest">
+          <div class="flex justify-between items-end mb-4">
+            <span class="font-bold text-sm text-on-surface">${exName}</span>
+            <span class="text-xs text-on-surface-variant font-mono">Max e1RM: ${Math.max(...data.map(d=>d.y))}</span>
+          </div>
+          <svg viewBox="0 -10 ${w} ${h+20}" class="w-full h-32 overflow-visible">
+            <polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            ${data.map((d, i) => {
+              const px = (i / Math.max(1, data.length - 1)) * w;
+              const py = h - ((d.y / maxValY) * h);
+              return `<circle cx="${px}" cy="${py}" r="4" fill="var(--bg-base)" stroke="var(--primary)" stroke-width="2"><title>${new Date(d.date).toLocaleDateString()}: ${d.y}</title></circle>`;
+            }).join('')}
+          </svg>
+        </div>
+      `;
+    });
+
+    html += `</div></div>`;
+    return html;
   }
 
   return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand, toggleArchiveSort, toggleWeekCollapse, setCellMacro };

@@ -20,7 +20,8 @@ window.LM.store = (function () {
     cellPresets: 'lm_cell_presets',
     statistics: 'lm_statistics',
     statLogs: 'lm_stat_logs',
-    weeklySplit: 'lm_weekly_split'
+    weeklySplit: 'lm_weekly_split',
+    workoutHistory: 'lm_workout_history'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -695,6 +696,27 @@ window.LM.store = (function () {
     saveDailyLogs(logs);
   }
 
+  // ── Workout History ──
+  function getWorkoutHistory() { return load(KEYS.workoutHistory) || []; }
+  function saveWorkoutHistory(list) { save(KEYS.workoutHistory, list); emit('change'); }
+  function addWorkoutLog(exerciseName, sets) {
+    const list = getWorkoutHistory();
+    list.push({
+      id: 'wh_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+      date: Date.now(),
+      dateStr: getISTDateString(),
+      exerciseName: exerciseName,
+      sets: sets // Array of { reps: Number, weight: Number }
+    });
+    saveWorkoutHistory(list);
+  }
+  function getLastWorkoutLog(exerciseName) {
+    const list = getWorkoutHistory().filter(l => l.exerciseName === exerciseName);
+    if (list.length === 0) return null;
+    list.sort((a,b) => b.date - a.date);
+    return list[0];
+  }
+
   // ── Cell Presets ──
   function getCellPresets() { 
     return load(KEYS.cellPresets) || [
@@ -910,6 +932,7 @@ window.LM.store = (function () {
     getSettings, saveSettings,
     getXPLog, saveXPLog,
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
+    getWorkoutHistory, addWorkoutLog, getLastWorkoutLog,
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     getDailyLogs, getDailyLog, upsertDailyLog,
     getCellPresets, saveCellPresets, upsertCellPreset, deleteCellPreset,
