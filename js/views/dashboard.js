@@ -505,7 +505,7 @@ window.LM.views.dashboard = (function () {
           <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
              <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--text-2);letter-spacing:0.1em;">DAILY STATISTICS</span>
           </div>
-          <div style="display:grid; grid-template-rows: repeat(3, max-content); grid-auto-flow: column; grid-auto-columns: 100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type: x mandatory; gap: 8px; flex:1; padding-bottom:4px;" class="custom-scrollbar hide-scrollbar">
+          <div style="display:grid; grid-template-rows: repeat(3, max-content); grid-auto-flow: column; grid-auto-columns: 100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type: x mandatory; gap: 8px; flex:1; padding-bottom:4px; align-content: start;" class="custom-scrollbar hide-scrollbar">
             ${stats.map(s => {
               const todayStr = new Date().toDateString();
               const logs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
@@ -520,17 +520,17 @@ window.LM.views.dashboard = (function () {
               }
 
               return `
-              <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
-                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+              <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
+                <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                   <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                   <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-                    <input type="number" id="stat-val-top-${s.id}" class="form-input" placeholder="Amt" style="width:70px; padding:4px 8px; font-size:0.85rem; height:32px;" onclick="event.stopPropagation();">
-                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-top-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:4px 10px; font-size:0.75rem; height:32px; min-width:unset;">LOG</button>
+                    <input type="number" id="stat-val-top-${s.id}" class="form-input" placeholder="Amt" style="width:65px; padding:4px 8px; font-size:0.85rem; height:28px;" onclick="event.stopPropagation();">
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-top-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:2px 10px; font-size:0.75rem; height:28px; min-width:unset;">LOG</button>
                   </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
-                  <div style="font-size:1.6rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:4px;">
-                    ${todayTotal}<span style="font-size:0.9rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
+                  <div style="font-size:2rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:2px;">
+                    ${todayTotal}<span style="font-size:1rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
                   </div>
                   ${leftHtml}
                 </div>
@@ -768,7 +768,7 @@ window.LM.views.dashboard = (function () {
                 <h2 style="font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; color: var(--text-3);">
                   DAILY STATISTICS
                 </h2>
-                <div class="quest-grid">
+                <div class="quest-grid" style="display:flex; flex-direction:column; gap:8px;">
                   ${stats.map(s => {
                     const todayStr = new Date().toDateString();
                     const logs = S.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
@@ -783,17 +783,17 @@ window.LM.views.dashboard = (function () {
                     }
 
                     return `
-                    <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; width: 100%; box-sizing: border-box;">
-                      <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                    <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; width: 100%; box-sizing: border-box;">
+                      <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                         <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                         <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-                          <input type="number" id="stat-val-bot-${s.id}" class="form-input" placeholder="Amt" style="width:70px; padding:4px 8px; font-size:0.85rem; height:32px;" onclick="event.stopPropagation();">
-                          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-bot-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:4px 10px; font-size:0.75rem; height:32px; min-width:unset;">LOG</button>
+                          <input type="number" id="stat-val-bot-${s.id}" class="form-input" placeholder="Amt" style="width:65px; padding:4px 8px; font-size:0.85rem; height:28px;" onclick="event.stopPropagation();">
+                          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-bot-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:2px 10px; font-size:0.75rem; height:28px; min-width:unset;">LOG</button>
                         </div>
                       </div>
                       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
-                        <div style="font-size:1.6rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:4px;">
-                          ${todayTotal}<span style="font-size:0.9rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
+                        <div style="font-size:2rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:2px;">
+                          ${todayTotal}<span style="font-size:1rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
                         </div>
                         ${leftHtml}
                       </div>

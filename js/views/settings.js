@@ -215,16 +215,16 @@ window.LM.views.settings = (function () {
                   ${s.fixedTimers.map(t => {
                     const [hh, mm] = t.timeStr.split(':');
                     const hInt = parseInt(hh, 10);
-                    const displayTime = \`\${hInt % 12 || 12}:\${mm} \${hInt >= 12 ? 'PM' : 'AM'}\`;
-                    return \`
+                    const displayTime = `${hInt % 12 || 12}:${mm} ${hInt >= 12 ? 'PM' : 'AM'}`;
+                    return `
                       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-container-highest);padding:8px 12px;border-radius:8px;">
                         <div>
-                          <span style="font-weight:bold;color:var(--text-1);font-size:0.9rem;margin-right:8px;">\${displayTime}</span>
-                          <span style="color:var(--text-2);font-size:0.85rem;">\${t.label}</span>
+                          <span style="font-weight:bold;color:var(--text-1);font-size:0.9rem;margin-right:8px;">${displayTime}</span>
+                          <span style="color:var(--text-2);font-size:0.85rem;">${t.label}</span>
                         </div>
-                        <button class="btn btn-ghost btn-sm" onclick="LM.views.settings.deleteFixedTimer('\${t.id}')" style="color:var(--danger);padding:4px 8px;">Delete</button>
+                        <button class="btn btn-ghost btn-sm" onclick="LM.views.settings.deleteFixedTimer('${t.id}')" style="color:var(--danger);padding:4px 8px;">Delete</button>
                       </div>
-                    \`;
+                    `;
                   }).join('')}
                 </div>
               </div>
