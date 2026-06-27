@@ -1,5 +1,5 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-cache-v136';
+const CACHE_NAME = 'lifemaxx-cache-v137';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS = [
   './css/tailwind-build.css',
   './js/formulas.js',
   './js/store.js',
+  './js/cell-notifier.js',
+  './js/ftimer-notifier.js',
   './js/ai-engine.js',
   './js/quest-progress.js',
   './js/seed.js',

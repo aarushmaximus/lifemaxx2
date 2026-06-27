@@ -202,6 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.LM.questProgress) {
     window.LM.questProgress.checkRunningTimers();
   }
+  
+  if (window.LM.fixedTimerNotifier) {
+    window.LM.fixedTimerNotifier.init();
+  }
 
   // High-performance second-by-second countdown timer ticking engine
   setInterval(() => {

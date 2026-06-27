@@ -207,6 +207,28 @@ window.LM.views.settings = (function () {
                 Fletcher will fire a browser push notification when a /timer countdown finishes.
               </p>
             </div>
+            
+            ${s.fixedTimers && s.fixedTimers.length > 0 ? `
+              <div style="margin-top: 8px;">
+                <div style="font-size:0.95rem;font-weight:500;margin-bottom:8px;">Active Fixed Timers (/ftimer)</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-left:24px;">
+                  ${s.fixedTimers.map(t => {
+                    const [hh, mm] = t.timeStr.split(':');
+                    const hInt = parseInt(hh, 10);
+                    const displayTime = \`\${hInt % 12 || 12}:\${mm} \${hInt >= 12 ? 'PM' : 'AM'}\`;
+                    return \`
+                      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-container-highest);padding:8px 12px;border-radius:8px;">
+                        <div>
+                          <span style="font-weight:bold;color:var(--text-1);font-size:0.9rem;margin-right:8px;">\${displayTime}</span>
+                          <span style="color:var(--text-2);font-size:0.85rem;">\${t.label}</span>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" onclick="LM.views.settings.deleteFixedTimer('\${t.id}')" style="color:var(--danger);padding:4px 8px;">Delete</button>
+                      </div>
+                    \`;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         </div>
 

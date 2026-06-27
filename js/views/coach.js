@@ -161,6 +161,20 @@ window.LM.views.coach = (function () {
     window.LM.router.render();
   }
 
+  function handleFTimerCommand() {
+    let chat = getActiveChat();
+    if (!chat) {
+      chat = { id: S.uid(), title: 'Fixed Timer', createdAt: Date.now(), messages: [] };
+      activeChatId = chat.id;
+      S.upsertCoachChat(chat);
+    }
+    chat.messages.push({ sender: 'fletcher', text: 'When should I remind you every day?', timestamp: Date.now() });
+    chat.messages.push({ sender: 'ftimer_setter', text: '', timestamp: Date.now() });
+    S.upsertCoachChat(chat);
+    renderHistory();
+    window.LM.router.render();
+  }
+
   function startTimerFromCard() {
     const h = parseInt(document.getElementById('timer-h')?.value || 0);
     const m = parseInt(document.getElementById('timer-m')?.value || 0);
@@ -185,6 +199,54 @@ window.LM.views.coach = (function () {
     const settings = S.getSettings();
     if (settings.timerNotificationsEnabled && Notification.permission === 'default') {
       Notification.requestPermission();
+    }
+  }
+
+  function setFixedTimerFromCard() {
+    const timeVal = document.getElementById('ftimer-time')?.value;
+    const label = document.getElementById('ftimer-label')?.value?.trim() || 'Reminder';
+    
+    if (!timeVal) {
+      N.show('Select a time first!', 'warning');
+      return;
+    }
+
+    const st = S.getSettings();
+    st.fixedTimers = st.fixedTimers || [];
+    st.fixedTimers.push({
+      id: S.uid(),
+      timeStr: timeVal,
+      label: label,
+      enabled: true
+    });
+    S.saveSettings(st);
+
+    let chat = getActiveChat();
+    if (chat) {
+      const idx = chat.messages.findLastIndex(msg => msg.sender === 'ftimer_setter');
+      if (idx !== -1) {
+        // Convert 24h to 12h for display
+        const [hh, mm] = timeVal.split(':');
+        const hInt = parseInt(hh, 10);
+        const ampm = hInt >= 12 ? 'PM' : 'AM';
+        const displayH = hInt % 12 || 12;
+        const displayTime = `${displayH}:${mm} ${ampm}`;
+        
+        chat.messages[idx] = { sender: 'fletcher', text: `Daily fixed timer set: "${label}" at ${displayTime}. I'll remind you every day.`, timestamp: Date.now() };
+        S.upsertCoachChat(chat);
+      }
+    }
+    renderHistory();
+    N.show(`Daily timer set for ${timeVal}`, 'success');
+
+    // Make sure we have notification permissions
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    // Refresh the notifier schedule
+    if (window.LM.fixedTimerNotifier) {
+      window.LM.fixedTimerNotifier.init();
     }
   }
 
@@ -267,6 +329,10 @@ window.LM.views.coach = (function () {
     // Intercept /timer before any API call
     if (userText.trim().toLowerCase() === '/timer') {
       handleTimerCommand();
+      return;
+    }
+    if (userText.trim().toLowerCase() === '/ftimer') {
+      handleFTimerCommand();
       return;
     }
     if (!userText.trim()) return;
@@ -416,8 +482,35 @@ window.LM.views.coach = (function () {
         </div>`;
     };
 
+    const renderFTimerSetterCard = () => {
+      const avatarUrl = S.getSettings().coachAvatarUrl;
+      const avatarContent = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : `F`;
+      return `
+        <div class="flex justify-start mb-6 w-full px-4 md:px-0">
+          <div class="flex items-end gap-3 w-full md:max-w-[75%]">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 bg-surface-container border border-surface-container-highest overflow-hidden flex items-center justify-center font-bold text-sm text-primary shadow-sm mb-1">${avatarContent}</div>
+            <div style="background:#0e0e0e;border:1px solid #1a1a1a;border-radius:18px;border-bottom-left-radius:4px;padding:16px;width:100%;max-width:340px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#7a7a85;margin-bottom:12px;">⏰ SET DAILY FIXED TIMER</div>
+              <div style="margin-bottom:10px;">
+                <input id="ftimer-label" type="text" placeholder="Label (e.g. Bedtime, Gym)" maxlength="30"
+                  style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px 12px;font-size:13px;color:#e8e8f0;outline:none;box-sizing:border-box;">
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                  <div style="font-size:10px;color:#555;margin-bottom:4px;">TIME OF DAY</div>
+                  <input id="ftimer-time" type="time"
+                    style="width:100%;background:#121212;border:1px solid #222;border-radius:8px;padding:8px;font-size:18px;font-weight:700;color:#e8e8f0;text-align:center;outline:none;">
+                </div>
+              </div>
+              <button onclick="LM.views.coach.setFixedTimerFromCard()" style="width:100%;padding:10px;border-radius:10px;background:#e8e8e8;border:none;color:#000;font-weight:700;font-size:13px;letter-spacing:.06em;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">SET DAILY TIMER</button>
+            </div>
+          </div>
+        </div>`;
+    };
+
     container.innerHTML = chat.messages.map(m => {
       if (m.sender === 'timer_setter') return renderTimerSetterCard();
+      if (m.sender === 'ftimer_setter') return renderFTimerSetterCard();
       if (m.sender === 'system') {
         return `<div class="text-center font-mono text-xs text-primary/50 my-4 ${m.isLoading ? 'animate-pulse' : ''} tracking-widest">${m.text}</div>`;
       }
@@ -655,6 +748,13 @@ window.LM.views.coach = (function () {
                       <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Set a countdown timer (no AI call)</div>
                     </div>
                   </div>
+                  <div class="cmd-item" onclick="LM.views.coach.insertCommand('/ftimer ')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+                    <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">alarm</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#fff;">/ftimer [name]</div>
+                      <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Set a daily recurring notification</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style="display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px;">
@@ -856,6 +956,7 @@ window.LM.views.coach = (function () {
     insertCommand,
     handleProposalAction,
     startTimerFromCard,
+    setFixedTimerFromCard,
     deleteTimer,
     renderTimerPanel,
     toggleTimerPanel
