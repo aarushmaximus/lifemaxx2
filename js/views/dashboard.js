@@ -519,6 +519,12 @@ window.LM.views.dashboard = (function () {
                 leftHtml = `<span style="font-size:0.65rem; color:var(--danger); font-weight:bold; margin-left:auto; text-transform:uppercase;">${left} ${s.unit || ''} left</span>`;
               }
 
+              const currentXP = window.LM.formulas.calculateStatisticXP(todayTotal, s.goalValue, s.maxXP, s.penaltyRange, s.negativeXP);
+              const isGood = currentXP >= 0;
+              const statusIcon = isGood 
+                ? `<span class="material-symbols-outlined" style="color:var(--success); font-size:1.1rem; margin-left:4px;">check_circle</span>`
+                : `<span class="material-symbols-outlined" style="color:var(--danger); font-size:1.1rem; margin-left:4px;">error</span>`;
+
               return `
               <div class="quest-card" style="flex-direction:row; border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
                 <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
@@ -526,6 +532,7 @@ window.LM.views.dashboard = (function () {
                   <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
                     <input type="number" id="stat-val-top-${s.id}" class="form-input" placeholder="Amt" style="width:65px; padding:4px 8px; font-size:0.85rem; height:28px;" onclick="event.stopPropagation();">
                     <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-top-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:2px 10px; font-size:0.75rem; height:28px; min-width:unset;">LOG</button>
+                    ${statusIcon}
                   </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
@@ -775,6 +782,12 @@ window.LM.views.dashboard = (function () {
                     const todayTotal = logs.reduce((sum, log) => sum + log.value, 0);
                     const left = s.goalValue - todayTotal;
                     
+                    const currentXP = window.LM.formulas.calculateStatisticXP(todayTotal, s.goalValue, s.maxXP, s.penaltyRange, s.negativeXP);
+                    const isGood = currentXP >= 0;
+                    const statusIcon = isGood 
+                      ? `<span class="material-symbols-outlined" style="color:var(--success); font-size:1.1rem; margin-left:4px;">check_circle</span>`
+                      : `<span class="material-symbols-outlined" style="color:var(--danger); font-size:1.1rem; margin-left:4px;">error</span>`;
+                    
                     let leftHtml = '';
                     if (left >= 0) {
                       leftHtml = `<span style="font-size:0.65rem; color:var(--success); font-weight:bold; margin-left:auto; text-transform:uppercase;">+${left} ${s.unit || ''} left</span>`;
@@ -789,6 +802,7 @@ window.LM.views.dashboard = (function () {
                         <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
                           <input type="number" id="stat-val-bot-${s.id}" class="form-input" placeholder="Amt" style="width:65px; padding:4px 8px; font-size:0.85rem; height:28px;" onclick="event.stopPropagation();">
                           <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); const el = document.getElementById('stat-val-bot-${s.id}'); if(el.value){LM.views.dashboard.logStatistic('${s.id}', Number(el.value)); el.value='';}" style="padding:2px 10px; font-size:0.75rem; height:28px; min-width:unset;">LOG</button>
+                          ${statusIcon}
                         </div>
                       </div>
                       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
