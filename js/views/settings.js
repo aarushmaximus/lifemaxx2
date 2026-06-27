@@ -169,6 +169,15 @@ window.LM.views.settings = (function () {
                 When enabled, primary UI elements will use a high-fidelity reflective chrome gradient. Disable to use your flat accent color.
               </p>
             </div>
+            <div>
+              <label class="form-check" style="font-size:0.95rem;font-weight:500;">
+                <input type="checkbox" id="set-stats-carousel" ${s.statsInCarousel !== false ? 'checked' : ''}>
+                Daily Statistics in Carousel
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-3);margin-left:24px;margin-top:4px;">
+                When enabled, Daily Statistics are placed in the top dashboard carousel. Disable to show them at the bottom.
+              </p>
+            </div>
             <!-- Theme selector removed. The app uses a unified Chrome design system now. -->
             <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -751,6 +760,15 @@ window.LM.views.settings = (function () {
     const historyBarCheck = document.getElementById('set-history-bar');
     const fillingIndicatorCheck = document.getElementById('set-filling-indicator');
     const fillingIndicatorWrap = document.getElementById('set-filling-indicator-wrap');
+    const statsCarouselCheck = document.getElementById('set-stats-carousel');
+
+    if (statsCarouselCheck) {
+      statsCarouselCheck.addEventListener('change', (e) => {
+        const st = S.getSettings();
+        st.statsInCarousel = e.target.checked;
+        S.saveSettings(st);
+      });
+    }
 
     if (historyBarCheck) {
       historyBarCheck.addEventListener('change', (e) => {
