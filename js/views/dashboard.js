@@ -513,24 +513,24 @@ window.LM.views.dashboard = (function () {
               
               let leftHtml = '';
               if (left >= 0) {
-                leftHtml = \`<span style="font-size:0.75rem; color:var(--success); font-weight:bold; margin-left:auto;">+\${left} \${s.unit || ''} left</span>\`;
+                leftHtml = `<span style="font-size:0.75rem; color:var(--success); font-weight:bold; margin-left:auto;">+${left} ${s.unit || ''} left</span>`;
               } else {
-                leftHtml = \`<span style="font-size:0.75rem; color:var(--danger); font-weight:bold; margin-left:auto;">\${left} \${s.unit || ''} left</span>\`;
+                leftHtml = `<span style="font-size:0.75rem; color:var(--danger); font-weight:bold; margin-left:auto;">${left} ${s.unit || ''} left</span>`;
               }
 
-              return \`
+              return `
               <div class="quest-card" style="border-color:var(--border); margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                  <h3 class="quest-card-name">\${s.name}</h3>
-                  <div style="font-size:0.85rem; font-weight:bold; color:var(--text-1);">\${todayTotal} / \${s.goalValue} <span style="font-size:0.7rem; color:var(--text-3); font-weight:normal;">\${s.unit || ''}</span></div>
+                  <h3 class="quest-card-name">${s.name}</h3>
+                  <div style="font-size:0.85rem; font-weight:bold; color:var(--text-1);">${todayTotal} / ${s.goalValue} <span style="font-size:0.7rem; color:var(--text-3); font-weight:normal;">${s.unit || ''}</span></div>
                 </div>
                 <div class="stat-controls" style="display:flex; align-items:center; gap:8px; margin-top:12px;">
-                  <input type="number" id="stat-val-\${s.id}" class="form-input" placeholder="Add amt..." style="width:100px; padding:6px 10px;" onclick="event.stopPropagation();">
-                  <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); LM.views.dashboard.logStatistic('\${s.id}')" style="padding:6px 12px;">LOG</button>
-                  \${leftHtml}
+                  <input type="number" id="stat-val-${s.id}" class="form-input" placeholder="Add amt..." style="width:100px; padding:6px 10px;" onclick="event.stopPropagation();">
+                  <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); LM.views.dashboard.logStatistic('${s.id}')" style="padding:6px 12px;">LOG</button>
+                  ${leftHtml}
                 </div>
               </div>
-            \`}).join('')}
+            `}).join('')}
           </div>
         </div>
       `;
