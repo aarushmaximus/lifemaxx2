@@ -221,15 +221,7 @@ window.LM.components.questModal = (function () {
           </select>
         </div>
 
-        <!-- Generate Chain with AI -->
-        ${!isReadOnly ? `
-        <div class="form-group" style="border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-top:10px; background:rgba(255, 74, 141, 0.03);">
-          <label style="color:var(--accent); font-weight:bold; font-family:var(--font-display); letter-spacing:0.05em;">⚡ GENERATE QUEST CHAIN WITH GEMINI</label>
-          <textarea id="qm-ai-prompt" class="form-input form-textarea" placeholder="Describe a goal to break down into a chain (e.g. 'Learn React and build a project', 'Prepare for a 10k run in 4 steps')"></textarea>
-          <button type="button" class="btn btn-ghost btn-sm" id="qm-ai-generate-btn" style="margin-top:8px; width:100%; border-color:var(--accent); color:var(--accent);">Generate & Add Chain</button>
-          <div id="qm-ai-status" style="font-size:0.75rem; color:var(--text-3); margin-top:6px; font-family:var(--font-mono); display:none;">Processing...</div>
-        </div>
-        ` : ''}
+
 
         <!-- Target Skills -->
         <div class="form-group" style="margin-top: 5px;">
@@ -497,77 +489,7 @@ window.LM.components.questModal = (function () {
 
     // AI Generate Quest Chain logic
     const aiGenBtn = document.getElementById('qm-ai-generate-btn');
-    if (aiGenBtn) {
-      aiGenBtn.addEventListener('click', async () => {
-        const promptInput = document.getElementById('qm-ai-prompt');
-        const statusDiv = document.getElementById('qm-ai-status');
-        const prompt = promptInput?.value?.trim();
-        if (!prompt) {
-          N.show('Please enter a goal description first.', 'warning');
-          return;
-        }
 
-        const settings = S.getSettings();
-        if (!settings.geminiApiKey) {
-          N.show('Please configure your Gemini API Key in Settings first.', 'warning');
-          return;
-        }
-
-        aiGenBtn.disabled = true;
-        if (statusDiv) {
-          statusDiv.style.display = 'block';
-          statusDiv.textContent = 'Generating quest chain with Gemini...';
-          statusDiv.style.color = 'var(--accent)';
-        }
-
-        const systemInstruction = `You are a life RPG planning assistant. The user wants to achieve a goal. Break down the goal into a logical, sequential sequence of quests (at least 3-5 steps).
-For each quest, return:
-- title: concise, actionable task name.
-- macroCategory: the high-level category representing the main skill targeted. Choose EXACTLY one of: "Mind", "Body", "Soul", "Work" (or "Creative" if it fits work/learning).
-- timeLimitHours: numeric duration in hours representing expiration (e.g. 1.5, 3, 24).
-
-You MUST return a JSON object with this exact structure:
-{
-  "quests": [
-    {
-      "title": "Quest Name",
-      "macroCategory": "Mind",
-      "timeLimitHours": 2
-    }
-  ]
-}`;
-
-        try {
-          const response = await window.LM.aiEngine.generateContent(prompt, systemInstruction);
-          if (response.error) {
-            throw new Error(response.error);
-          }
-
-          let jsonText = response.data.candidates[0].content.parts[0].text;
-          // Clean up markdown block if returned
-          jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-          
-          const parsed = JSON.parse(jsonText);
-          if (!parsed.quests || !Array.isArray(parsed.quests)) {
-            throw new Error("Invalid response format received from AI.");
-          }
-
-          S.addQuestChain(parsed);
-          N.show(`Successfully generated and added a chain of ${parsed.quests.length} quests!`, 'success');
-          close();
-          window.LM.router.render(); // Redraw dashboard to show new quests
-        } catch (err) {
-          console.error("AI Generation failed:", err);
-          if (statusDiv) {
-            statusDiv.textContent = `Error: ${err.message}`;
-            statusDiv.style.color = 'var(--danger)';
-          }
-          N.show(`AI Generation failed: ${err.message}`, 'danger');
-        } finally {
-          aiGenBtn.disabled = false;
-        }
-      });
-    }
 
     // Submit
     document.getElementById('qm-submit')?.addEventListener('click', submit);
