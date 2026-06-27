@@ -520,7 +520,7 @@ window.LM.views.dashboard = (function () {
               }
 
               return `
-              <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; scroll-snap-align: start;">
+              <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; scroll-snap-align: start; width: 100%; box-sizing: border-box;">
                 <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
                   <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                   <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
@@ -529,7 +529,7 @@ window.LM.views.dashboard = (function () {
                   </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
-                  <div style="font-size:1.6rem; font-weight:900; color:var(--text-1); font-family:var(--font-display); line-height:1; white-space:nowrap; margin-bottom:4px;">
+                  <div style="font-size:1.6rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:4px;">
                     ${todayTotal}<span style="font-size:0.9rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
                   </div>
                   ${leftHtml}
@@ -783,7 +783,7 @@ window.LM.views.dashboard = (function () {
                     }
 
                     return `
-                    <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px;">
+                    <div class="quest-card" style="border-color:var(--border); margin-bottom:0; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; width: 100%; box-sizing: border-box;">
                       <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
                         <h3 class="quest-card-name" style="margin:0; font-size:0.95rem;">${s.name}</h3>
                         <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
@@ -792,7 +792,7 @@ window.LM.views.dashboard = (function () {
                         </div>
                       </div>
                       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width: 100px;">
-                        <div style="font-size:1.6rem; font-weight:900; color:var(--text-1); font-family:var(--font-display); line-height:1; white-space:nowrap; margin-bottom:4px;">
+                        <div style="font-size:1.6rem; font-weight:normal; color:var(--text-1); font-family:inherit; line-height:1; white-space:nowrap; margin-bottom:4px;">
                           ${todayTotal}<span style="font-size:0.9rem; color:var(--text-3); font-weight:normal;">/${s.goalValue}</span>
                         </div>
                         ${leftHtml}
