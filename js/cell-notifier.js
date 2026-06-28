@@ -95,9 +95,14 @@ window.LM.cellNotifier = (function () {
     return nextHour - now;
   }
 
+  let _timeoutId = null;
+
   function scheduleNextHour() {
     const msUntil = getMsUntilNextHour();
-    setTimeout(() => {
+    if (_timeoutId) clearTimeout(_timeoutId);
+    if (_intervalId) clearInterval(_intervalId);
+    
+    _timeoutId = setTimeout(() => {
       fireNotification();
       // Now set up a true hourly interval from this point
       _intervalId = setInterval(fireNotification, 60 * 60 * 1000);
@@ -141,6 +146,10 @@ window.LM.cellNotifier = (function () {
     if (_intervalId) {
       clearInterval(_intervalId);
       _intervalId = null;
+    }
+    if (_timeoutId) {
+      clearTimeout(_timeoutId);
+      _timeoutId = null;
     }
   }
 
