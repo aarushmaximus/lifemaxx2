@@ -1165,10 +1165,9 @@ window.LM.views.dashboard = (function () {
     if (confirm('Delete this quest instance?')) { S.deleteQuest(questId); refreshCards(); }
   }
 
-  function logStatistic(statId) {
-    const input = document.getElementById(`stat-val-${statId}`);
-    if (!input || !input.value) return;
-    const loggedValue = parseFloat(input.value);
+  function logStatistic(statId, val) {
+    if (val === undefined || isNaN(val)) return;
+    const loggedValue = Number(val);
     
     const stat = S.getStatistic(statId);
     if (!stat) return;
