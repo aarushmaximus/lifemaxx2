@@ -277,7 +277,6 @@ window.LM.views.analysis = (function () {
   // ── Rendering Archive ──
   function renderStatChartsForWeek(weekDates) {
     const logs = S.getStatLogs();
-    if (logs.length === 0) return '';
     const stats = S.getStatistics();
     if (stats.length === 0) return '';
     
@@ -513,10 +512,34 @@ window.LM.views.analysis = (function () {
         
         if (isExpanded) {
           html += `<div class="p-4 pt-0 border-t border-surface-container-highest/50">`;
+          
+          // Past Stats Editing
+          const allStats = S.getStatistics();
+          if (allStats.length > 0) {
+            html += `<div class="mb-4 pt-4 border-b border-surface-container-highest/50 pb-4">
+              <p class="text-xs text-on-surface-variant mb-2 font-bold uppercase">Logged Statistics for ${dayName}</p>
+              <div class="flex flex-col gap-2">`;
+            allStats.forEach(stat => {
+              const todaysLogs = S.getStatLogs().filter(l => l.statId === stat.id && l.dateStr === dateStr);
+              const val = todaysLogs.reduce((acc, l) => acc + l.value, 0);
+              const inputId = `edit-stat-${stat.id}-${dateStr.replace(/\\s/g,'-')}`;
+              html += `
+                <div class="flex items-center gap-2 bg-surface-container-highest/30 p-2 rounded-lg">
+                  <span class="text-xs text-on-surface flex-1">${stat.name}</span>
+                  <input id="${inputId}" type="number" value="${val}" class="form-input" style="width:70px; height:28px; font-size:0.75rem; padding:4px;" placeholder="0">
+                  <span class="text-xs text-on-surface-variant font-mono">/ ${stat.goalValue} ${stat.unit||''}</span>
+                  <button onclick="LM.views.analysis.editPastStat('${stat.id}', '${dateStr}', '${inputId}')" class="btn btn-primary btn-sm" style="padding:2px 10px; font-size:0.7rem; height:28px; min-width:unset;">SAVE</button>
+                </div>
+              `;
+            });
+            html += `</div></div>`;
+          }
+
           if (!log || cCount === 0) {
-            html += `<div class="text-center text-xs text-on-surface-variant py-4">No data logged for this day.</div>`;
+            html += `<div class="text-center text-xs text-on-surface-variant py-4">No hourly data logged for this day.</div>`;
           } else {
-            html += `<div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-4">`;
+            html += `<p class="text-xs text-on-surface-variant mb-2 font-bold uppercase">Time Tracking</p>`;
+            html += `<div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">`;
             const presets = S.getCellPresets();
             for (let i = 0; i < 24; i++) {
               const cell = log.cells[i];
@@ -822,5 +845,31 @@ window.LM.views.analysis = (function () {
     return html;
   }
 
-  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand, toggleArchiveSort, toggleWeekCollapse, setCellMacro };
+  function editPastStat(statId, dateStr, inputId) {
+    const el = document.getElementById(inputId);
+    if (!el || el.value === '') return;
+    const val = Number(el.value);
+    
+    let allLogs = S.getStatLogs();
+    let existingLogsForDay = allLogs.filter(l => l.statId === statId && l.dateStr === dateStr);
+    
+    if (existingLogsForDay.length > 0) {
+      existingLogsForDay[0].value = val;
+      allLogs = allLogs.filter(l => l.id === existingLogsForDay[0].id || !(l.statId === statId && l.dateStr === dateStr));
+    } else {
+      allLogs.push({
+        id: S.uid(),
+        statId: statId,
+        value: val,
+        dateStr: dateStr,
+        timestamp: new Date(dateStr).getTime() + 43200000 // noon roughly
+      });
+    }
+    S.saveStatLogs(allLogs);
+    
+    window.LM.components.notifications.show('Statistic saved for ' + dateStr, 'success');
+    LM.router.render();
+  }
+
+  return { render, init, toggleTab, selectCell, setCellStatus, updateCellNote, setCustomStatus, openWeekDetails, openWeekStats, backToArchiveList, toggleArchiveDayExpand, toggleArchiveSort, toggleWeekCollapse, setCellMacro, editPastStat };
 })();
