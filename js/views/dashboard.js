@@ -1197,8 +1197,6 @@ window.LM.views.dashboard = (function () {
       if (finalXP > 0) window.LM.components.notifications.show(`+${finalXP} XP`, 'success');
       else if (finalXP < 0) window.LM.components.notifications.show(`${finalXP} XP`, 'warning');
     }
-
-    input.value = '';
     LM.router.render();
   }
 
