@@ -298,14 +298,15 @@ window.LM.views.analysis = (function () {
     let html = `<div class="mb-6"><div class="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">`;
 
     Object.values(statSeries).forEach(series => {
-      const maxValY = Math.max(...series.data.map(d => d.y), series.goal * 1.2, 1);
+      const goalNum = Number(series.goal) || 1;
+      const maxValY = Math.max(...series.data.map(d => d.y), goalNum * 1.2, 1);
       const points = series.data.map((d, i) => {
         const px = (i / Math.max(1, series.data.length - 1)) * w;
         const py = h - ((d.y / maxValY) * h);
         return `${px},${py}`;
       }).join(' ');
 
-      const goalY = h - ((series.goal / maxValY) * h);
+      const goalY = h - ((goalNum / maxValY) * h);
 
       html += `
         <div class="min-w-[280px] bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest snap-start">
@@ -522,7 +523,7 @@ window.LM.views.analysis = (function () {
             allStats.forEach(stat => {
               const todaysLogs = S.getStatLogs().filter(l => l.statId === stat.id && l.dateStr === dateStr);
               const val = todaysLogs.reduce((acc, l) => acc + l.value, 0);
-              const inputId = `edit-stat-${stat.id}-${dateStr.replace(/\\s/g,'-')}`;
+              const inputId = `edit-stat-${stat.id}-${dateStr.replace(/ /g,'-')}`;
               html += `
                 <div class="flex items-center gap-2 bg-surface-container-highest/30 p-2 rounded-lg">
                   <span class="text-xs text-on-surface flex-1">${stat.name}</span>
