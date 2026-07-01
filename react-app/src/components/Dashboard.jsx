@@ -128,10 +128,6 @@ const Wheel = ({ currentSkillId, setCurrentSkillId, macros, overall, settings })
             fontFamily="var(--font-display)" fontSize="9"
             fill="var(--text-3)">{F.formatXP(into)} / {F.formatXP(req)} XP</text>
         </svg>
-        <div className="wheel-drop-hint">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="18" height="18"><path d="M12 16V8m0 8l-3-3m3 3l3-3"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-          <span>Drop quest to complete</span>
-        </div>
       </div>
     </div>
   );
@@ -168,11 +164,7 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
 
   return (
     <div 
-      className={`bg-[#181820] border border-[#ffffff10] rounded-xl p-4 flex flex-col gap-3 relative transition-all ${cardClass}`} 
-      draggable={canDrag}
-      onDragStart={(e) => {
-        if (canDrag) e.dataTransfer.setData('questId', quest.id);
-      }}
+      className={`glass-panel-accent rounded-xl p-4 flex flex-col gap-3 relative transition-all ${cardClass}`} 
     >
       <div className="flex justify-between items-center text-xs">
         <div className="flex gap-2 items-center">
@@ -202,15 +194,9 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
           <button className="w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider transition-colors" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow.start} - {quest.timeWindow.end})</button>
         ) : quest.isWorkoutQuest ? (
           <button className="w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider transition-colors" onClick={() => setActiveTab('workout')} style={{background: 'var(--accent)', color: '#000', border: 'none', fontWeight: 700, letterSpacing: '0.08em'}}>⚡ START WORKOUT</button>
-        ) : (settings.dragToRegister !== false && quest.isReadyToClaim) ? (
-          <button className="w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider transition-colors" style={{background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-3)', cursor: 'grab', pointerEvents: 'none'}}>✓ Completed (Drag to Claim XP)</button>
         ) : (
           <button className="w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider transition-colors bg-[#ffffff0a] border border-[#ffffff10] hover:bg-[#ffffff1a] text-white cursor-pointer" onClick={() => {
-            if (settings.dragToRegister !== false) {
-              store.markQuestReady(quest.id);
-            } else {
-              store.completeQuest(quest.id);
-            }
+            store.completeQuest(quest.id);
           }}>✓ Complete</button>
         )}
       </div>
