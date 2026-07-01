@@ -73,8 +73,8 @@
           <span class="font-label-sm text-[9px] tracking-widest mt-1">COACH</span>
         </div>
         <div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer active:scale-95" data-nav-view="settings" onclick="LM.router.navigate('settings')">
-            <span class="material-symbols-rounded text-2xl mb-1 group-data-[active=true]:fill-1">settings</span>
-            <span class="text-[10px] font-medium tracking-wide">Settings</span>
+          <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 0,'wght' 100">tune</span>
+          <span class="font-label-sm text-[9px] tracking-widest mt-1">SETTINGS</span>
         </div>
       </div>
     </nav>
@@ -165,7 +165,7 @@
   <script>
     // ── Auto-update for iOS Safari (and all browsers) ──────────
     // Increment APP_VERSION with every deploy to force a fresh load.
-    const APP_VERSION = '148';
+    const APP_VERSION = '149';
     
     // 1. A recursive function to unregister all SWs and empty all CacheStorage
     async function clearAndReload() {
