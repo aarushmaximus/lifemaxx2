@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/react/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>react-app</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;word-break:break-word;';
+        el.innerText = 'JS Error: ' + (e.message || e.error);
+        if(document.body) document.body.appendChild(el);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:orange;color:white;z-index:9999;padding:20px;word-break:break-word;';
+        el.innerText = 'Promise Rejection: ' + (e.reason ? e.reason.message || e.reason : 'Unknown');
+        if(document.body) document.body.appendChild(el);
+      });
+    </script>
     <script type="module" crossorigin src="/react/assets/index-CCxP6-NJ.js"></script>
     <link rel="stylesheet" crossorigin href="/react/assets/index-BVhMmFLh.css">
   </head>
