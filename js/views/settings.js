@@ -310,6 +310,17 @@ window.LM.views.settings = (function () {
           </div>
         </div>
 
+        <!-- React UI Toggle Section -->
+        <div class="section-block">
+          <h2>React UI (Beta)</h2>
+          <p style="font-size:0.8rem;color:var(--text-3);margin-top:4px;margin-bottom:16px;">
+            Switch to the completely rebuilt React interface. This shares the exact same database.
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="window.location.href='/react/'" style="color:white; font-weight:600;">Launch React App</button>
+          </div>
+        </div>
+
         <!-- Cloud Auto-Sync Section -->
         <div class="section-block">
           <h2>Cloud Auto-Sync</h2>
