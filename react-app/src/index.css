@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: #08080c;
+    --bg-surface: #101016;
+    --bg-raised: #181820;
+    --text-1: #ffffff;
+    --text-2: #a0a0a8;
+    --text-3: #6b6b75;
+    --accent: #d4d4d8;
+    --accent-dim: rgba(212, 212, 216, 0.1);
+    --border: #1f1f26;
+    --chrome: #ffffff;
+    --chrome-dim: rgba(255,255,255,0.15);
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --font-display: 'Geist', sans-serif;
+    --font-body: 'Geist', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-1);
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100dvh;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.custom-scrollbar::-webkit-scrollbar { height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Custom Utilities for LifeMaxx */
+.glass-panel {
+  background: rgba(10,10,10,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.glass-panel-accent {
+  background: rgba(10,10,10,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.glass-panel-accent::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
