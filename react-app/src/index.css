@@ -144,3 +144,90 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+#wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+.wheel-select {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  max-width: 200px;
+}
+.wheel-drop-zone {
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: 50%;
+  padding: 8px;
+  transition: all 0.3s ease;
+}
+.wheel-drop-zone.drag-active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.wheel-drop-zone.drag-rejected {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
+  animation: wheelReject 0.5s ease;
+}
+@keyframes wheelReject {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.wheel-drop-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--text-3);
+  margin-top: 8px;
+  letter-spacing: 0.04em;
+}
+
+/* Liquid fill waves */
+.liquid-wave {
+  fill: var(--accent);
+  opacity: 0.6;
+  animation: liquidWaveAnim 3s infinite linear;
+}
+.liquid-wave-2 {
+  fill: var(--accent);
+  opacity: 0.3;
+  animation: liquidWaveAnim 4s infinite linear reverse;
+}
+@keyframes liquidWaveAnim {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-260px); }
+}
+
+/* Wheel flash on XP gain */
+@keyframes wheelFlash {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.8) drop-shadow(0 0 10px var(--accent-glow)); }
+  100% { filter: brightness(1); }
+}
+.wheel-flash {
+  animation: wheelFlash 0.6s ease;
+}
+
+/* Spring easing variable */
+:root {
+  --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+}

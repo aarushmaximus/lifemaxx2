@@ -3,8 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>react-app</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lifemaxx React</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <script>
+      window.addEventListener('error', function(e) {
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;word-break:break-word;';
+        el.innerText = 'JS Error: ' + (e.message || e.error);
+        if(document.body) document.body.appendChild(el);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:orange;color:white;z-index:9999;padding:20px;word-break:break-word;';
+        el.innerText = 'Promise Rejection: ' + (e.reason ? e.reason.message || e.reason : 'Unknown');
+        if(document.body) document.body.appendChild(el);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
