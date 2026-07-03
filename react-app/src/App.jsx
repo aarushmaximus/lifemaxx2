@@ -7,6 +7,8 @@ import Analysis from './pages/Analysis';
 import Coach from './pages/Coach';
 import Settings from './pages/Settings';
 
+import Quests from './pages/Quests';
+
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [overall, setOverall] = useState(store.getOverall());
@@ -40,7 +42,7 @@ function App() {
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 pt-[72px] md:pt-0 pb-[90px] md:pb-0" id="main-content">
         {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-        {activeTab === 'quests' && <div className="p-6 text-center text-gray-500">Quests UI Pending...</div>}
+        {activeTab === 'quests' && <Quests setActiveTab={setActiveTab} />}
         {activeTab === 'skills' && <SkillHub />}
         {activeTab === 'analysis' && <Analysis />}
         {activeTab === 'coach' && <Coach />}
@@ -56,7 +58,7 @@ function App() {
             { id: 'skills', icon: 'apps', label: 'SKILLS' },
             { id: 'analysis', icon: 'query_stats', label: 'ANALYSIS' },
             { id: 'coach', icon: 'psychology', label: 'COACH' },
-            { id: 'settings', icon: 'tune', label: 'SETTINGS' },
+            { id: 'settings', icon: 'settings', label: 'SETTINGS' },
           ].map((tab) => (
             <div
               key={tab.id}

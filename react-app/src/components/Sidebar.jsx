@@ -1,11 +1,13 @@
-import { LucideHome, LucideActivity, LucideTrendingUp, LucideMessageSquare } from 'lucide-react';
+import { LucideHome, LucideActivity, LucideTrendingUp, LucideMessageSquare, LucideSettings, LucideFlag } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, overall }) {
   const tabs = [
     { id: 'dashboard', icon: <LucideHome size={20} />, label: 'Dashboard' },
+    { id: 'quests', icon: <LucideFlag size={20} />, label: 'Quests' },
     { id: 'skills', icon: <LucideActivity size={20} />, label: 'Skill Hub' },
     { id: 'analysis', icon: <LucideTrendingUp size={20} />, label: 'Analysis' },
     { id: 'coach', icon: <LucideMessageSquare size={20} />, label: 'Coach' },
+    { id: 'settings', icon: <LucideSettings size={20} />, label: 'Settings' },
   ];
 
   return (
