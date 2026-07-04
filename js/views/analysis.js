@@ -16,6 +16,21 @@ window.LM.views.analysis = (function () {
   let _archiveSortOrder = 'desc';
   let _collapsedWeeks = new Set();
   
+  let _chartConfigs = [];
+  let _activeCharts = [];
+  
+  function initCharts() {
+    if (typeof Chart === 'undefined') return;
+    _activeCharts.forEach(c => c.destroy());
+    _activeCharts = [];
+    _chartConfigs.forEach(conf => {
+      const el = document.getElementById(conf.id);
+      if (el) {
+        _activeCharts.push(new Chart(el, conf.config));
+      }
+    });
+  }
+
   function toggleArchiveSort() {
     _archiveSortOrder = _archiveSortOrder === 'desc' ? 'asc' : 'desc';
     LM.router.render();
@@ -75,6 +90,7 @@ window.LM.views.analysis = (function () {
   function init() {
     render();
     initChat();
+    initCharts();
   }
 
   function format12Hour(hour) {
@@ -300,13 +316,7 @@ window.LM.views.analysis = (function () {
     Object.values(statSeries).forEach(series => {
       const goalNum = Number(series.goal) || 1;
       const maxValY = Math.max(...series.data.map(d => d.y), goalNum * 1.2, 1);
-      const points = series.data.map((d, i) => {
-        const px = (i / Math.max(1, series.data.length - 1)) * w;
-        const py = h - ((d.y / maxValY) * h);
-        return `${px},${py}`;
-      }).join(' ');
-
-      const goalY = h - ((goalNum / maxValY) * h);
+      const canvasId = `chart-week-${series.name.replace(/\W/g,'')}-${Date.now()}`;
 
       html += `
         <div class="min-w-[280px] bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest snap-start">
@@ -314,17 +324,67 @@ window.LM.views.analysis = (function () {
             <span class="font-bold text-sm text-on-surface">${series.name}</span>
             <span class="text-xs text-on-surface-variant font-mono">Goal: ${series.goal} ${series.unit || ''}</span>
           </div>
-          <svg viewBox="0 -10 ${w} ${h+20}" class="w-full h-24 overflow-visible">
-            <line x1="0" y1="${goalY}" x2="${w}" y2="${goalY}" stroke="var(--border)" stroke-width="2" stroke-dasharray="4" />
-            <polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            ${series.data.map((d, i) => {
-              const px = (i / Math.max(1, series.data.length - 1)) * w;
-              const py = h - ((d.y / maxValY) * h);
-              return `<circle cx="${px}" cy="${py}" r="4" fill="var(--bg-base)" stroke="var(--primary)" stroke-width="2"><title>${new Date(d.date).toLocaleDateString(undefined, {weekday:'short'})}: ${d.y}</title></circle>`;
-            }).join('')}
-          </svg>
+          <div class="w-full h-24 relative">
+            <canvas id="${canvasId}"></canvas>
+          </div>
         </div>
       `;
+
+      _chartConfigs.push({
+        id: canvasId,
+        config: {
+          type: 'line',
+          data: {
+            labels: series.data.map(d => new Date(d.date).toLocaleDateString(undefined, {weekday:'short'})),
+            datasets: [
+              {
+                label: series.name,
+                data: series.data.map(d => d.y),
+                borderColor: '#38bdf8',
+                borderWidth: 3,
+                pointBackgroundColor: '#0f172a',
+                pointBorderColor: '#38bdf8',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                tension: 0.4
+              },
+              {
+                label: 'Goal',
+                data: series.data.map(() => goalNum),
+                borderColor: 'rgba(148, 163, 184, 0.3)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false,
+                tension: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                titleFont: { size: 11, family: 'Geist' },
+                bodyFont: { size: 13, family: 'Geist', weight: 'bold' },
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: false
+              }
+            },
+            scales: {
+              y: { display: false, min: 0, max: maxValY },
+              x: { display: false }
+            },
+            layout: { padding: 5 }
+          }
+        }
+      });
     });
 
     html += `</div></div>`;
@@ -762,6 +822,7 @@ window.LM.views.analysis = (function () {
 
   // ── Main Render ──
   function render() {
+    _chartConfigs = [];
     return `
       <div style="padding: 100px 16px 120px; max-width: 900px; margin: 0 auto;">
         
@@ -813,16 +874,8 @@ window.LM.views.analysis = (function () {
     exNames.forEach(exName => {
       const data = seriesData[exName];
       data.sort((a,b) => a.date - b.date); // chronological
-
-      const w = 320;
-      const h = 100;
-      const maxValY = Math.max(...data.map(d => d.y), 1) * 1.1; // 10% headroom
-
-      const points = data.map((d, i) => {
-        const px = (i / Math.max(1, data.length - 1)) * w;
-        const py = h - ((d.y / maxValY) * h);
-        return `${px},${py}`;
-      }).join(' ');
+      
+      const canvasId = `chart-prog-${exName.replace(/\W/g,'')}-${Date.now()}`;
 
       html += `
         <div class="w-full bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest">
@@ -830,16 +883,64 @@ window.LM.views.analysis = (function () {
             <span class="font-bold text-sm text-on-surface">${exName}</span>
             <span class="text-xs text-on-surface-variant font-mono">Max e1RM: ${Math.max(...data.map(d=>d.y))}</span>
           </div>
-          <svg viewBox="0 -10 ${w} ${h+20}" class="w-full h-32 overflow-visible">
-            <polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            ${data.map((d, i) => {
-              const px = (i / Math.max(1, data.length - 1)) * w;
-              const py = h - ((d.y / maxValY) * h);
-              return `<circle cx="${px}" cy="${py}" r="4" fill="var(--bg-base)" stroke="var(--primary)" stroke-width="2"><title>${new Date(d.date).toLocaleDateString()}: ${d.y}</title></circle>`;
-            }).join('')}
-          </svg>
+          <div class="w-full h-48 relative">
+            <canvas id="${canvasId}"></canvas>
+          </div>
         </div>
       `;
+
+      _chartConfigs.push({
+        id: canvasId,
+        config: {
+          type: 'line',
+          data: {
+            labels: data.map(d => new Date(d.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})),
+            datasets: [{
+              label: 'e1RM',
+              data: data.map(d => d.y),
+              borderColor: '#10b981',
+              borderWidth: 3,
+              pointBackgroundColor: '#0f172a',
+              pointBorderColor: '#10b981',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              fill: true,
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                titleFont: { size: 11, family: 'Geist' },
+                bodyFont: { size: 13, family: 'Geist', weight: 'bold' },
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: false
+              }
+            },
+            scales: {
+              y: { 
+                display: true, 
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                border: { display: false },
+                ticks: { color: '#94a3b8', font: { family: 'Geist', size: 10 } }
+              },
+              x: { 
+                display: true,
+                grid: { display: false },
+                border: { display: false },
+                ticks: { color: '#94a3b8', font: { family: 'Geist', size: 10 } }
+              }
+            },
+            layout: { padding: 5 }
+          }
+        }
+      });
     });
 
     html += `</div></div>`;
