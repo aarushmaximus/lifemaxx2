@@ -4,10 +4,15 @@ window.LM.views.skillWidgets = (function () {
   var F = window.LM.formulas;
 
   var macroId = null;
-  var activeWidget = null; // null = menu, 'planner' = Weekly Split Planner
+  var activeWidget = null; // null = menu, 'planner' = Weekly Split Planner, 'archive' = Workout Archive
   var selectedDay = new Date().getDay(); // 0 = Sun, 1 = Mon...
   var tempSplit = null; 
   var isAddingExercise = false;
+
+  var archiveActiveFilter = 'all';
+  var archiveSelectedEx = null;
+  var _chartConfigs = [];
+  var _activeCharts = [];
 
   var MUSCLES = [
     { id: 'back',       label: 'Back',       color: '#4ade80' },
@@ -43,8 +48,11 @@ window.LM.views.skillWidgets = (function () {
       tempSplit = JSON.parse(JSON.stringify(S.getWeeklySplit()));
     }
 
-    var headerTitle = activeWidget === 'planner' ? 'WEEKLY SPLIT' : 'WIDGETS';
-    var backAction = activeWidget === 'planner' 
+    var headerTitle = 'WIDGETS';
+    if (activeWidget === 'planner') headerTitle = 'WEEKLY SPLIT';
+    if (activeWidget === 'archive') headerTitle = 'ARCHIVE';
+
+    var backAction = activeWidget 
       ? 'LM.views.skillWidgets.openMenu()' 
       : 'LM.router.navigate(\'#skill-hub/' + macroId + '\')';
 
@@ -58,13 +66,14 @@ window.LM.views.skillWidgets = (function () {
         '</div>' +
       '</div>' +
       '<div id="widget-body" class="workout-body">' + 
-        (activeWidget === 'planner' ? renderPlanner() : renderMenu(macro)) + 
+        (activeWidget === 'planner' ? renderPlanner() : (activeWidget === 'archive' ? renderArchive() : renderMenu(macro))) + 
       '</div>' +
     '</div>';
   }
 
   function renderMenu(macro) {
     var plannerCard = '';
+    var archiveCard = '';
     if (isPhysique(macro)) {
       plannerCard = '<div class="skill-hub-option" style="margin-bottom:12px;background:var(--bg-surface);border:1px solid var(--sk-accent);" onclick="LM.views.skillWidgets.openPlanner()">' +
         '<div class="hub-opt-icon" style="color:var(--sk-accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>' +
@@ -74,10 +83,19 @@ window.LM.views.skillWidgets = (function () {
         '</div>' +
         '<div class="hub-opt-arrow">›</div>' +
       '</div>';
+      
+      archiveCard = '<div class="skill-hub-option" style="margin-bottom:12px;background:var(--bg-surface);border:1px solid var(--sk-accent);" onclick="LM.views.skillWidgets.openArchive()">' +
+        '<div class="hub-opt-icon" style="color:var(--sk-accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><path d="M4 6h16M4 12h16M4 18h7"></path></svg></div>' +
+        '<div class="hub-opt-text">' +
+          '<div class="hub-opt-title" style="color:#fff;">Workout Archive</div>' +
+          '<div class="hub-opt-desc">Exercise database and form tracking</div>' +
+        '</div>' +
+        '<div class="hub-opt-arrow">›</div>' +
+      '</div>';
     }
 
     return '<div class="widget-menu-list" style="padding-top:10px;">' +
-      plannerCard +
+      plannerCard + archiveCard +
       '<div style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:0.85rem;opacity:0.5;">More widgets coming soon.</div>' +
     '</div>';
   }
@@ -308,14 +326,281 @@ window.LM.views.skillWidgets = (function () {
     // Force a re-check to see if a workout needs to be generated immediately today
     // We pass 'true' to force creation if it doesn't exist yet today.
     S.checkWeeklyWorkoutGen(true); 
-    
     // Go back to menu
     openMenu();
   }
 
+  // --- ARCHIVE LOGIC ---
+  function openArchive() {
+    activeWidget = 'archive';
+    archiveActiveFilter = 'all';
+    archiveSelectedEx = null;
+    refresh();
+  }
+  function setArchiveFilter(f) {
+    archiveActiveFilter = f;
+    refresh();
+  }
+  function openArchiveDetail(name) {
+    archiveSelectedEx = name;
+    refresh();
+    setTimeout(initArchiveCharts, 50);
+  }
+
+  function getArchiveExercises() {
+    var exercises = {}; 
+    var history = S.getWorkoutHistory();
+    history.forEach(function(h) {
+      if (!exercises[h.exerciseName]) exercises[h.exerciseName] = { name: h.exerciseName, history: [] };
+      exercises[h.exerciseName].history.push(h);
+    });
+    
+    var split = S.getWeeklySplit();
+    split.forEach(function(day) {
+      if(day.exercises) {
+        day.exercises.forEach(function(e) {
+          if (!exercises[e.name]) exercises[e.name] = { name: e.name, history: [] };
+          if(!exercises[e.name].splitMeta) {
+            exercises[e.name].splitMeta = e; 
+          }
+        });
+      }
+    });
+
+    Object.keys(exercises).forEach(function(k) {
+      var ex = exercises[k];
+      var meta = S.getExerciseMeta(k);
+      ex.meta = meta || { name: k, muscleGroup: ex.splitMeta ? ex.splitMeta.muscleGroup : 'unknown', formNotes: '', videoUrl: '' };
+      ex.history.sort(function(a,b) { return b.date - a.date; }); // newest first
+      ex.lastDone = ex.history.length > 0 ? ex.history[0] : null;
+    });
+
+    return Object.values(exercises);
+  }
+
+  function saveExerciseForm(name) {
+    var group = document.getElementById('ex-meta-group').value;
+    var notes = document.getElementById('ex-meta-notes').value;
+    var url = document.getElementById('ex-meta-url').value;
+    S.upsertExerciseMeta({ name: name, muscleGroup: group, formNotes: notes, videoUrl: url });
+    LM.components.notifications.show('Exercise Details Saved', 'success');
+    refresh();
+  }
+
+  function initArchiveCharts() {
+    if (typeof Chart === 'undefined') return;
+    _activeCharts.forEach(function(c) { c.destroy(); });
+    _activeCharts = [];
+    _chartConfigs.forEach(function(conf) {
+      var el = document.getElementById(conf.id);
+      if (el) _activeCharts.push(new Chart(el, conf.config));
+    });
+  }
+
+  function extractYouTubeID(url) {
+    if (!url) return null;
+    var match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^"&?\/\s]{11})/);
+    return match ? match[1] : null;
+  }
+
+  function renderArchive() {
+    _chartConfigs = [];
+    if (archiveSelectedEx) {
+      return renderArchiveDetail(archiveSelectedEx);
+    }
+    // LIST VIEW
+    var exercises = getArchiveExercises();
+    
+    var groupsInUse = new Set();
+    exercises.forEach(function(e) { groupsInUse.add(e.meta.muscleGroup); });
+    
+    var pillsHtml = '<div style="display:flex;gap:8px;overflow-x:auto;padding:4px 0 16px;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+      '<button class="wo-muscle-pill ' + (archiveActiveFilter === 'all' ? 'active' : '') + '" style="--pill-color:#fff;padding:6px 16px;border-radius:20px;font-size:0.8rem;white-space:nowrap;background:'+(archiveActiveFilter === 'all' ? '#fff' : 'rgba(255,255,255,0.05)')+';color:'+(archiveActiveFilter === 'all' ? '#000' : '#fff')+';" onclick="LM.views.skillWidgets.setArchiveFilter(\'all\')">All</button>';
+    
+    MUSCLES.forEach(function(m) {
+      if (groupsInUse.has(m.id)) {
+        var active = archiveActiveFilter === m.id;
+        pillsHtml += '<button class="wo-muscle-pill ' + (active ? 'active' : '') + '" style="--pill-color:'+m.color+';padding:6px 16px;border-radius:20px;font-size:0.8rem;white-space:nowrap;background:'+(active ? m.color : 'rgba(255,255,255,0.05)')+';color:'+(active ? '#000' : m.color)+';" onclick="LM.views.skillWidgets.setArchiveFilter(\''+m.id+'\')">' + m.label + '</button>';
+      }
+    });
+    
+    if (groupsInUse.has('unknown')) {
+      var unkActive = archiveActiveFilter === 'unknown';
+      pillsHtml += '<button class="wo-muscle-pill ' + (unkActive ? 'active' : '') + '" style="--pill-color:#888;padding:6px 16px;border-radius:20px;font-size:0.8rem;white-space:nowrap;background:'+(unkActive ? '#888' : 'rgba(255,255,255,0.05)')+';color:'+(unkActive ? '#000' : '#888')+';" onclick="LM.views.skillWidgets.setArchiveFilter(\'unknown\')">Unknown</button>';
+    }
+    pillsHtml += '</div>';
+
+    var filtered = exercises.filter(function(e) {
+      return archiveActiveFilter === 'all' || e.meta.muscleGroup === archiveActiveFilter;
+    });
+
+    filtered.sort(function(a,b) { return a.name.localeCompare(b.name); });
+
+    var listHtml = '<div style="margin-top:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:120px;">';
+    if (filtered.length === 0) {
+      listHtml += '<div style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:0.9rem;">No exercises found for this filter.</div>';
+    } else {
+      filtered.forEach(function(ex) {
+        var m = getMuscle(ex.meta.muscleGroup);
+        var lastStr = ex.lastDone ? 'Last: ' + new Date(ex.lastDone.date).toLocaleDateString() : 'Never performed';
+        listHtml += '<div class="skill-hub-option" style="background:var(--bg-surface);border:1px solid rgba(255,255,255,0.05);" onclick="LM.views.skillWidgets.openArchiveDetail(\''+ex.name.replace(/'/g,"\\'")+'\')">' +
+          '<div style="flex:1;">' +
+            '<div style="font-weight:600;font-size:1.05rem;color:#fff;margin-bottom:4px;">' + ex.name + '</div>' +
+            '<div style="display:flex;gap:8px;font-size:0.75rem;color:var(--text-3);align-items:center;">' +
+              '<span style="color:' + m.color + ';background:' + m.color + '22;padding:2px 6px;border-radius:4px;">' + m.label + '</span>' +
+              '<span>•</span>' +
+              '<span>' + lastStr + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="hub-opt-arrow">›</div>' +
+        '</div>';
+      });
+    }
+    listHtml += '</div>';
+
+    return '<div>' + pillsHtml + listHtml + '</div>';
+  }
+
+  function renderArchiveDetail(name) {
+    var exercises = getArchiveExercises();
+    var ex = exercises.find(function(e) { return e.name === name; });
+    if (!ex) return '<div class="p-10 text-center">Exercise not found</div>';
+    
+    var m = getMuscle(ex.meta.muscleGroup);
+    
+    var scoreHTML = '';
+    if (ex.lastDone && ex.lastDone.sets && ex.lastDone.sets.length > 0) {
+      var bestSet = ex.lastDone.sets.reduce(function(best, s) {
+        var sScore = s.weight * (1 + s.reps/30);
+        var bScore = best.weight * (1 + best.reps/30);
+        return sScore > bScore ? s : best;
+      }, { weight: 0, reps: 0 });
+
+      var repRangeStr = ex.splitMeta ? ex.splitMeta.repRange : '8-12';
+      var parts = repRangeStr.split('-');
+      var maxReps = parts.length > 1 ? parseInt(parts[1]) : 12;
+      
+      var targetWeight = bestSet.weight;
+      var targetReps = bestSet.reps + 1;
+      var logicStr = 'Add 1 Rep';
+      
+      if (bestSet.reps >= maxReps) {
+        targetWeight = bestSet.weight + 2.5;
+        targetReps = parts.length > 1 ? parseInt(parts[0]) : 8;
+        logicStr = 'Increase Weight';
+      }
+
+      scoreHTML = '<div style="background:var(--bg-surface);border:1px solid ' + m.color + '44;border-radius:12px;padding:16px;margin-bottom:24px;">' +
+        '<div style="font-size:0.75rem;color:'+m.color+';text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;font-weight:600;">🎯 SCORE TO BEAT (Last: ' + bestSet.weight + 'kg x ' + bestSet.reps + ')</div>' +
+        '<div style="font-size:1.4rem;font-weight:bold;color:#fff;">' + targetWeight + 'kg <span style="color:var(--text-3);font-weight:500;font-size:1.1rem;">× ' + targetReps + ' reps</span></div>' +
+        '<div style="font-size:0.85rem;color:var(--text-3);margin-top:4px;">Goal: ' + logicStr + ' (Target Range: ' + repRangeStr + ')</div>' +
+      '</div>';
+    } else {
+      scoreHTML = '<div style="background:var(--bg-surface);border:1px dashed var(--border);border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;color:var(--text-3);font-size:0.9rem;">No workout history to calculate Score to Beat.</div>';
+    }
+
+    var videoHtml = '';
+    if (ex.meta.videoUrl) {
+      var ytId = extractYouTubeID(ex.meta.videoUrl);
+      if (ytId) {
+        videoHtml = '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin-bottom:20px;border:1px solid var(--border);">' +
+          '<iframe src="https://www.youtube.com/embed/' + ytId + '" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" allowfullscreen></iframe>' +
+        '</div>';
+      } else {
+        videoHtml = '<div style="margin-bottom:20px;"><a href="'+ex.meta.videoUrl+'" target="_blank" style="color:var(--primary);text-decoration:underline;">🔗 View Form Video</a></div>';
+      }
+    }
+
+    var chartHtml = '';
+    if (ex.history.length > 0) {
+      var canvasId = 'chart-archive-' + Date.now();
+      
+      var chartData = ex.history.map(function(h) {
+        var maxW = h.sets.reduce(function(mx, s){ return s.weight > mx ? s.weight : mx; }, 0);
+        return { date: h.date, y: maxW };
+      });
+      chartData.sort(function(a,b) { return a.date - b.date; });
+
+      chartHtml = '<div class="w-full bg-surface-container rounded-2xl p-4 shadow-sm border border-surface-container-highest mb-6" style="background:var(--bg-surface);">' +
+        '<div class="flex justify-between items-end mb-4">' +
+          '<span class="font-bold text-sm text-on-surface" style="color:#fff;">Max Weight Progression</span>' +
+          '<span class="text-xs text-on-surface-variant font-mono">Max: '+Math.max(...chartData.map(function(d){return d.y}))+'kg</span>' +
+        '</div>' +
+        '<div class="w-full h-48 relative" style="height:150px;">' +
+          '<canvas id="' + canvasId + '"></canvas>' +
+        '</div>' +
+      '</div>';
+
+      _chartConfigs.push({
+        id: canvasId,
+        config: {
+          type: 'line',
+          data: {
+            labels: chartData.map(function(d) { return new Date(d.date).toLocaleDateString(undefined, {month:'short', day:'numeric'}); }),
+            datasets: [{
+              label: 'Max Weight',
+              data: chartData.map(function(d) { return d.y; }),
+              borderColor: m.color,
+              borderWidth: 3,
+              pointBackgroundColor: '#0f172a',
+              pointBorderColor: m.color,
+              pointRadius: 4,
+              fill: true,
+              backgroundColor: m.color + '22',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { display: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, border: { display: false }, ticks: { color: '#94a3b8' } },
+              x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#94a3b8' } }
+            },
+            layout: { padding: 5 }
+          }
+        }
+      });
+    }
+
+    var groupSelectOpts = '<option value="unknown">Unknown</option>' + MUSCLES.map(function(mus) {
+      return '<option value="'+mus.id+'" '+(mus.id === ex.meta.muscleGroup ? 'selected' : '')+'>'+mus.label+'</option>';
+    }).join('');
+
+    return '<div style="padding-bottom:120px;">' +
+      '<button class="btn-ghost" style="margin-bottom:16px;color:var(--text-2);padding:0;" onclick="LM.views.skillWidgets.openArchive()">← Back to List</button>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+        '<h2 style="font-size:1.6rem;font-weight:700;line-height:1.2;">' + ex.name + '</h2>' +
+        '<span style="color:' + m.color + ';background:' + m.color + '22;padding:4px 10px;border-radius:6px;font-size:0.8rem;font-weight:600;">' + m.label + '</span>' +
+      '</div>' +
+      scoreHTML +
+      chartHtml +
+      '<h3 class="font-display" style="font-size:1.1rem;color:var(--text-2);letter-spacing:0.05em;margin-bottom:16px;">FORM & NOTES</h3>' +
+      videoHtml +
+      '<div class="form-group" style="margin-bottom:16px;">' +
+        '<label style="font-size:0.8rem;color:var(--text-3);margin-bottom:6px;display:block;">Muscle Group</label>' +
+        '<select id="ex-meta-group" class="form-input" style="font-size:1rem;padding:12px;background:var(--bg-elevated);border:1px solid rgba(255,255,255,0.1);">' + groupSelectOpts + '</select>' +
+      '</div>' +
+      '<div class="form-group" style="margin-bottom:16px;">' +
+        '<label style="font-size:0.8rem;color:var(--text-3);margin-bottom:6px;display:block;">Video Link (YouTube)</label>' +
+        '<input id="ex-meta-url" type="text" class="form-input" value="'+(ex.meta.videoUrl || '')+'" placeholder="Paste YouTube link" style="font-size:1rem;padding:12px;background:var(--bg-elevated);border:1px solid rgba(255,255,255,0.1);" />' +
+      '</div>' +
+      '<div class="form-group" style="margin-bottom:24px;">' +
+        '<label style="font-size:0.8rem;color:var(--text-3);margin-bottom:6px;display:block;">Form Notes</label>' +
+        '<textarea id="ex-meta-notes" class="form-input" rows="4" placeholder="Cues, setups, reminders..." style="font-size:1rem;padding:12px;background:var(--bg-elevated);border:1px solid rgba(255,255,255,0.1);resize:none;">' + (ex.meta.formNotes || '') + '</textarea>' +
+      '</div>' +
+      '<button class="btn btn-primary" style="width:100%;padding:14px;font-size:1.05rem;" onclick="LM.views.skillWidgets.saveExerciseForm(\''+ex.name.replace(/'/g,"\\'")+'\')">Save Details</button>' +
+    '</div>';
+  }
+
   function refresh() {
     var body = document.getElementById('widget-body');
-    if (body) body.innerHTML = activeWidget === 'planner' ? renderPlanner() : renderMenu(S.getMacro(macroId));
+    if (body) {
+      if (activeWidget === 'planner') body.innerHTML = renderPlanner();
+      else if (activeWidget === 'archive') body.innerHTML = renderArchive();
+      else body.innerHTML = renderMenu(S.getMacro(macroId));
+    }
     
     // Apply styling to tabs after render
     document.querySelectorAll('.planner-day-tab').forEach(function(el) {
@@ -339,6 +624,7 @@ window.LM.views.skillWidgets = (function () {
     tempSplit = JSON.parse(JSON.stringify(S.getWeeklySplit()));
     isAddingExercise = false;
     activeWidget = null;
+    archiveSelectedEx = null;
   }
 
   return {
@@ -346,6 +632,10 @@ window.LM.views.skillWidgets = (function () {
     init: init,
     openMenu: openMenu,
     openPlanner: openPlanner,
+    openArchive: openArchive,
+    openArchiveDetail: openArchiveDetail,
+    setArchiveFilter: setArchiveFilter,
+    saveExerciseForm: saveExerciseForm,
     selectDay: selectDay,
     toggleDayActive: toggleDayActive,
     updateDayName: updateDayName,

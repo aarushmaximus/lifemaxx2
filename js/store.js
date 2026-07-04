@@ -21,7 +21,8 @@ window.LM.store = (function () {
     statistics: 'lm_statistics',
     statLogs: 'lm_stat_logs',
     weeklySplit: 'lm_weekly_split',
-    workoutHistory: 'lm_workout_history'
+    workoutHistory: 'lm_workout_history',
+    exerciseMeta: 'lm_exercise_meta'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -717,6 +718,21 @@ window.LM.store = (function () {
     return list[0];
   }
 
+  // ── Exercise Metadata ──
+  function getExerciseMetaList() { return load(KEYS.exerciseMeta) || []; }
+  function saveExerciseMetaList(list) { save(KEYS.exerciseMeta, list); emit('change'); }
+  function getExerciseMeta(name) { 
+    if (!name) return null;
+    const list = getExerciseMetaList();
+    return list.find(e => e.name.toLowerCase() === name.toLowerCase()) || null;
+  }
+  function upsertExerciseMeta(meta) {
+    const list = getExerciseMetaList();
+    const idx = list.findIndex(e => e.name.toLowerCase() === meta.name.toLowerCase());
+    if (idx >= 0) list[idx] = meta; else list.push(meta);
+    saveExerciseMetaList(list);
+  }
+
   // ── Cell Presets ──
   function getCellPresets() { 
     return load(KEYS.cellPresets) || [
@@ -754,6 +770,8 @@ window.LM.store = (function () {
       dailyLogs: getDailyLogs(),
       cellPresets: getCellPresets(),
       weeklySplit: getWeeklySplit(),
+      workoutHistory: getWorkoutHistory(),
+      exerciseMeta: getExerciseMetaList(),
       lastUpdated: load(KEYS.lastUpdated) || Date.now()
     };
   }
@@ -773,6 +791,8 @@ window.LM.store = (function () {
     if (data.dailyLogs) save(KEYS.dailyLogs, data.dailyLogs);
     if (data.cellPresets) save(KEYS.cellPresets, data.cellPresets);
     if (data.weeklySplit) save(KEYS.weeklySplit, data.weeklySplit);
+    if (data.workoutHistory) save(KEYS.workoutHistory, data.workoutHistory);
+    if (data.exerciseMeta) save(KEYS.exerciseMeta, data.exerciseMeta);
     const cloudTime = data.lastUpdated || Date.now();
     save(KEYS.lastUpdated, cloudTime);
     emit('change');
@@ -933,6 +953,7 @@ window.LM.store = (function () {
     getXPLog, saveXPLog,
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
     getWorkoutHistory, addWorkoutLog, getLastWorkoutLog,
+    getExerciseMetaList, getExerciseMeta, upsertExerciseMeta,
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     getDailyLogs, getDailyLog, upsertDailyLog,
     getCellPresets, saveCellPresets, upsertCellPreset, deleteCellPreset,
