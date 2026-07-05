@@ -326,6 +326,104 @@ window.LM.views.coach = (function () {
   // Old generation functions removed
 
   async function sendChatMessage(userText) {
+    if (userText.trim().toLowerCase().startsWith('/bulkquest')) {
+      pushMessage('user', userText);
+      
+      const textBlock = userText.substring('/bulkquest'.length).trim();
+      const lines = textBlock.split('\\n');
+      const macros = S.getMacros();
+      
+      let currentChain = null;
+      let addedCount = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+        
+        if (line.startsWith('> ')) {
+          let nameStr = line.substring(2);
+          
+          const typeMatch = nameStr.match(/#(habit|project|boss|chain|research|daily)/i);
+          const type = typeMatch ? typeMatch[1].toLowerCase() : 'daily';
+          
+          const xpMatch = nameStr.match(/\\$(\\d+)/);
+          const xp = xpMatch ? parseInt(xpMatch[1], 10) : 50;
+          
+          const timeMatch = nameStr.match(/~(\\d{2}:\\d{2}-\\d{2}:\\d{2})/);
+          const timeWindow = timeMatch ? timeMatch[1] : null;
+          
+          const isNegative = /!negative/i.test(nameStr);
+          
+          const skillRegex = /@(\\w+)/g;
+          let targetSkills = [];
+          let match;
+          while ((match = skillRegex.exec(nameStr)) !== null) {
+            const t = match[1].toLowerCase();
+            const macro = macros.find(m => m.name.toLowerCase() === t);
+            if (macro) {
+              targetSkills.push({ macroSkillId: macro.id, microSkillId: null, xpAmount: xp });
+            }
+          }
+          
+          if (targetSkills.length === 0 && macros.length > 0) {
+            targetSkills.push({ macroSkillId: macros[0].id, microSkillId: null, xpAmount: xp });
+          }
+
+          let cleanName = nameStr
+            .replace(/#\\w+/g, '')
+            .replace(/\\$\\d+/g, '')
+            .replace(/~\\d{2}:\\d{2}-\\d{2}:\\d{2}/g, '')
+            .replace(/!negative/gi, '')
+            .replace(/@\\w+/g, '')
+            .trim();
+            
+          if (type === 'chain') {
+            currentChain = {
+              id: S.uid(),
+              name: cleanName,
+              macroId: targetSkills.length > 0 ? targetSkills[0].macroSkillId : macros[0]?.id,
+              steps: [],
+              createdAt: Date.now()
+            };
+            S.upsertChain(currentChain);
+            addedCount++;
+          } else {
+            currentChain = null;
+            S.upsertQuest({
+              id: S.uid(),
+              name: cleanName,
+              description: '',
+              type: type,
+              status: 'active',
+              isNegative: isNegative,
+              timeWindow: timeWindow,
+              targetSkills: targetSkills,
+              createdAt: Date.now(),
+              isCustom: true
+            });
+            addedCount++;
+          }
+        } else if (line.startsWith('>> ') && currentChain) {
+          let stepStr = line.substring(3).trim();
+          const xpMatch = stepStr.match(/\\$(\\d+)/);
+          const stepXp = xpMatch ? parseInt(xpMatch[1], 10) : 50;
+          let cleanStep = stepStr.replace(/\\$\\d+/g, '').trim();
+          
+          currentChain.steps.push({
+            id: S.uid(),
+            name: cleanStep,
+            xpAmount: stepXp,
+            completedAt: null
+          });
+          S.upsertChain(currentChain);
+        }
+      }
+      
+      pushMessage('fletcher', `Successfully parsed and created ${addedCount} main quests/chains.`);
+      window.LM.router.render();
+      return;
+    }
+
     // Intercept /timer before any API call
     if (userText.trim().toLowerCase() === '/timer') {
       handleTimerCommand();
@@ -727,6 +825,13 @@ window.LM.views.coach = (function () {
               <div style="position:sticky; bottom:0; padding:10px 16px 12px; background:#000000; z-index:10; border-top:1px solid #121212;">
                 <!-- Command Popup -->
                 <div id="coach-command-popup" style="display:none; position:absolute; bottom:100%; left:16px; right:16px; margin-bottom:8px; background:#121212; border:1px solid #1a1a1a; border-radius:12px; padding:8px; z-index:20; box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
+                  <div class="cmd-item" onclick="LM.views.coach.insertCommand('/bulkquest\\n> My Quest @macro #habit $50\\n')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+                    <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">list_alt</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#fff;">/bulkquest</div>
+                      <div style="font-size:11px;color:#7a7a85;margin-top:2px;">Import quests via syntax (Offline)</div>
+                    </div>
+                  </div>
                   <div class="cmd-item" onclick="LM.views.coach.insertCommand('/quest ')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
                     <span class="material-symbols-outlined" style="color:#e8e8e8;font-size:20px;">flag</span>
                     <div>
