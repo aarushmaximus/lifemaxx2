@@ -757,6 +757,18 @@ window.LM.views.coach = (function () {
       </div>
     `;
 
+    const macros = S.getMacros() || [];
+    const macroPopupHTML = `
+      <div id="coach-macro-popup" style="display:none; position:absolute; bottom:100%; left:16px; right:16px; margin-bottom:8px; background:#121212; border:1px solid #1a1a1a; border-radius:12px; padding:8px; z-index:20; box-shadow:0 -4px 20px rgba(0,0,0,0.5); max-height:200px; overflow-y:auto;">
+        ${macros.map(m => `
+          <div class="cmd-item" data-name="${m.name}" onclick="LM.views.coach.insertMacro('${m.name}')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
+            <div style="width:12px;height:12px;border-radius:50%;background:${m.accentColor};"></div>
+            <div style="font-size:13px;font-weight:600;color:#fff;">@${m.name.toLowerCase()}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
     return `
       <div id="coach-shell" style="
         position: fixed;
@@ -823,6 +835,7 @@ window.LM.views.coach = (function () {
 
               <!-- Sticky Input Bar -->
               <div style="position:sticky; bottom:0; padding:10px 16px 12px; background:#000000; z-index:10; border-top:1px solid #121212;">
+                ${macroPopupHTML}
                 <!-- Command Popup -->
                 <div id="coach-command-popup" style="display:none; position:absolute; bottom:100%; left:16px; right:16px; margin-bottom:8px; background:#121212; border:1px solid #1a1a1a; border-radius:12px; padding:8px; z-index:20; box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
                   <div class="cmd-item" onclick="LM.views.coach.insertCommand('/bulkquest\\n> My Quest @macro #habit $50\\n')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
@@ -927,6 +940,20 @@ window.LM.views.coach = (function () {
     }
   }
 
+  function insertMacro(name) {
+    const input = document.getElementById('coach-input-text');
+    if (!input) return;
+    const val = input.value;
+    const lastAt = val.lastIndexOf('@');
+    if (lastAt >= 0) {
+      input.value = val.substring(0, lastAt) + '@' + name.toLowerCase() + ' ';
+    } else {
+      input.value = val + '@' + name.toLowerCase() + ' ';
+    }
+    input.focus();
+    input.dispatchEvent(new Event('input'));
+  }
+
   function handleProposalAction(action, msgIndex) {
     let chat = getActiveChat();
     if (!chat || !chat.messages[msgIndex]) return;
@@ -1016,10 +1043,32 @@ window.LM.views.coach = (function () {
         // Command Popup Logic
         const popup = document.getElementById('coach-command-popup');
         if (popup) {
-          if (this.value === '/' || (this.value.startsWith('/') && !this.value.includes(' '))) {
+          if (this.value === '/' || (this.value.startsWith('/') && !this.value.includes(' ') && !this.value.includes('\n'))) {
             popup.style.display = 'block';
           } else {
             popup.style.display = 'none';
+          }
+        }
+
+        // Macro Popup Logic
+        const macroPopup = document.getElementById('coach-macro-popup');
+        if (macroPopup) {
+          const val = this.value;
+          const lastAt = val.lastIndexOf('@');
+          if (lastAt >= 0 && !val.substring(lastAt).includes(' ') && !val.substring(lastAt).includes('\n')) {
+            const search = val.substring(lastAt + 1).toLowerCase();
+            let hasVisible = false;
+            macroPopup.querySelectorAll('.cmd-item').forEach(el => {
+              if (el.dataset.name.toLowerCase().includes(search)) {
+                el.style.display = 'flex';
+                hasVisible = true;
+              } else {
+                el.style.display = 'none';
+              }
+            });
+            macroPopup.style.display = hasVisible ? 'block' : 'none';
+          } else {
+            macroPopup.style.display = 'none';
           }
         }
       });
@@ -1056,10 +1105,11 @@ window.LM.views.coach = (function () {
     startNewChat, 
     toggleSidebar,
     changeAvatar,
-    triggerAction,
+    triggerAction: triggerAction,
     _resetSidebar,
-    insertCommand,
-    handleProposalAction,
+    insertCommand: insertCommand,
+    insertMacro: insertMacro,
+    handleProposalAction: handleProposalAction,
     startTimerFromCard,
     setFixedTimerFromCard,
     deleteTimer,
