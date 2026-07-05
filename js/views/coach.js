@@ -346,15 +346,15 @@ window.LM.views.coach = (function () {
           const typeMatch = nameStr.match(/#(habit|project|boss|chain|research|daily)/i);
           const type = typeMatch ? typeMatch[1].toLowerCase() : 'daily';
           
-          const xpMatch = nameStr.match(/\\$(\\d+)/);
+          const xpMatch = nameStr.match(/\$(\d+)/);
           const xp = xpMatch ? parseInt(xpMatch[1], 10) : 50;
           
-          const timeMatch = nameStr.match(/~(\\d{2}:\\d{2}-\\d{2}:\\d{2})/);
+          const timeMatch = nameStr.match(/~(\d{2}:\d{2}-\d{2}:\d{2})/);
           const timeWindow = timeMatch ? timeMatch[1] : null;
           
           const isNegative = /!negative/i.test(nameStr);
           
-          const skillRegex = /@(\\w+)/g;
+          const skillRegex = /@(\w+)/g;
           let targetSkills = [];
           let match;
           while ((match = skillRegex.exec(nameStr)) !== null) {
@@ -370,11 +370,11 @@ window.LM.views.coach = (function () {
           }
 
           let cleanName = nameStr
-            .replace(/#\\w+/g, '')
-            .replace(/\\$\\d+/g, '')
-            .replace(/~\\d{2}:\\d{2}-\\d{2}:\\d{2}/g, '')
+            .replace(/#\w+/g, '')
+            .replace(/\$\d+/g, '')
+            .replace(/~\d{2}:\d{2}-\d{2}:\d{2}/g, '')
             .replace(/!negative/gi, '')
-            .replace(/@\\w+/g, '')
+            .replace(/@\w+/g, '')
             .trim();
             
           if (type === 'chain') {
@@ -405,9 +405,9 @@ window.LM.views.coach = (function () {
           }
         } else if (line.startsWith('>> ') && currentChain) {
           let stepStr = line.substring(3).trim();
-          const xpMatch = stepStr.match(/\\$(\\d+)/);
+          const xpMatch = stepStr.match(/\$(\d+)/);
           const stepXp = xpMatch ? parseInt(xpMatch[1], 10) : 50;
-          let cleanStep = stepStr.replace(/\\$\\d+/g, '').trim();
+          let cleanStep = stepStr.replace(/\$\d+/g, '').trim();
           
           currentChain.steps.push({
             id: S.uid(),
