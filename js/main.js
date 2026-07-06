@@ -124,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
     LM.store.checkTimers();
   }, 10000); // Check every 10 seconds
 
+  // Auto-backup: save a snapshot immediately on boot, then every 30 min
+  LM.store.saveAutoBackup();
+  LM.store.scheduleAutoBackup();
+
+
   // Theme
   LM.components.theme.init();
 

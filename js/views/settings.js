@@ -374,7 +374,43 @@ window.LM.views.settings = (function () {
         </div>
 
       </div>
-      
+
+      <!-- Auto-Backup Restore Section -->
+      <div class="section-block" style="border: 1px solid rgba(239,68,68,0.15); background: rgba(239,68,68,0.03);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <span class="material-symbols-outlined" style="color:#ef4444; font-size:20px;">restore</span>
+          <h2 style="margin:0; color:var(--text-1);">Auto-Backup Recovery</h2>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-3); margin-bottom:16px;">
+          LifeMaxx automatically saves a snapshot of your data every 30 minutes while the app is open. If you ever lose data, restore one of the snapshots below.
+        </p>
+        <div id="auto-backups-list" style="display:flex; flex-direction:column; gap:10px;">
+          ${(function() {
+            const backups = S.getAutoBackups();
+            if (!backups || backups.length === 0) {
+              return `<div style="font-size:0.85rem; color:var(--text-3); text-align:center; padding:12px;">No auto-backups saved yet. One will be created the next time you open the app with data.</div>`;
+            }
+            return backups.map((b, i) => {
+              const d = new Date(b.savedAt);
+              const timeStr = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+              const macroCount = (b.data && b.data.macros) ? b.data.macros.length : 0;
+              const questCount = (b.data && b.data.quests) ? b.data.quests.length : 0;
+              return `
+                <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-raised); padding:12px 16px; border-radius:10px; border:1px solid var(--border); gap:12px; flex-wrap:wrap;">
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div style="font-size:0.9rem; font-weight:600; color:var(--text-1);">Snapshot ${i === 0 ? '(Latest)' : i === 1 ? '(Yesterday)' : '(2 days ago)'}</div>
+                    <div style="font-size:0.75rem; color:var(--text-3);">${timeStr} &nbsp;·&nbsp; ${macroCount} Skills &nbsp;·&nbsp; ${questCount} Quests</div>
+                  </div>
+                  <button class="btn btn-ghost btn-restore-backup" data-idx="${i}" style="font-size:0.8rem; padding:6px 14px; border-color:rgba(239,68,68,0.3); color:#ef4444; white-space:nowrap;">
+                    ↩ Restore
+                  </button>
+                </div>
+              `;
+            }).join('');
+          })()}
+        </div>
+      </div>
+
       <!-- App Version Info -->
       <div style="text-align:center; padding: 10px 20px 40px; font-size: 0.75rem; color: var(--text-3); font-family: var(--font-mono); letter-spacing: 0.1em; opacity: 0.7;">
         LIFEMAXX SYSTEM VERSION: v${localStorage.getItem('lm_app_version') || 'UNKNOWN'}
@@ -384,6 +420,7 @@ window.LM.views.settings = (function () {
       <div id="activity-preset-modal-root"></div>
     `;
   }
+
 
   const PRESET_ICONS = [
     'bedtime', 'work', 'fitness_center', 'coffee', 'laptop_mac', 'menu_book', 
@@ -566,6 +603,29 @@ window.LM.views.settings = (function () {
 
   function init() {
     
+    // Auto-backup restore bindings
+    document.querySelectorAll('.btn-restore-backup').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        const backups = S.getAutoBackups();
+        const b = backups[idx];
+        if (!b) return;
+        const d = new Date(b.savedAt);
+        const timeStr = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        const macroCount = (b.data && b.data.macros) ? b.data.macros.length : 0;
+        const questCount = (b.data && b.data.quests) ? b.data.quests.length : 0;
+        if (confirm(`Restore snapshot from ${timeStr}?\n\nThis will overwrite your current data with:\n• ${macroCount} Skills\n• ${questCount} Quests\n\nYour current state will be lost. Are you sure?`)) {
+          const ok = S.restoreAutoBackup(idx);
+          if (ok) {
+            window.LM.components.notifications.show('✅ Backup restored successfully!', 'success');
+            window.LM.router.render();
+          } else {
+            window.LM.components.notifications.show('❌ Restore failed — backup data may be corrupt.', 'danger');
+          }
+        }
+      });
+    });
+
     // Activity Presets bindings
     const createActivityPresetBtn = document.getElementById('btn-create-grid-preset-settings');
     if (createActivityPresetBtn) {
@@ -573,6 +633,7 @@ window.LM.views.settings = (function () {
         openActivityPresetModal(null);
       });
     }
+
 
     document.querySelectorAll('.btn-edit-grid-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {

@@ -760,9 +760,9 @@ window.LM.views.coach = (function () {
     const macros = S.getMacros() || [];
     const macroPopupHTML = `
       <div id="coach-macro-popup" style="display:none; position:absolute; bottom:100%; left:16px; right:16px; margin-bottom:8px; background:#121212; border:1px solid #1a1a1a; border-radius:12px; padding:8px; z-index:20; box-shadow:0 -4px 20px rgba(0,0,0,0.5); max-height:200px; overflow-y:auto;">
-        ${macros.map(m => `
+        ${macros.filter(m => m && m.name).map(m => `
           <div class="cmd-item" data-name="${m.name}" onclick="LM.views.coach.insertMacro('${m.name}')" style="padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background .15s;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background='transparent'">
-            <div style="width:12px;height:12px;border-radius:50%;background:${m.accentColor};"></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:${m.accentColor || '#ffffff'};"></div>
             <div style="font-size:13px;font-weight:600;color:#fff;">@${m.name.toLowerCase()}</div>
           </div>
         `).join('')}

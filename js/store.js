@@ -22,7 +22,8 @@ window.LM.store = (function () {
     statLogs: 'lm_stat_logs',
     weeklySplit: 'lm_weekly_split',
     workoutHistory: 'lm_workout_history',
-    exerciseMeta: 'lm_exercise_meta'
+    exerciseMeta: 'lm_exercise_meta',
+    autoBackup: 'lm_auto_backup'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
@@ -843,6 +844,36 @@ window.LM.store = (function () {
     }
   }
 
+  // ── Auto-Backup (daily snapshot to localStorage) ──
+  const AUTO_BACKUP_SLOTS = 3; // Keep last 3 daily backups
+  function saveAutoBackup() {
+    try {
+      const current = getMacros();
+      if (!current || current.length === 0) return; // Never backup empty state
+      const backups = getAutoBackups();
+      const todayStr = new Date().toDateString();
+      // Don't write more than once per day
+      if (backups.length > 0 && backups[0].dateStr === todayStr) {
+        // Update today's backup
+        backups[0] = { dateStr: todayStr, savedAt: Date.now(), data: exportBackup() };
+      } else {
+        // New day — push to front
+        backups.unshift({ dateStr: todayStr, savedAt: Date.now(), data: exportBackup() });
+        // Prune old slots
+        if (backups.length > AUTO_BACKUP_SLOTS) backups.length = AUTO_BACKUP_SLOTS;
+      }
+      localStorage.setItem(KEYS.autoBackup, JSON.stringify(backups));
+    } catch(e) { console.warn('Auto-backup failed:', e); }
+  }
+  function getAutoBackups() {
+    try { return JSON.parse(localStorage.getItem(KEYS.autoBackup) || '[]'); } catch { return []; }
+  }
+  function restoreAutoBackup(index) {
+    const backups = getAutoBackups();
+    if (!backups[index]) return false;
+    return importBackup(backups[index].data);
+  }
+
   async function pullCloudSync() {
     const settings = getSettings();
     if (!settings.syncKey || isSyncing) return false;
@@ -863,12 +894,23 @@ window.LM.store = (function () {
         isSyncing = false;
         return false;
       }
+
+      // SAFETY GUARD: Never import cloud data that has fewer macros than local
+      // This prevents an empty/corrupt sync bin from wiping local data
+      const localMacros = getMacros();
+      if (cloudData.macros.length === 0 && localMacros.length > 0) {
+        console.warn('Cloud sync: refusing to import empty cloud macros over existing local data');
+        isSyncing = false;
+        return false;
+      }
       
       const localBackup = exportBackup();
       const cloudTime = cloudData.lastUpdated || 0;
       const localTime = localBackup.lastUpdated || 0;
       
       if (cloudTime > localTime) {
+        // Save an auto-backup BEFORE overwriting with cloud data
+        saveAutoBackup();
         // Cloud is newer, import it
         importBackup(cloudData);
         isSyncing = false;
@@ -900,6 +942,15 @@ window.LM.store = (function () {
       _pushTimer = null;
       pushCloudSync();
     }, 600);
+  }
+
+  // Auto-backup timer — every 30 minutes while app is open
+  let _autoBackupTimer = null;
+  function scheduleAutoBackup() {
+    if (_autoBackupTimer) return;
+    _autoBackupTimer = setInterval(() => {
+      saveAutoBackup();
+    }, 30 * 60 * 1000); // every 30 min
   }
 
   // Trigger debounced background upload whenever store data changes
@@ -960,6 +1011,7 @@ window.LM.store = (function () {
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, checkMidnightResets,
     getHistory, addHistoryEntry, clearHistory,
-    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
+    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint,
+    saveAutoBackup, getAutoBackups, restoreAutoBackup, scheduleAutoBackup
   };
 })();
