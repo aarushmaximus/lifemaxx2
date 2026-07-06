@@ -875,8 +875,11 @@ window.LM.views.coach = (function () {
                   </div>
                 </div>
 
-                <div style="display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px;">
-                  <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="flex:1;background:transparent;border:none;outline:none;resize:none;font-size:14px;color:#e8e8f0;max-height:120px;line-height:1.5;padding:4px 0;font-family:inherit;"></textarea>
+                <div id="coach-input-container" style="display:flex;align-items:flex-end;gap:8px;background:#121212;border:1px solid #1a1a1a;border-radius:16px;padding:8px 8px 8px 16px; transition: background 0.2s, border-color 0.2s;">
+                  <div style="position:relative; flex:1; display:flex;">
+                    <div id="coach-input-backdrop" style="position:absolute; top:0; left:0; right:0; bottom:0; font-size:14px; line-height:1.5; padding:4px 0; font-family:inherit; color:transparent; pointer-events:none; white-space:pre-wrap; overflow:hidden; word-break:break-word;"></div>
+                    <textarea id="coach-input-text" rows="1" placeholder="Message Fletcher..." style="position:relative; z-index:2; flex:1; background:transparent; border:none; outline:none; resize:none; font-size:14px; color:#e8e8f0; max-height:120px; line-height:1.5; padding:4px 0; font-family:inherit; margin:0; word-break:break-word;"></textarea>
+                  </div>
                   <button id="btn-coach-send" style="width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;opacity:.5;" disabled>
                     <span class="material-symbols-outlined" style="font-size:18px;color:#000;">arrow_upward</span>
                   </button>
@@ -1031,6 +1034,11 @@ window.LM.views.coach = (function () {
 
     // Auto-resize textarea and command popup
     if (input) {
+      input.addEventListener('scroll', function() {
+        const backdrop = document.getElementById('coach-input-backdrop');
+        if (backdrop) backdrop.scrollTop = this.scrollTop;
+      });
+
       input.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
@@ -1038,6 +1046,67 @@ window.LM.views.coach = (function () {
         if (send) {
           send.disabled = !hasText;
           send.style.opacity = hasText ? '1' : '.5';
+        }
+
+        // Update Syntax Highlighting
+        const container = document.getElementById('coach-input-container');
+        const backdrop = document.getElementById('coach-input-backdrop');
+        if (backdrop && container) {
+          let text = this.value;
+          backdrop.scrollTop = this.scrollTop; // Sync scroll
+          
+          if (text.startsWith('/bulkquest')) {
+            container.style.background = '#121212';
+            container.style.borderColor = '#1a1a1a';
+            let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const lines = escaped.split('\n');
+            let res = [];
+            let inQuest = false;
+            let colorIdx = 0;
+            const colors = [
+              'rgba(59,130,246,0.18)', // blue
+              'rgba(16,185,129,0.18)', // green
+              'rgba(245,158,11,0.18)', // orange
+              'rgba(139,92,246,0.18)', // purple
+              'rgba(239,68,68,0.18)'   // red
+            ];
+            
+            for (let i = 0; i < lines.length; i++) {
+              let l = lines[i];
+              if (i === 0) {
+                // Highlight the /bulkquest command line itself
+                res.push(`<span style="background:rgba(255,255,255,0.1);display:inline-block;width:100%; border-radius:4px;">${l || ' '}</span>`);
+                continue;
+              }
+              if (l.trim().startsWith('&gt;')) {
+                if (inQuest) {
+                  res.push(`</span>`); // close previous quest block
+                  colorIdx = (colorIdx + 1) % colors.length;
+                }
+                inQuest = true;
+                res.push(`<span style="background:${colors[colorIdx]};display:inline-block;width:100%; border-radius:4px;">` + (l || ' '));
+              } else if (l.trim() === '' && inQuest) {
+                res.push((l || ' ') + `</span>`);
+                inQuest = false;
+                colorIdx = (colorIdx + 1) % colors.length;
+              } else {
+                res.push(l || ' ');
+              }
+            }
+            if (inQuest) res.push(`</span>`);
+            // Adding extra break to ensure trailing newlines scroll properly
+            backdrop.innerHTML = res.join('\n') + (text.endsWith('\n') ? '<br>' : '');
+          } else if (text.startsWith('/')) {
+            // General command mode - highlight the whole container
+            container.style.background = 'rgba(16,185,129,0.06)';
+            container.style.borderColor = 'rgba(16,185,129,0.3)';
+            backdrop.innerHTML = '';
+          } else {
+            // Normal mode
+            container.style.background = '#121212';
+            container.style.borderColor = '#1a1a1a';
+            backdrop.innerHTML = '';
+          }
         }
 
         // Command Popup Logic
