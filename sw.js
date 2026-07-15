@@ -1,49 +1,14 @@
 // ⚠️ BUMP THIS VERSION every deploy to bust old caches
-const CACHE_NAME = 'lifemaxx-cache-v150';
-const ASSETS = [
-  './',
-  './index.html',
-  './css/main.css',
-  './css/tailwind-build.css',
-  './js/formulas.js',
-  './js/store.js',
-  './js/cell-notifier.js',
-  './js/ftimer-notifier.js',
-  './js/ai-engine.js',
-  './js/quest-progress.js',
-  './js/seed.js',
-  './js/components/notifications.js',
-  './js/components/theme.js',
-  './js/components/wheel.js',
-  './js/views/coach.js',
-  './js/components/quest-modal.js',
-  './js/components/skill-modal.js',
-  './js/components/stat-modal.js',
-  './js/components/research-timer.js',
-  './js/views/dashboard.js',
-  './js/views/skill-detail.js',
-  './js/views/quest-log.js',
-  './js/views/home.js',
-  './js/views/settings.js',
-  './js/views/skills.js',
-  './js/views/skill-hub.js',
-  './js/views/skill-widgets.js',
-  './js/views/skill-chains.js',
-  './js/views/stats.js',
-  './js/views/me.js',
-  './js/views/coach.js',
-  './js/main.js'
-];
+const CACHE_NAME = 'lifemaxx-react-cache-v151';
 
-// Install: cache all assets
+// Install: Take control immediately
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets v50');
-      return cache.addAll(ASSETS);
+      console.log('[SW] Caching root for React App v151');
+      return cache.addAll(['./', './index.html']);
     })
   );
-  // Take control immediately — don't wait for old SW to die
   self.skipWaiting();
 });
 
@@ -59,25 +24,19 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  // Take control of all open tabs immediately
   self.clients.claim();
 });
 
 // Fetch: Network-First strategy
-// → Always try the network first so users get fresh content.
-// → Only fall back to cache when offline (airplane mode, etc.)
 self.addEventListener('fetch', event => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip cross-origin requests (CDN fonts, Quill, etc.) — let browser handle them
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(event.request)
       .then(networkResponse => {
-        // Got a fresh response — update the cache in background
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => {
@@ -87,7 +46,6 @@ self.addEventListener('fetch', event => {
         return networkResponse;
       })
       .catch(() => {
-        // Network failed (offline) — serve from cache
         return caches.match(event.request).then(cachedResponse => {
           return cachedResponse || new Response('Offline', { status: 503 });
         });

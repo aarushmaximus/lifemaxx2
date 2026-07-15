@@ -286,20 +286,6 @@ export default function Settings() {
           }} />
         </div>
       </div>
-
-      {/* Vanilla UI Switch */}
-      <div className="section-block">
-        <h2>Vanilla UI (Reliable Code)</h2>
-        <p style={{fontSize: '0.8rem', color: 'var(--text-3)', marginTop: '4px', marginBottom: '16px'}}>
-          Switch back to the original Vanilla JS interface. The React interface is still in Beta and being synced with the mobile layout.
-        </p>
-        <button 
-          className="btn btn-primary"
-          onClick={() => window.location.href = '/'}
-        >
-          Switch to Vanilla
-        </button>
-      </div>
       
     </div>
   );
