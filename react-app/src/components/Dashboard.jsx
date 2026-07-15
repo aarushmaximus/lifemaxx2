@@ -90,6 +90,28 @@ const Wheel = ({ currentSkillId, setCurrentSkillId, macros, overall, settings })
   const chromeOn = settings.chromeAccentsEnabled !== false;
   const strokeColor = chromeOn ? 'url(#wheel-chrome-gradient)' : data.color;
 
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const questId = e.dataTransfer.getData('questId');
+    if (!questId) return;
+    const quest = store.getQuest(questId);
+    if (!quest || quest.status !== 'active') return;
+    const s = store.getSettings();
+    if (s.dragToRegister !== false) {
+      store.markQuestReady(questId);
+    } else {
+      store.completeQuest(questId);
+    }
+  };
+
   return (
     <div id="wheel-container">
       <select 
@@ -109,7 +131,13 @@ const Wheel = ({ currentSkillId, setCurrentSkillId, macros, overall, settings })
           <option key={m.id} value={m.id}>{m.name}</option>
         ))}
       </select>
-      <div id="wheel-drop-zone" className="wheel-drop-zone" onDragOver={e => e.preventDefault()}>
+      <div 
+        id="wheel-drop-zone" 
+        className={`wheel-drop-zone ${isDragOver ? 'drag-active' : ''}`} 
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <svg id="wheel-svg" viewBox="0 0 260 260" width="100%" style={{maxWidth: '240px', display: 'block', margin: '0 auto'}}>
           <defs>
             <filter id="glow-filter">
@@ -175,16 +203,25 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
   const isMissed = quest.status === 'missed';
   const withinWindow = F.isWithinTimeWindow(quest.timeWindow);
   const isLocked = quest.status === 'active' && !withinWindow;
+  const isReadyToClaim = quest.isReadyToClaim;
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-  let timeStr = null;
-  if (quest.expiresAt && quest.status === 'active') {
-    const leftMs = quest.expiresAt - Date.now();
-    if (leftMs > 0) {
-      timeStr = <span className="quest-countdown-timer" data-expires-at={quest.expiresAt} style={{fontSize:'0.65rem', color:'var(--accent)'}}>Counting down...</span>;
-    } else {
-      timeStr = <span style={{fontSize:'0.65rem', color:'var(--danger)'}}>Expired</span>;
-    }
-  }
+  const [timeDisplay, setTimeDisplay] = React.useState('');
+
+  React.useEffect(() => {
+    if (!quest.expiresAt || quest.status !== 'active') return;
+    const update = () => {
+      const leftMs = quest.expiresAt - Date.now();
+      if (leftMs <= 0) { setTimeDisplay('Expired'); return; }
+      const h = Math.floor(leftMs / 3600000);
+      const m = Math.floor((leftMs % 3600000) / 60000);
+      const s = Math.floor((leftMs % 60000) / 1000);
+      setTimeDisplay(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [quest.expiresAt, quest.status]);
 
   let windowBadge = quest.timeWindow 
     ? <span className="quest-type-badge" style={{background:'var(--accent-dim)', color:'var(--accent)', border:'1px solid var(--border)'}}>{quest.timeWindow.start} - {quest.timeWindow.end}</span>
@@ -197,15 +234,31 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
     statusBadge = <span className="quest-type-badge" style={{background:'rgba(120,120,140,0.15)', color:'var(--text-3)', border:'1px solid var(--border)'}}>LOCKED 🔒</span>;
   }
 
-  let cardClass = (isMissed || isLocked) ? 'quest-card-deleted-status' : '';
-  const canDrag = !isLocked && !isMissed;
+  const cardClass = (isMissed || isLocked) ? 'quest-card-deleted-status' : '';
+  const canDrag = !isLocked && !isMissed && settings.dragToRegister !== false;
+
+  const handleDragStart = (e) => {
+    if (!canDrag) return;
+    e.dataTransfer.setData('questId', quest.id);
+    e.currentTarget.classList.add('card-dragging');
+  };
+  const handleDragEnd = (e) => {
+    e.currentTarget.classList.remove('card-dragging');
+  };
 
   return (
-    <div className={`quest-card ${cardClass}`} draggable={canDrag ? "true" : "false"}>
+    <div 
+      className={`quest-card ${cardClass}`} 
+      draggable={canDrag ? 'true' : 'false'}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="quest-card-header">
         {windowBadge}
         {statusBadge}
-        {timeStr}
+        {timeDisplay && quest.expiresAt && quest.status === 'active' && (
+          <span style={{fontSize:'0.65rem', color: timeDisplay === 'Expired' ? 'var(--danger)' : 'var(--accent)'}}>{timeDisplay}</span>
+        )}
         <div className="quest-card-actions">
           <button className="btn-icon danger" onClick={() => store.deleteQuest(quest.id)} title="Delete">✕</button>
         </div>
@@ -225,9 +278,15 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
         {isMissed ? (
           <button className="btn-complete" style={{background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.2)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Missed (Click ✕ to delete)</button>
         ) : isLocked ? (
-          <button className="btn-complete" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow.start} - {quest.timeWindow.end})</button>
+          <button className="btn-complete" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow?.start} - {quest.timeWindow?.end})</button>
         ) : quest.isWorkoutQuest ? (
-          <button className="btn-complete" onClick={() => setActiveTab('workout')} style={{background: 'var(--accent)', color: '#000', border: 'none', fontWeight: 700, letterSpacing: '0.08em'}}>⚡ START WORKOUT</button>
+          <button className="btn-complete" onClick={() => setActiveTab && setActiveTab('workout')} style={{background: 'var(--accent)', color: '#000', border: 'none', fontWeight: 700, letterSpacing: '0.08em'}}>⚡ START WORKOUT</button>
+        ) : isReadyToClaim ? (
+          isTouch ? (
+            <button className="btn-complete" onClick={() => store.completeQuest(quest.id)} style={{background: 'var(--accent-dim)', border: '1px solid var(--accent)', color: 'var(--accent)', cursor: 'pointer'}}>✓ Claim XP</button>
+          ) : (
+            <button className="btn-complete" style={{background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-3)', cursor: 'grab', pointerEvents: 'none'}}>✓ Completed (Drag to Claim XP)</button>
+          )
         ) : (
           <button className="btn-complete" onClick={() => store.completeQuest(quest.id)}>✓ Complete</button>
         )}
@@ -365,15 +424,21 @@ export default function Dashboard({ setActiveTab }) {
     return () => store.off('change', handleStoreChange);
   }, []);
 
+  // Timer tick for countdowns
+  useEffect(() => {
+    store.checkTimers();
+    const interval = setInterval(() => store.checkTimers(), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const visibleQuests = quests.filter(q => {
     if (q.hiddenFromDashboard) return false;
     if (q.status === 'completed' && !q.isReadyToClaim) return false;
     if (q.status === 'deleted') return false;
-    const isLocked = q.status === 'active' && !F.isWithinTimeWindow(q.timeWindow);
-    if (isLocked || q.status === 'missed') return false;
-    return true;
+    return true; // show active (locked or not), missed — with appropriate badges
   });
 
+  const activeEffects = store.getActiveStatusEffects ? store.getActiveStatusEffects() : [];
   const activeChains = chains.filter(c => c.steps.some(s => !s.completedAt));
 
   const updateQuestCarouselNav = (e) => {
@@ -446,7 +511,25 @@ export default function Dashboard({ setActiveTab }) {
     <div className="dashboard-grid h-full overflow-y-auto">
       <div className="dash-center pb-20">
         
-        {/* Layout Conditonal: History Bar (Split Layout) vs Default Large Wheel */}
+        {/* Status Effects Banner */}
+        {activeEffects.length > 0 && (
+          <div style={{display:'flex', gap:'8px', padding:'8px 16px', flexWrap:'wrap'}}>
+            {activeEffects.map(effect => (
+              <div key={effect.id} style={{
+                display:'flex', alignItems:'center', gap:'6px',
+                background: effect.type === 'buff' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${effect.type === 'buff' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                borderRadius:'8px', padding:'4px 10px', fontSize:'0.72rem'
+              }}>
+                <span>{effect.type === 'buff' ? '⬆' : '⬇'}</span>
+                <span style={{color: effect.type === 'buff' ? '#10b981' : '#ef4444', fontWeight:600}}>{effect.name}</span>
+                <span style={{color:'var(--text-3)'}}>x{effect.multiplier?.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Layout Conditional: History Bar (Split Layout) vs Default Large Wheel */}
         <div className="dash-carousel-wrap">
           <div className="dash-carousel-viewport" id="dash-carousel">
             <div className="dash-carousel-panel">

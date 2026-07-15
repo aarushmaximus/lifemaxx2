@@ -22,12 +22,13 @@ export const store = (function () {
     statistics: 'lm_statistics',
     statLogs: 'lm_stat_logs',
     weeklySplit: 'lm_weekly_split',
-    workoutHistory: 'lm_workout_history'
+    workoutHistory: 'lm_workout_history',
+    exerciseMeta: 'lm_exercise_meta',
+    autoBackup: 'lm_auto_backup',
+    notes: 'lm_notes'
   };
   const HISTORY_MAX = 200;
   const listeners = [];
-  // F is imported above if needed, but since it's IIFE we can just require it or import it. Wait, I'll add the import at the top of the file!
-  // Actually, I'll replace this with an empty string and add import at the top.
 
   function on(event, fn) { listeners.push({ event, fn }); }
   function off(event, fn) { 
@@ -241,7 +242,25 @@ export const store = (function () {
     }
   }
 
-  // ── Award XP ──
+  // ── Notes (Codex) ──
+  function getNotes() { return load(KEYS.notes) || []; }
+  function saveNotes(list) { save(KEYS.notes, list); emit('change'); }
+  function getNote(id) { return getNotes().find(n => n.id === id) || null; }
+  function upsertNote(note) {
+    const list = getNotes();
+    const idx = list.findIndex(n => n.id === note.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...note, updatedAt: Date.now() };
+    } else {
+      list.push({ ...note, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+    saveNotes(list);
+  }
+  function deleteNote(id) {
+    saveNotes(getNotes().filter(n => n.id !== id));
+  }
+
+  // ── Cloud Sync ──
   function awardXP(targetSkills, negative = false, reason = '', questId = null) {
     if (!Array.isArray(targetSkills)) return { overallDelta: 0 };
     const macros = getMacros();
@@ -390,8 +409,6 @@ export const store = (function () {
     }
   }
 
-
-
   function checkMidnightResets() {
     const todayStr = new Date().toDateString();
     const lastReview = load(KEYS.lastReviewDate);
@@ -532,7 +549,6 @@ export const store = (function () {
     quests.forEach(q => {
       if (q.expiresAt && q.expiresAt <= now) {
         if (q.status === 'active') {
-          // Requirement 1: Expired active quests transition to 'missed' state and remain in the quest log.
           q.status = 'missed';
           changed = true;
           registerMissedQuest();
@@ -622,8 +638,6 @@ export const store = (function () {
   }
 
   // ── Habituals ──
-  // A habitual is a daily task tied to a macro skill.
-  // Fields: { id, macroId, name, xpGain, xpLoss, createdAt, todayStatus: null|'yes'|'no', lastResetDate }
   function getHabituals() { return load(KEYS.habituals) || []; }
   function saveHabituals(list) { save(KEYS.habituals, list); emit('change'); }
   function getHabitual(id) { return getHabituals().find(h => h.id === id) || null; }
@@ -639,30 +653,23 @@ export const store = (function () {
     saveHabituals(getHabituals().filter(h => h.id !== id));
   }
 
-  // Returns the current IST date string e.g. "2026-06-15"
   function getISTDateString() {
     const now = new Date();
-    // IST = UTC + 5:30
     const istMs = now.getTime() + (5.5 * 60 * 60 * 1000);
     const ist = new Date(istMs);
-    return ist.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    return ist.toISOString().slice(0, 10);
   }
 
-  // Called on app load: reset any habituals whose lastResetDate != today (IST)
-  // If todayStatus is null (not answered) AND it's past midnight IST since lastResetDate → deduct xpLoss
   function checkHabitualReset() {
     const todayIST = getISTDateString();
     let list = getHabituals();
     let changed = false;
     list = list.map(h => {
       if (!h.lastResetDate) {
-        // First time, just set date
         return { ...h, lastResetDate: todayIST, todayStatus: null };
       }
       if (h.lastResetDate !== todayIST) {
-        // New day! Apply penalty if no answer was given yesterday
         if (h.todayStatus === null || h.todayStatus === undefined) {
-          // Missed — deduct xpLoss
           if (h.xpLoss && h.xpLoss > 0) {
             awardXP([{ macroSkillId: h.macroId, xpAmount: -h.xpLoss }], false, `Habitual missed: ${h.name}`);
             addHistoryEntry('habitual_missed', `Habitual missed: ${h.name}`, { habitualId: h.id, xp: -h.xpLoss });
@@ -722,7 +729,7 @@ export const store = (function () {
       date: Date.now(),
       dateStr: getISTDateString(),
       exerciseName: exerciseName,
-      sets: sets // Array of { reps: Number, weight: Number }
+      sets: sets
     });
     saveWorkoutHistory(list);
   }
@@ -731,6 +738,54 @@ export const store = (function () {
     if (list.length === 0) return null;
     list.sort((a,b) => b.date - a.date);
     return list[0];
+  }
+
+  // ── Exercise Metadata ──
+  function getExerciseMetaList() { return load(KEYS.exerciseMeta) || []; }
+  function saveExerciseMetaList(list) { save(KEYS.exerciseMeta, list); emit('change'); }
+  function getExerciseMeta(name) { 
+    if (!name) return null;
+    const list = getExerciseMetaList();
+    return list.find(e => e.name.toLowerCase() === name.toLowerCase()) || null;
+  }
+  function upsertExerciseMeta(meta) {
+    const list = getExerciseMetaList();
+    const idx = list.findIndex(e => e.name.toLowerCase() === meta.name.toLowerCase());
+    if (idx >= 0) list[idx] = meta; else list.push(meta);
+    saveExerciseMetaList(list);
+  }
+
+  // ── Auto-Backup ──
+  const AUTO_BACKUP_SLOTS = 3;
+  function saveAutoBackup() {
+    try {
+      const current = getMacros();
+      if (!current || current.length === 0) return;
+      const backups = getAutoBackups();
+      const todayStr = new Date().toDateString();
+      if (backups.length > 0 && backups[0].dateStr === todayStr) {
+        backups[0] = { dateStr: todayStr, savedAt: Date.now(), data: exportBackup() };
+      } else {
+        backups.unshift({ dateStr: todayStr, savedAt: Date.now(), data: exportBackup() });
+        if (backups.length > AUTO_BACKUP_SLOTS) backups.length = AUTO_BACKUP_SLOTS;
+      }
+      localStorage.setItem(KEYS.autoBackup, JSON.stringify(backups));
+    } catch(e) { console.warn('Auto-backup failed:', e); }
+  }
+  function getAutoBackups() {
+    try { return JSON.parse(localStorage.getItem(KEYS.autoBackup) || '[]'); } catch { return []; }
+  }
+  function restoreAutoBackup(index) {
+    const backups = getAutoBackups();
+    if (!backups[index]) return false;
+    return importBackup(backups[index].data);
+  }
+  let _autoBackupTimer = null;
+  function scheduleAutoBackup() {
+    if (_autoBackupTimer) return;
+    _autoBackupTimer = setInterval(() => {
+      saveAutoBackup();
+    }, 30 * 60 * 1000);
   }
 
   // ── Cell Presets ──
@@ -759,18 +814,24 @@ export const store = (function () {
     return {
       macros: getMacros(),
       quests: getQuests(),
+      habituals: getHabituals(),
+      chains: getAllChains(),
+      history: getHistory(),
       overall: getOverall(),
       settings: getSettings(),
+      xpLog: getXPLog(),
       presets: getPresets(),
-      chains: getAllChains(),
-      habituals: getHabituals(),
-      xplog: load(KEYS.xplog) || [],
+      statistics: getStatistics(),
+      statLogs: getStatLogs(),
+      weeklySplit: getWeeklySplit(),
+      workoutTemplates: getWorkoutTemplates(),
       coachChats: getCoachChats(),
-      history: getHistory(),
       dailyLogs: getDailyLogs(),
       cellPresets: getCellPresets(),
-      weeklySplit: getWeeklySplit(),
-      lastUpdated: load(KEYS.lastUpdated) || Date.now()
+      workoutHistory: getWorkoutHistory(),
+      exerciseMeta: getExerciseMetaList(),
+      notes: getNotes(),
+      lastUpdated: load(KEYS.lastUpdated) || 0
     };
   }
 
@@ -778,19 +839,24 @@ export const store = (function () {
     if (!data) return false;
     if (data.macros) save(KEYS.macros, data.macros);
     if (data.quests) save(KEYS.quests, data.quests);
+    if (data.habituals) save(KEYS.habituals, data.habituals);
+    if (data.chains) save(KEYS.chains, data.chains);
+    if (data.history) save(KEYS.history, data.history);
     if (data.overall) save(KEYS.overall, data.overall);
     if (data.settings) save(KEYS.settings, data.settings);
+    if (data.xpLog) save(KEYS.xplog, data.xpLog);
     if (data.presets) save(KEYS.presets, data.presets);
-    if (data.chains) save(KEYS.chains, data.chains);
-    if (data.habituals) save(KEYS.habituals, data.habituals);
-    if (data.xplog) save(KEYS.xplog, data.xplog);
+    if (data.statistics) save(KEYS.statistics, data.statistics);
+    if (data.statLogs) save(KEYS.statLogs, data.statLogs);
+    if (data.weeklySplit) save(KEYS.weeklySplit, data.weeklySplit);
+    if (data.workoutTemplates) save(KEYS.woTemplates, data.workoutTemplates);
     if (data.coachChats) save(KEYS.coachChats, data.coachChats);
-    if (data.history) save(KEYS.history, data.history);
     if (data.dailyLogs) save(KEYS.dailyLogs, data.dailyLogs);
     if (data.cellPresets) save(KEYS.cellPresets, data.cellPresets);
-    if (data.weeklySplit) save(KEYS.weeklySplit, data.weeklySplit);
-    const cloudTime = data.lastUpdated || Date.now();
-    save(KEYS.lastUpdated, cloudTime);
+    if (data.workoutHistory) save(KEYS.workoutHistory, data.workoutHistory);
+    if (data.exerciseMeta) save(KEYS.exerciseMeta, data.exerciseMeta);
+    if (data.notes) save(KEYS.notes, data.notes);
+    save(KEYS.lastUpdated, Date.now());
     emit('change');
     return true;
   }
@@ -856,6 +922,14 @@ export const store = (function () {
       // jsonbin-zeta returns stored data at root level (not wrapped in .data)
       const cloudData = (responseBody && responseBody.macros) ? responseBody : responseBody.data;
       if (!cloudData || !cloudData.macros) {
+        isSyncing = false;
+        return false;
+      }
+      
+      // SAFETY GUARD: Never import cloud data that has fewer macros than local
+      const localMacros = getMacros();
+      if (cloudData.macros.length === 0 && localMacros.length > 0) {
+        console.warn('Cloud sync: refusing to import empty cloud macros over existing local data');
         isSyncing = false;
         return false;
       }
@@ -949,12 +1023,16 @@ export const store = (function () {
     getXPLog, saveXPLog,
     getWorkoutTemplates, upsertWorkoutTemplate, deleteWorkoutTemplate,
     getWorkoutHistory, addWorkoutLog, getLastWorkoutLog,
+    getExerciseMetaList, getExerciseMeta, upsertExerciseMeta,
+    saveAutoBackup, getAutoBackups, restoreAutoBackup, scheduleAutoBackup,
     getCoachChats, getCoachChat, upsertCoachChat, deleteCoachChat,
     getDailyLogs, getDailyLog, upsertDailyLog,
     getCellPresets, saveCellPresets, upsertCellPreset, deleteCellPreset,
     awardXP, completeQuest, markQuestReady, checkResets, checkTimers, addQuestChain,
     getActiveStatusEffects, addStatusEffect, registerMissedQuest, checkMidnightResets,
     getHistory, addHistoryEntry, clearHistory,
-    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint
+    uid, exportBackup, importBackup, pushCloudSync, pullCloudSync, getSyncEndpoint,
+    getExerciseMetaList, getExerciseMeta, upsertExerciseMeta, saveAutoBackup, getAutoBackups, restoreAutoBackup, scheduleAutoBackup,
+    getNotes, getNote, upsertNote, deleteNote
   };
 })();

@@ -1,4 +1,4 @@
-import { LucideHome, LucideActivity, LucideTrendingUp, LucideMessageSquare, LucideSettings, LucideFlag } from 'lucide-react';
+import { LucideHome, LucideActivity, LucideTrendingUp, LucideMessageSquare, LucideSettings, LucideFlag, LucideBook } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, overall }) {
   const tabs = [
@@ -6,6 +6,7 @@ export default function Sidebar({ activeTab, setActiveTab, overall }) {
     { id: 'quests', icon: <LucideFlag size={20} />, label: 'Quests' },
     { id: 'skills', icon: <LucideActivity size={20} />, label: 'Skill Hub' },
     { id: 'analysis', icon: <LucideTrendingUp size={20} />, label: 'Analysis' },
+    { id: 'codex', icon: <LucideBook size={20} />, label: 'Codex' },
     { id: 'coach', icon: <LucideMessageSquare size={20} />, label: 'Coach' },
     { id: 'settings', icon: <LucideSettings size={20} />, label: 'Settings' },
   ];

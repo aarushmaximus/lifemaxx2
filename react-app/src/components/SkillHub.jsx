@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../lib/store';
 import { formulas as F } from '../lib/formulas';
+import SkillModal from './SkillModal';
+import StatModal from './StatModal';
 
 export default function SkillHub({ macroId }) {
   const [macro, setMacro] = useState(null);
@@ -14,6 +16,13 @@ export default function SkillHub({ macroId }) {
   const [habName, setHabName] = useState('');
   const [habGain, setHabGain] = useState(10);
   const [habLoss, setHabLoss] = useState(10);
+
+  // Skill & Stat Modal states
+  const [skillModalOpen, setSkillModalOpen] = useState(false);
+  
+  const [statModalOpen, setStatModalOpen] = useState(false);
+  const [statModalMode, setStatModalMode] = useState('create');
+  const [editStatId, setEditStatId] = useState(null);
 
   useEffect(() => {
     function loadData() {
@@ -182,8 +191,11 @@ export default function SkillHub({ macroId }) {
                 })
               )}
             </div>
-            <button className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-gray-300 transition-colors">
-              + Add Micro Skill
+            <button 
+              onClick={() => setSkillModalOpen(true)}
+              className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-gray-300 transition-colors"
+            >
+              + Add Micro Skill / Edit Macro
             </button>
           </div>
         </div>
@@ -228,7 +240,9 @@ export default function SkillHub({ macroId }) {
                       <div className="flex gap-2">
                         <button 
                           onClick={() => {
-                            if (window.LM?.components?.statModal) window.LM.components.statModal.open(s.id);
+                            setEditStatId(s.id);
+                            setStatModalMode('edit');
+                            setStatModalOpen(true);
                           }}
                           className="text-gray-500 hover:text-white transition-colors p-1 text-xs"
                           title="Edit Statistic"
@@ -273,10 +287,12 @@ export default function SkillHub({ macroId }) {
                         setShowHabModal(true);
                         break;
                       case 'create-quest':
-                        window.LM?.components?.questModal?.open(null, false);
+                        window.openQuestModal && window.openQuestModal(null);
                         break;
                       case 'create-statistic':
-                        window.LM?.components?.statModal?.open(null);
+                        setEditStatId(null);
+                        setStatModalMode('create');
+                        setStatModalOpen(true);
                         break;
                       case 'chain-quests':
                         window.location.hash = `#skill-chains/${macro.id}`;
@@ -357,6 +373,19 @@ export default function SkillHub({ macroId }) {
           </div>
         </div>
       )}
+
+      {/* React Modals */}
+      <SkillModal 
+        isOpen={skillModalOpen} 
+        onClose={() => setSkillModalOpen(false)} 
+        macroId={macro.id} 
+      />
+      <StatModal 
+        isOpen={statModalOpen} 
+        onClose={() => setStatModalOpen(false)} 
+        statId={editStatId} 
+        mode={statModalMode} 
+      />
     </div>
   );
 }

@@ -6,18 +6,33 @@ import SkillHub from './pages/SkillHub';
 import Analysis from './pages/Analysis';
 import Coach from './pages/Coach';
 import Settings from './pages/Settings';
-
 import Quests from './pages/Quests';
+import Codex from './pages/Codex';
+import QuestModal from './components/QuestModal';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [overall, setOverall] = useState(store.getOverall());
+  
+  // Modals state
+  const [questModalOpen, setQuestModalOpen] = useState(false);
+  const [editQuest, setEditQuest] = useState(null);
 
   useEffect(() => {
     const handleStoreChange = () => {
       setOverall(store.getOverall());
     };
     store.on('change', handleStoreChange);
+
+    // Auto backup setup
+    store.scheduleAutoBackup();
+
+    // Expose openQuestModal globally
+    window.openQuestModal = (q) => {
+      setEditQuest(q || null);
+      setQuestModalOpen(true);
+    };
+
     return () => {
       store.off('change', handleStoreChange);
     };
@@ -46,8 +61,21 @@ function App() {
         {activeTab === 'skills' && <SkillHub />}
         {activeTab === 'analysis' && <Analysis />}
         {activeTab === 'coach' && <Coach />}
+        {activeTab === 'codex' && <Codex />}
         {activeTab === 'settings' && <Settings />}
       </main>
+
+      {/* Quest Modal */}
+      <QuestModal isOpen={questModalOpen} onClose={() => setQuestModalOpen(false)} editQuest={editQuest} />
+
+      {/* Global FAB */}
+      <button 
+        id="fab"
+        onClick={() => { setEditQuest(null); setQuestModalOpen(true); }}
+        className="fixed bottom-[100px] md:bottom-8 right-4 md:right-8 w-14 h-14 bg-[#00E5FF] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_30px_rgba(0,229,255,0.6)] hover:scale-105 transition-all z-[90]"
+      >
+        <span className="material-symbols-outlined text-3xl font-light">add</span>
+      </button>
 
       {/* Mobile Bottom NavBar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-3xl border-t border-[#141414]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}>
@@ -57,6 +85,7 @@ function App() {
             { id: 'quests', icon: 'flag', label: 'QUESTS' },
             { id: 'skills', icon: 'apps', label: 'SKILLS' },
             { id: 'analysis', icon: 'query_stats', label: 'ANALYSIS' },
+            { id: 'codex', icon: 'book', label: 'CODEX' },
             { id: 'coach', icon: 'psychology', label: 'COACH' },
             { id: 'settings', icon: 'settings', label: 'SETTINGS' },
           ].map((tab) => (
