@@ -51,6 +51,12 @@ function App() {
           <div className="flex items-center gap-4">
             <h1 className="tracking-tighter text-[#e8e8f0]" style={{ fontSize: '1.2rem', fontWeight: 600 }}>Lifemaxx</h1>
           </div>
+          <button 
+            onClick={() => setActiveTab('settings')} 
+            className={`transition-colors flex items-center justify-center p-1 rounded-full ${activeTab === 'settings' ? 'text-[#00E5FF] bg-[#00E5FF]/10' : 'text-[#8a8a98] hover:text-white'}`}
+          >
+            <span className="material-symbols-outlined text-2xl font-light">settings</span>
+          </button>
         </div>
       </nav>
       
@@ -86,8 +92,7 @@ function App() {
             { id: 'skills', icon: 'apps', label: 'SKILLS' },
             { id: 'analysis', icon: 'query_stats', label: 'ANALYSIS' },
             { id: 'codex', icon: 'book', label: 'CODEX' },
-            { id: 'coach', icon: 'psychology', label: 'COACH' },
-            { id: 'settings', icon: 'settings', label: 'SETTINGS' },
+            { id: 'coach', icon: 'psychology', label: 'COACH' }
           ].map((tab) => (
             <div
               key={tab.id}
