@@ -340,8 +340,8 @@ window.LM.views.coach = (function () {
         let line = lines[i].trim();
         if (!line) continue;
         
-        if (line.startsWith('> ')) {
-          let nameStr = line.substring(2);
+        if (line.startsWith('>') && !line.startsWith('>>')) {
+          let nameStr = line.replace(/^>\s*/, '');
           
           const typeMatch = nameStr.match(/#(habit|project|boss|chain|research|daily)/i);
           const type = typeMatch ? typeMatch[1].toLowerCase() : 'daily';
@@ -371,7 +371,7 @@ window.LM.views.coach = (function () {
 
           let cleanName = nameStr
             .replace(/#\w+/g, '')
-            .replace(/\$\d+/g, '')
+            .replace(/\$\d+[xXpP]*/g, '')
             .replace(/~\d{2}:\d{2}-\d{2}:\d{2}/g, '')
             .replace(/!negative/gi, '')
             .replace(/@\w+/g, '')
@@ -381,7 +381,7 @@ window.LM.views.coach = (function () {
             currentChain = {
               id: S.uid(),
               name: cleanName,
-              macroId: targetSkills.length > 0 ? targetSkills[0].macroSkillId : macros[0]?.id,
+              macroId: targetSkills.length > 0 ? targetSkills[0].macroSkillId : (macros.length > 0 ? macros[0].id : null),
               steps: [],
               createdAt: Date.now()
             };
@@ -403,11 +403,11 @@ window.LM.views.coach = (function () {
             });
             addedCount++;
           }
-        } else if (line.startsWith('>> ') && currentChain) {
-          let stepStr = line.substring(3).trim();
+        } else if (line.startsWith('>>') && currentChain) {
+          let stepStr = line.replace(/^>>\s*/, '').trim();
           const xpMatch = stepStr.match(/\$(\d+)/);
           const stepXp = xpMatch ? parseInt(xpMatch[1], 10) : 50;
-          let cleanStep = stepStr.replace(/\$\d+/g, '').trim();
+          let cleanStep = stepStr.replace(/\$\d+[xXpP]*/g, '').trim();
           
           currentChain.steps.push({
             id: S.uid(),
@@ -1078,14 +1078,15 @@ window.LM.views.coach = (function () {
                 res.push(`<span style="background:rgba(255,255,255,0.1);display:inline-block;width:100%; border-radius:4px;">${l || ' '}</span>`);
                 continue;
               }
-              if (l.trim().startsWith('&gt;')) {
+              const trimmed = l.trim();
+              if (trimmed.startsWith('&gt;') && !trimmed.startsWith('&gt;&gt;')) {
                 if (inQuest) {
                   res.push(`</span>`); // close previous quest block
                   colorIdx = (colorIdx + 1) % colors.length;
                 }
                 inQuest = true;
                 res.push(`<span style="background:${colors[colorIdx]};display:inline-block;width:100%; border-radius:4px;">` + (l || ' '));
-              } else if (l.trim() === '' && inQuest) {
+              } else if (trimmed === '' && inQuest) {
                 res.push((l || ' ') + `</span>`);
                 inQuest = false;
                 colorIdx = (colorIdx + 1) % colors.length;
