@@ -36,6 +36,14 @@ const MiniWheel = ({ skillId, wheelIndex, macros, overall, settings }) => {
             <feGaussianBlur stdDeviation="2" result="blur"/>
             <feComposite in="SourceGraphic" in2="blur" operator="over"/>
           </filter>
+          <linearGradient id="wheel-chrome-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#404040" />
+            <stop offset="20%" stopColor="#b8b8b8" />
+            <stop offset="40%" stopColor="#ffffff" />
+            <stop offset="60%" stopColor="#707070" />
+            <stop offset="80%" stopColor="#e0e0e0" />
+            <stop offset="100%" stopColor="#ffffff" />
+          </linearGradient>
         </defs>
         <circle cx="130" cy="130" r="110" fill="none" stroke="var(--bg-raised)" strokeWidth="12"/>
         {Array.from({length: 16}).map((_, i) => {
@@ -389,6 +397,100 @@ const ChainCard = ({ chain, macros }) => {
   );
 };
 
+const MacroBarsPanel = ({ macros, overall }) => {
+  const overallBarPct = F.progressPercent(overall.currentXP || 0, overall);
+  const overallInto = F.xpIntoCurrentLevel(overall.currentXP || 0, overall);
+  const overallReq = F.xpRequiredForNextLevel(overall.currentXP || 0, overall);
+
+  return (
+    <div className="dash-macros-panel">
+      <div style={{marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+         <span style={{fontFamily:'var(--font-display)',fontSize:'0.75rem',color:'var(--text-2)',letterSpacing:'0.1em'}}>MACRO SKILL PROGRESS</span>
+      </div>
+      <div className="dash-macros-list">
+        <div className="macro-bar-row overall-bar-row" style={{marginBottom:'18px',borderBottom:'1px solid var(--border)',paddingBottom:'12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px',alignItems:'center'}}>
+            <span style={{fontFamily:'var(--font-display)',fontSize:'0.85rem',color:'var(--text-1)',fontWeight:'bold',display:'flex',alignItems:'center',gap:'8px'}}>
+               <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'var(--chrome,#E8E8E8)',boxShadow:'0 0 8px var(--chrome,#E8E8E8)'}}></div>
+               OVERALL <span className="chrome-metallic-text" style={{fontWeight:'bold'}}>LV{overall.currentLevel || 0}</span>
+             </span>
+            <span style={{fontSize:'0.75rem',color:'var(--text-2)',fontWeight:500}}>{F.formatXP(overallInto)}/{F.formatXP(overallReq)}</span>
+          </div>
+          <div style={{width:'100%',height:'8px',background:'rgba(255,255,255,0.05)',borderRadius:'100px',overflow:'hidden'}}>
+            <div className="xp-bar-fill-chrome" style={{width:`${overallBarPct}%`,height:'100%'}}></div>
+          </div>
+        </div>
+        {macros.map(m => {
+          const pct = F.progressPercent(m.currentXP || 0, m);
+          const into = F.xpIntoCurrentLevel(m.currentXP || 0, m);
+          const req = F.xpRequiredForNextLevel(m.currentXP || 0, m);
+          return (
+            <div key={m.id} className="macro-bar-row" style={{marginBottom:'12px',cursor:'pointer'}} onClick={() => window.location.hash = `#skill-hub/${m.id}`}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px',alignItems:'center'}}>
+                <span style={{fontFamily:'var(--font-display)',fontSize:'0.75rem',color:'var(--text-1)',display:'flex',alignItems:'center',gap:'6px'}}>
+                   <div style={{width:'6px',height:'6px',borderRadius:'50%',background:m.accentColor}}></div>
+                   {m.name} <span style={{color:m.accentColor}}>LV{m.currentLevel || 0}</span>
+                </span>
+                <span style={{fontSize:'0.65rem',color:'var(--text-3)'}}>{F.formatXP(into)}/{F.formatXP(req)}</span>
+              </div>
+              <div style={{width:'100%',height:'4px',background:'var(--bg-raised)',borderRadius:'100px',overflow:'hidden'}}>
+                <div className="xp-bar-fill-chrome" style={{width:`${pct}%`,height:'100%'}}></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const StatsPanel = ({ stats }) => {
+  if (!stats || stats.length === 0) return null;
+  return (
+    <div className="dash-macros-panel" style={{height:'100%', display:'flex', flexDirection:'column', background:'var(--bg-surface)', padding:'16px', borderRadius:'16px', border:'1px solid var(--border)'}}>
+      <div style={{marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+         <span style={{fontFamily:'var(--font-display)',fontSize:'0.75rem',color:'var(--text-2)',letterSpacing:'0.1em'}}>DAILY STATISTICS</span>
+      </div>
+      <div style={{display:'grid', gridTemplateRows: 'repeat(3, max-content)', gridAutoFlow: 'column', gridAutoColumns: '100%', overflowX:'auto', overflowY:'hidden', scrollSnapType: 'x mandatory', gap: '8px', flex:1, paddingBottom:'4px', alignContent: 'start'}} className="custom-scrollbar hide-scrollbar">
+        {stats.map(s => {
+          const todayStr = new Date().toDateString();
+          const logs = store.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+          const todayTotal = logs.reduce((sum, log) => sum + log.value, 0);
+          const left = s.goalValue - todayTotal;
+          const currentXP = F.calculateStatisticXP(todayTotal, s.goalValue, s.maxXP, s.penaltyRange, s.negativeXP);
+          const isGood = currentXP >= 0;
+          return (
+            <div key={s.id} className="quest-card" style={{flexDirection:'row', borderColor:'var(--border)', marginBottom:0, display:'flex', alignItems:'center', justifyContent:'space-between', padding: '10px 12px', scrollSnapAlign: 'start', width: '100%', boxSizing: 'border-box'}}>
+              <div style={{display:'flex', flexDirection:'column', gap:'4px', flex:1}}>
+                <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
+                <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                  <input type="number" id={`stat-val-top-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
+                  <button className="btn btn-primary btn-sm" onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById(`stat-val-top-${s.id}`);
+                    if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
+                  }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
+                  {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
+                </div>
+              </div>
+              <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'2px', minWidth: '100px'}}>
+                <div style={{fontSize:'2rem', fontWeight:'normal', color:'var(--text-1)', fontFamily:'inherit', lineHeight:1, whiteSpace:'nowrap', marginBottom:'2px'}}>
+                  {todayTotal}<span style={{fontSize:'1rem', color:'var(--text-3)', fontWeight:'normal'}}>/{s.goalValue}</span>
+                </div>
+                {left >= 0 ? (
+                  <span style={{fontSize:'0.65rem', color:'var(--success)', fontWeight:'bold', marginLeft:'auto', textTransform:'uppercase'}}>+{left} {s.unit || ''} left</span>
+                ) : (
+                  <span style={{fontSize:'0.65rem', color:'var(--danger)', fontWeight:'bold', marginLeft:'auto', textTransform:'uppercase'}}>{Math.abs(left)} {s.unit || ''} over</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard({ setActiveTab }) {
   const [macros, setMacros] = useState([]);
   const [quests, setQuests] = useState([]);
@@ -397,6 +499,7 @@ export default function Dashboard({ setActiveTab }) {
   const [habituals, setHabituals] = useState([]);
   const [chains, setChains] = useState([]);
   const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState([]);
 
   const [currentSkillId, setCurrentSkillId] = useState('overall');
   const [activeQuestType, setActiveQuestType] = useState('quests');
@@ -413,6 +516,7 @@ export default function Dashboard({ setActiveTab }) {
       setHabituals(store.getHabituals());
       setChains(store.getAllChains());
       setHistory(store.getHistory().slice().reverse());
+      setStats(store.getStatistics() || []);
       
       const s = store.getSettings();
       setCurrentSkillId(s.wheelSkillId || 'overall');
@@ -531,7 +635,16 @@ export default function Dashboard({ setActiveTab }) {
 
         {/* Layout Conditional: History Bar (Split Layout) vs Default Large Wheel */}
         <div className="dash-carousel-wrap">
-          <div className="dash-carousel-viewport" id="dash-carousel">
+          <div className="dash-carousel-viewport" id="dash-carousel" onScroll={() => {
+            const el = document.getElementById('dash-carousel');
+            const dots = document.getElementById('dash-nav-dots');
+            if (!el || !dots) return;
+            const index = Math.round(el.scrollLeft / el.clientWidth);
+            Array.from(dots.children).forEach((d, i) => {
+              if (i === index) d.classList.add('active');
+              else d.classList.remove('active');
+            });
+          }}>
             <div className="dash-carousel-panel">
               {historyBarEnabled ? (
                 <div className="dash-split-layout">
@@ -575,12 +688,30 @@ export default function Dashboard({ setActiveTab }) {
                   </div>
                 </div>
               ) : (
-                <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0'}}>
+                <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 0 16px 0'}}>
                   <p style={{fontFamily: 'var(--font-display)', fontSize: '0.68rem', letterSpacing: '0.18em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '12px'}}>SELECT SKILL · DRAG QUEST TO COMPLETE</p>
                   <Wheel currentSkillId={currentSkillId} setCurrentSkillId={setCurrentSkillId} macros={macros} overall={overall} settings={settings} />
                 </div>
               )}
             </div>
+            
+            <div className="dash-carousel-panel" style={{paddingLeft: '16px'}}>
+              <MacroBarsPanel macros={macros} overall={overall} />
+            </div>
+
+            {settings.statsInCarousel !== false && stats.length > 0 && (
+              <div className="dash-carousel-panel" style={{paddingLeft: '16px'}}>
+                <StatsPanel stats={stats} />
+              </div>
+            )}
+          </div>
+          
+          <div className="carousel-nav-dots" id="dash-nav-dots">
+            <div className="nav-dot active" onClick={() => document.getElementById('dash-carousel').scrollTo({left:0, behavior:'smooth'})}></div>
+            <div className="nav-dot" onClick={() => document.getElementById('dash-carousel').scrollTo({left: document.getElementById('dash-carousel').clientWidth, behavior:'smooth'})}></div>
+            {settings.statsInCarousel !== false && stats.length > 0 && (
+              <div className="nav-dot" onClick={() => document.getElementById('dash-carousel').scrollTo({left: 9999, behavior:'smooth'})}></div>
+            )}
           </div>
         </div>
 
@@ -635,6 +766,50 @@ export default function Dashboard({ setActiveTab }) {
             </div>
           </div>
         </div>
+
+        {settings.statsInCarousel === false && stats.length > 0 && (
+          <div className="dash-statistics-wrap" style={{marginTop:'24px', paddingBottom: '24px'}}>
+            <h2 style={{fontFamily: 'var(--font-display)', fontSize: '0.9rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px', color: 'var(--text-3)'}}>
+              DAILY STATISTICS
+            </h2>
+            <div className="quest-grid" style={{display:'flex', flexDirection:'column', gap:'8px'}}>
+              {stats.map(s => {
+                const todayStr = new Date().toDateString();
+                const logs = store.getStatLogs().filter(l => l.statId === s.id && l.dateStr === todayStr);
+                const todayTotal = logs.reduce((sum, log) => sum + log.value, 0);
+                const left = s.goalValue - todayTotal;
+                const currentXP = F.calculateStatisticXP(todayTotal, s.goalValue, s.maxXP, s.penaltyRange, s.negativeXP);
+                const isGood = currentXP >= 0;
+                return (
+                  <div key={s.id} className="quest-card" style={{flexDirection:'row', borderColor:'var(--border)', marginBottom:0, display:'flex', alignItems:'center', justifyContent:'space-between', padding: '10px 12px', width: '100%', boxSizing: 'border-box'}}>
+                    <div style={{display:'flex', flexDirection:'column', gap:'4px', flex:1}}>
+                      <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
+                      <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                        <input type="number" id={`stat-val-bottom-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
+                        <button className="btn btn-primary btn-sm" onClick={(e) => {
+                          e.stopPropagation();
+                          const el = document.getElementById(`stat-val-bottom-${s.id}`);
+                          if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
+                        }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
+                        {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
+                      </div>
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'2px', minWidth: '100px'}}>
+                      <div style={{fontSize:'2rem', fontWeight:'normal', color:'var(--text-1)', fontFamily:'inherit', lineHeight:1, whiteSpace:'nowrap', marginBottom:'2px'}}>
+                        {todayTotal}<span style={{fontSize:'1rem', color:'var(--text-3)', fontWeight:'normal'}}>/{s.goalValue}</span>
+                      </div>
+                      {left >= 0 ? (
+                        <span style={{fontSize:'0.65rem', color:'var(--success)', fontWeight:'bold', marginLeft:'auto', textTransform:'uppercase'}}>+{left} {s.unit || ''} left</span>
+                      ) : (
+                        <span style={{fontSize:'0.65rem', color:'var(--danger)', fontWeight:'bold', marginLeft:'auto', textTransform:'uppercase'}}>{Math.abs(left)} {s.unit || ''} over</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

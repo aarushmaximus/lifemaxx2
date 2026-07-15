@@ -3,6 +3,7 @@ import { store } from '../lib/store';
 import { formulas as F } from '../lib/formulas';
 import SkillModal from './SkillModal';
 import StatModal from './StatModal';
+import SkillWidgets from './SkillWidgets';
 
 export default function SkillHub({ macroId }) {
   const [macro, setMacro] = useState(null);
@@ -23,6 +24,8 @@ export default function SkillHub({ macroId }) {
   const [statModalOpen, setStatModalOpen] = useState(false);
   const [statModalMode, setStatModalMode] = useState('create');
   const [editStatId, setEditStatId] = useState(null);
+
+  const [showWidgets, setShowWidgets] = useState(false);
 
   useEffect(() => {
     function loadData() {
@@ -133,6 +136,22 @@ export default function SkillHub({ macroId }) {
     if (level >= 20) return 'ADEPT';
     if (level >= 10) return 'APPRENTICE';
     return 'NOVICE';
+  }
+
+  const PHYSIQUE_NAMES = ['physique', 'corpus', 'forge', 'brawn', 'titan'];
+  const isPhysique = macro && (PHYSIQUE_NAMES.includes(macro.name.toLowerCase()) || macro.accentColor === '#ef4444');
+
+  if (isPhysique) {
+    OPTIONS.unshift({
+      id: 'open-widgets',
+      title: 'Skill Widgets',
+      desc: 'Workout Planner & Archive',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="26" height="26">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      )
+    });
   }
 
   return (
@@ -297,6 +316,9 @@ export default function SkillHub({ macroId }) {
                       case 'chain-quests':
                         window.location.hash = `#skill-chains/${macro.id}`;
                         break;
+                      case 'open-widgets':
+                        setShowWidgets(true);
+                        break;
                       default:
                         break;
                     }
@@ -386,6 +408,7 @@ export default function SkillHub({ macroId }) {
         statId={editStatId} 
         mode={statModalMode} 
       />
+      {showWidgets && <SkillWidgets macro={macro} onClose={() => setShowWidgets(false)} />}
     </div>
   );
 }

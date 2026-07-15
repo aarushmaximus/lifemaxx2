@@ -172,7 +172,7 @@ export default function Codex() {
   return (
     <div className="flex h-full text-[#e8e8f0] bg-black">
       {/* Sidebar */}
-      <div className="w-64 border-r border-[#1a1a1a] flex flex-col bg-[#050505]">
+      <div className={`${(activeNoteId || showGraph) ? 'hidden md:flex' : 'flex'} w-full md:w-64 border-r border-[#1a1a1a] flex-col bg-[#050505]`}>
         <div className="p-4 border-b border-[#1a1a1a]">
           <h2 className="text-lg font-bold tracking-widest font-display mb-4">CODEX</h2>
           <button 
@@ -213,9 +213,15 @@ export default function Codex() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
+      <div className={`${!(activeNoteId || showGraph) ? 'hidden md:flex' : 'flex'} flex-1 flex-col relative overflow-hidden`}>
         {showGraph ? (
-          <div className="w-full h-full relative">
+          <div className="w-full h-full relative flex flex-col">
+            <button 
+              onClick={() => setShowGraph(false)}
+              className="md:hidden absolute top-4 right-4 z-10 px-3 py-1.5 bg-[#1a1a1a] text-white rounded text-sm shadow"
+            >
+              Close
+            </button>
             <ForceGraph2D
               graphData={getGraphData()}
               nodeLabel="name"
@@ -235,7 +241,14 @@ export default function Codex() {
             </div>
           </div>
         ) : activeNoteId ? (
-          <div className="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto w-full">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full">
+            <button 
+              onClick={() => { setActiveNoteId(null); setShowGraph(false); }}
+              className="md:hidden flex items-center gap-1 text-gray-400 mb-6 hover:text-white"
+            >
+              <span className="material-symbols-outlined text-sm">arrow_back</span> Back
+            </button>
+            
             <div className="flex justify-between items-start mb-6">
               {isEditing ? (
                 <input 

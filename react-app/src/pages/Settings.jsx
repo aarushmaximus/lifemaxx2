@@ -211,6 +211,82 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Intelligence Engine */}
+      <div className="section-block">
+        <h2>Intelligence Engine</h2>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px'}}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px'}}>
+            <div style={{flex: 1, minWidth: '200px'}}>
+              <div style={{fontSize: '0.95rem', fontWeight: 500, marginBottom: '4px'}}>Gemini API Key</div>
+              <div style={{fontSize: '0.8rem', color: 'var(--text-3)'}}>Configure your Google AI Studio Key for Intelligence features.</div>
+            </div>
+            <input type="password" placeholder="AIzaSy..." value={settings.geminiApiKey || ''} onChange={e => updateSetting('geminiApiKey', e.target.value)} className="form-input" style={{width: '250px', padding: '8px 12px', fontSize: '0.85rem'}} />
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px'}}>
+            <div style={{flex: 1, minWidth: '200px'}}>
+              <div style={{fontSize: '0.95rem', fontWeight: 500, marginBottom: '4px'}}>AI Model</div>
+              <div style={{fontSize: '0.8rem', color: 'var(--text-3)'}}>Choose the Gemini model version. Flash is faster; Pro is smarter.</div>
+            </div>
+            <select value={settings.geminiModel || 'gemini-2.0-flash'} onChange={e => updateSetting('geminiModel', e.target.value)} className="form-input" style={{width: '250px', padding: '8px 12px', fontSize: '0.85rem', cursor: 'pointer'}}>
+              <option value="gemini-3.5-flash">Gemini 3.5 Flash (Latest)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended/Free)</option>
+              <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro (Advanced/Smarter)</option>
+            </select>
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px'}}>
+            <div style={{flex: 1, minWidth: '200px'}}>
+              <div style={{fontSize: '0.95rem', fontWeight: 500, marginBottom: '4px'}}>Coach Profile Picture (URL)</div>
+              <div style={{fontSize: '0.8rem', color: 'var(--text-3)'}}>Customize Fletcher's avatar with any image URL.</div>
+            </div>
+            <input type="text" placeholder="https://..." value={settings.coachAvatarUrl || ''} onChange={e => updateSetting('coachAvatarUrl', e.target.value)} className="form-input" style={{width: '250px', padding: '8px 12px', fontSize: '0.85rem'}} />
+          </div>
+        </div>
+      </div>
+
+      {/* Cloud Auto-Sync */}
+      <div className="section-block">
+        <h2>Cloud Auto-Sync</h2>
+        <p style={{fontSize: '0.8rem', color: 'var(--text-3)', marginTop: '4px', marginBottom: '16px'}}>
+          Synchronize your levels, custom presets, XP progress, and active quests automatically.
+        </p>
+        <div style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+           <p style={{fontSize: '0.8rem', color: 'var(--text-2)'}}>Cloud sync configuration is coming soon to the React UI. Switch to Vanilla UI to configure.</p>
+        </div>
+      </div>
+
+      {/* Data Migration & Backup */}
+      <div className="section-block">
+        <h2>Data Migration & Backup</h2>
+        <p style={{fontSize: '0.8rem', color: 'var(--text-3)', marginTop: '4px', marginBottom: '16px'}}>
+          Export your complete database as a JSON backup file to archive your progress.
+        </p>
+        <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
+          <button className="btn btn-ghost" onClick={() => {
+            const data = store.exportBackup();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lifemaxx_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+          }}>📤 Export Backup File</button>
+          <button className="btn btn-ghost" onClick={() => document.getElementById('import-file-input').click()}>📥 Import Backup File</button>
+          <input type="file" id="import-file-input" style={{display: 'none'}} accept=".json" onChange={(e) => {
+             const file = e.target.files[0];
+             if (!file) return;
+             const reader = new FileReader();
+             reader.onload = (ev) => {
+               try {
+                 const json = JSON.parse(ev.target.result);
+                 store.importBackup(json);
+                 window.location.reload();
+               } catch (err) { alert('Invalid backup file'); }
+             };
+             reader.readAsText(file);
+          }} />
+        </div>
+      </div>
+
       {/* Vanilla UI Switch */}
       <div className="section-block">
         <h2>Vanilla UI (Reliable Code)</h2>

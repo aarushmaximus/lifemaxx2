@@ -5,7 +5,14 @@ import { formulas as F } from '../lib/formulas';
 
 export default function SkillHub() {
   const [selectedMacroId, setSelectedMacroId] = useState(null);
-  const macros = store.getMacros();
+  const [macros, setMacros] = useState([]);
+
+  React.useEffect(() => {
+    const handleStoreChange = () => setMacros(store.getMacros());
+    handleStoreChange();
+    store.on('change', handleStoreChange);
+    return () => store.off('change', handleStoreChange);
+  }, []);
 
   if (selectedMacroId) {
     return (
