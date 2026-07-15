@@ -330,7 +330,7 @@ window.LM.views.coach = (function () {
       pushMessage('user', userText);
       
       const textBlock = userText.substring('/bulkquest'.length).trim();
-      const lines = textBlock.split('\\n');
+      const lines = textBlock.split('\n');
       const macros = S.getMacros();
       
       let currentChain = null;
