@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { store } from '../lib/store';
 import { formulas as F } from '../lib/formulas';
+import { MetalButton } from './ui/liquid-glass-button';
 
 const CIRC = 2 * Math.PI * 110;
 
@@ -282,21 +283,21 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
         })}
       </div>
       
-      <div className="quest-card-footer">
+      <div className="quest-card-footer mt-2">
         {isMissed ? (
           <button className="btn-complete" style={{background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.2)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Missed (Click ✕ to delete)</button>
         ) : isLocked ? (
           <button className="btn-complete" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow?.start} - {quest.timeWindow?.end})</button>
         ) : quest.isWorkoutQuest ? (
-          <button className="btn-complete" onClick={() => setActiveTab && setActiveTab('workout')} style={{background: 'var(--accent)', color: '#000', border: 'none', fontWeight: 700, letterSpacing: '0.08em'}}>⚡ START WORKOUT</button>
+          <MetalButton variant="gold" onClick={() => setActiveTab && setActiveTab('workout')} style={{ width: '100%' }}>⚡ START WORKOUT</MetalButton>
         ) : isReadyToClaim ? (
           isTouch ? (
-            <button className="btn-complete" onClick={() => store.completeQuest(quest.id)} style={{background: 'var(--accent-dim)', border: '1px solid var(--accent)', color: 'var(--accent)', cursor: 'pointer'}}>✓ Claim XP</button>
+            <MetalButton variant="primary" onClick={() => store.completeQuest(quest.id)} style={{ width: '100%' }}>✓ Claim XP</MetalButton>
           ) : (
             <button className="btn-complete" style={{background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-3)', cursor: 'grab', pointerEvents: 'none'}}>✓ Completed (Drag to Claim XP)</button>
           )
         ) : (
-          <button className="btn-complete" onClick={() => store.completeQuest(quest.id)}>✓ Complete</button>
+          <MetalButton variant="primary" onClick={() => store.completeQuest(quest.id)} style={{ width: '100%' }}>✓ Complete</MetalButton>
         )}
       </div>
     </div>
