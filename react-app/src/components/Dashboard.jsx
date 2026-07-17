@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { store } from '../lib/store';
 import { formulas as F } from '../lib/formulas';
-import { MetalButton } from './ui/liquid-glass-button';
+import { LiquidButton } from './ui/liquid-glass-button';
 
 const CIRC = 2 * Math.PI * 110;
 
@@ -289,15 +289,15 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
         ) : isLocked ? (
           <button className="btn-complete" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow?.start} - {quest.timeWindow?.end})</button>
         ) : quest.isWorkoutQuest ? (
-          <MetalButton variant="gold" onClick={() => setActiveTab && setActiveTab('workout')} style={{ width: '100%' }}>⚡ START WORKOUT</MetalButton>
+          <LiquidButton variant="default" onClick={() => setActiveTab && setActiveTab('workout')} className="w-full text-amber-400 border border-amber-500/30">⚡ START WORKOUT</LiquidButton>
         ) : isReadyToClaim ? (
           isTouch ? (
-            <MetalButton variant="primary" onClick={() => store.completeQuest(quest.id)} style={{ width: '100%' }}>✓ Claim XP</MetalButton>
+            <LiquidButton variant="default" onClick={() => store.completeQuest(quest.id)} className="w-full text-cyan-400 border border-cyan-500/30">✓ Claim XP</LiquidButton>
           ) : (
             <button className="btn-complete" style={{background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-3)', cursor: 'grab', pointerEvents: 'none'}}>✓ Completed (Drag to Claim XP)</button>
           )
         ) : (
-          <MetalButton variant="primary" onClick={() => store.completeQuest(quest.id)} style={{ width: '100%' }}>✓ Complete</MetalButton>
+          <LiquidButton variant="default" onClick={() => store.completeQuest(quest.id)} className="w-full text-cyan-400 border border-cyan-500/30">✓ Complete</LiquidButton>
         )}
       </div>
     </div>
@@ -466,11 +466,11 @@ const StatsPanel = ({ stats }) => {
                 <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
                 <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
                   <input type="number" id={`stat-val-top-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
-                  <button className="btn btn-primary btn-sm" onClick={(e) => {
+                  <LiquidButton variant="default" size="sm" onClick={(e) => {
                     e.stopPropagation();
                     const el = document.getElementById(`stat-val-top-${s.id}`);
                     if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
-                  }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
+                  }} className="text-cyan-400 border border-cyan-500/30 !h-7 py-0 px-2 text-xs">LOG</LiquidButton>
                   {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
                 </div>
               </div>
@@ -787,11 +787,11 @@ export default function Dashboard({ setActiveTab }) {
                       <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
                       <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
                         <input type="number" id={`stat-val-bottom-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
-                        <button className="btn btn-primary btn-sm" onClick={(e) => {
+                        <LiquidButton variant="default" size="sm" onClick={(e) => {
                           e.stopPropagation();
                           const el = document.getElementById(`stat-val-bottom-${s.id}`);
                           if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
-                        }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
+                        }} className="text-cyan-400 border border-cyan-500/30 !h-7 py-0 px-2 text-xs">LOG</LiquidButton>
                         {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
                       </div>
                     </div>
