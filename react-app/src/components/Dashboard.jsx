@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { store } from '../lib/store';
 import { formulas as F } from '../lib/formulas';
-import { LiquidButton } from './ui/liquid-glass-button';
 
 const CIRC = 2 * Math.PI * 110;
 
@@ -283,21 +282,21 @@ const QuestCard = ({ quest, macros, settings, setActiveTab }) => {
         })}
       </div>
       
-      <div className="quest-card-footer mt-2">
+      <div className="quest-card-footer">
         {isMissed ? (
           <button className="btn-complete" style={{background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.2)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Missed (Click ✕ to delete)</button>
         ) : isLocked ? (
           <button className="btn-complete" style={{background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-3)', cursor: 'not-allowed'}} disabled>Locked (Available {quest.timeWindow?.start} - {quest.timeWindow?.end})</button>
         ) : quest.isWorkoutQuest ? (
-          <LiquidButton variant="default" onClick={() => setActiveTab && setActiveTab('workout')} className="w-full text-amber-400 border border-amber-500/30">⚡ START WORKOUT</LiquidButton>
+          <button className="btn-complete" onClick={() => setActiveTab && setActiveTab('workout')} style={{background: 'var(--accent)', color: '#000', border: 'none', fontWeight: 700, letterSpacing: '0.08em'}}>⚡ START WORKOUT</button>
         ) : isReadyToClaim ? (
           isTouch ? (
-            <LiquidButton variant="default" onClick={() => store.completeQuest(quest.id)} className="w-full text-cyan-400 border border-cyan-500/30">✓ Claim XP</LiquidButton>
+            <button className="btn-complete" onClick={() => store.completeQuest(quest.id)} style={{background: 'var(--accent-dim)', border: '1px solid var(--accent)', color: 'var(--accent)', cursor: 'pointer'}}>✓ Claim XP</button>
           ) : (
             <button className="btn-complete" style={{background: 'transparent', border: '1px dashed var(--border)', color: 'var(--text-3)', cursor: 'grab', pointerEvents: 'none'}}>✓ Completed (Drag to Claim XP)</button>
           )
         ) : (
-          <LiquidButton variant="default" onClick={() => store.completeQuest(quest.id)} className="w-full text-cyan-400 border border-cyan-500/30">✓ Complete</LiquidButton>
+          <button className="btn-complete" onClick={() => store.completeQuest(quest.id)}>✓ Complete</button>
         )}
       </div>
     </div>
@@ -466,11 +465,11 @@ const StatsPanel = ({ stats }) => {
                 <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
                 <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
                   <input type="number" id={`stat-val-top-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
-                  <LiquidButton variant="default" size="sm" onClick={(e) => {
+                  <button className="btn btn-primary btn-sm" onClick={(e) => {
                     e.stopPropagation();
                     const el = document.getElementById(`stat-val-top-${s.id}`);
                     if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
-                  }} className="text-cyan-400 border border-cyan-500/30 !h-7 py-0 px-2 text-xs">LOG</LiquidButton>
+                  }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
                   {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
                 </div>
               </div>
@@ -787,11 +786,11 @@ export default function Dashboard({ setActiveTab }) {
                       <h3 className="quest-card-name" style={{margin:0, fontSize:'0.95rem'}}>{s.name}</h3>
                       <div className="stat-controls" style={{display:'flex', alignItems:'center', gap:'6px'}}>
                         <input type="number" id={`stat-val-bottom-${s.id}`} className="form-input" placeholder="Amt" style={{width:'65px', padding:'4px 8px', fontSize:'0.85rem', height:'28px'}} onClick={e => e.stopPropagation()} />
-                        <LiquidButton variant="default" size="sm" onClick={(e) => {
+                        <button className="btn btn-primary btn-sm" onClick={(e) => {
                           e.stopPropagation();
                           const el = document.getElementById(`stat-val-bottom-${s.id}`);
                           if(el && el.value) { store.logStatistic(s.id, Number(el.value)); el.value=''; }
-                        }} className="text-cyan-400 border border-cyan-500/30 !h-7 py-0 px-2 text-xs">LOG</LiquidButton>
+                        }} style={{padding:'2px 10px', fontSize:'0.75rem', height:'28px', minWidth:'unset'}}>LOG</button>
                         {isGood ? <span className="material-symbols-outlined" style={{color:'var(--success)', fontSize:'1.1rem', marginLeft:'4px'}}>check_circle</span> : <span className="material-symbols-outlined" style={{color:'var(--danger)', fontSize:'1.1rem', marginLeft:'4px'}}>error</span>}
                       </div>
                     </div>

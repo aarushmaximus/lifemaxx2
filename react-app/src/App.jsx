@@ -9,8 +9,6 @@ import Settings from './pages/Settings';
 import Quests from './pages/Quests';
 import Codex from './pages/Codex';
 import QuestModal from './components/QuestModal';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LiquidButton } from './components/ui/liquid-glass-button';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -64,37 +62,26 @@ function App() {
       
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 pt-[72px] md:pt-0 pb-[90px] md:pb-0" id="main-content">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.3, ease: [0.1, 0.4, 0.2, 1] }}
-            className="h-full w-full"
-          >
-            {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-            {activeTab === 'quests' && <Quests setActiveTab={setActiveTab} />}
-            {activeTab === 'skills' && <SkillHub />}
-            {activeTab === 'analysis' && <Analysis />}
-            {activeTab === 'coach' && <Coach />}
-            {activeTab === 'codex' && <Codex />}
-            {activeTab === 'settings' && <Settings />}
-          </motion.div>
-        </AnimatePresence>
+        {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
+        {activeTab === 'quests' && <Quests setActiveTab={setActiveTab} />}
+        {activeTab === 'skills' && <SkillHub />}
+        {activeTab === 'analysis' && <Analysis />}
+        {activeTab === 'coach' && <Coach />}
+        {activeTab === 'codex' && <Codex />}
+        {activeTab === 'settings' && <Settings />}
       </main>
 
       {/* Quest Modal */}
       <QuestModal isOpen={questModalOpen} onClose={() => setQuestModalOpen(false)} editQuest={editQuest} />
 
       {/* Global FAB */}
-      <LiquidButton 
+      <button 
         id="fab"
         onClick={() => { setEditQuest(null); setQuestModalOpen(true); }}
-        className="fixed bottom-[100px] md:bottom-8 right-4 md:right-8 !size-14 bg-[#00E5FF] rounded-full flex items-center justify-center text-black z-[90]"
+        className="fixed bottom-[100px] md:bottom-8 right-4 md:right-8 w-14 h-14 bg-[#00E5FF] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_30px_rgba(0,229,255,0.6)] hover:scale-105 transition-all z-[90]"
       >
         <span className="material-symbols-outlined text-3xl font-light">add</span>
-      </LiquidButton>
+      </button>
 
       {/* Mobile Bottom NavBar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-3xl border-t border-[#141414]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}>
